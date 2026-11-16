@@ -7,6 +7,7 @@ pub mod cache;
 pub mod error;
 pub mod files;
 pub mod image;
+pub mod news;
 pub mod recent;
 pub mod settings_store;
 pub mod text_view;

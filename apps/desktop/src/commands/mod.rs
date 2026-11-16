@@ -6,6 +6,7 @@
 
 pub mod document;
 pub mod settings;
+pub mod updates;
 
 use std::sync::Arc;
 

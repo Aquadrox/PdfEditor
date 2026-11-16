@@ -8,15 +8,18 @@
 mod commands;
 mod logging;
 mod protocol;
+mod updates;
 
 use std::sync::Arc;
 
 use pde_app::app::App;
+use pde_app::news::News;
 use pde_app::recent::RecentFiles;
 use pde_app::settings_store::SettingsStore;
 use pde_app::unavailable::UnavailableEngine;
 use pde_pdf::PdfiumEngine;
 use pde_platform::dirs::AppDirs;
+use tauri::Manager;
 
 /// Moteur PDFium, ou moteur de remplacement qui explique pourquoi il manque.
 fn engine() -> Arc<dyn pde_app::PdfEngine> {
@@ -44,14 +47,29 @@ fn main() {
     logging::init(&dirs.logs, settings.get().diagnostic.log_level);
     log::info!("PdfEditor {} démarre", env!("CARGO_PKG_VERSION"));
 
+    let news = Arc::new(News::launch(
+        dirs.version_file(),
+        env!("CARGO_PKG_VERSION"),
+        updates::platform(),
+        settings.existed(),
+    ));
+    let check_updates = settings.get().updates.check;
     let recent = RecentFiles::load(dirs.recent_file());
     let app = Arc::new(App::new(engine(), settings, recent));
     let protocol_app = app.clone();
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(app)
         .manage(dirs)
+        .manage(news)
+        .setup(move |tauri_app| {
+            let updates = updates::Updates::new(tauri_app.handle(), check_updates);
+            updates::spawn_checks(tauri_app.handle().clone(), updates.clone());
+            tauri_app.manage(updates);
+            Ok(())
+        })
         .register_asynchronous_uri_scheme_protocol("pde", move |_ctx, request, responder| {
             let app = protocol_app.clone();
             tauri::async_runtime::spawn_blocking(move || {
@@ -72,6 +90,11 @@ fn main() {
             commands::settings::default_settings,
             commands::settings::open_logs_folder,
             commands::settings::app_info,
+            commands::updates::update_status,
+            commands::updates::check_update,
+            commands::updates::install_update,
+            commands::updates::changelog_view,
+            commands::updates::dismiss_update_news,
         ])
         .run(tauri::generate_context!());
     if let Err(error) = result {

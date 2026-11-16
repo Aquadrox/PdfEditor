@@ -25,6 +25,8 @@ const STARTUP = {
   recent_files: [{ ok: [] }],
   app_info: [{ ok: { version: "0.0.0-test" } }],
   initial_files: [{ ok: [] }],
+  update_status: [{ ok: { current: "0.0.0-test", available: null, notes: [], configured: true } }],
+  changelog_view: [{ ok: { current: "0.0.0-test", releases: [], updated_from: null, news: [] } }],
 };
 const TYPES = {
   ".html": "text/html",

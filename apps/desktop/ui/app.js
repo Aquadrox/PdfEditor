@@ -8,6 +8,7 @@ import { renderRecent } from "./features/home/recent.js";
 import { openPath, pickPdf } from "./features/open/open.js";
 import { attachSearch } from "./features/search/search-bar.js";
 import { attachSettings } from "./features/settings/settings-view.js";
+import { attachUpdates } from "./features/updates/updates.js";
 import { renderOutline } from "./features/viewer/outline.js";
 import { attachStatusbar } from "./features/viewer/statusbar.js";
 import { Thumbnails } from "./features/viewer/thumbnails.js";
@@ -190,6 +191,7 @@ async function start() {
     toast(t("error.unexpected", { message: error?.message ?? String(error) }), "error");
   }
   show(null);
+  attachUpdates();
   // Fichier passé en argument (« Ouvrir avec PdfEditor »), sinon le dernier
   // document si le réglage le demande.
   const files = await invoke("initial_files").catch(() => []);

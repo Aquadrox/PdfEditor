@@ -58,6 +58,19 @@
         </button>
       </header>
 
+      <div id="update-banner" class="banner" role="status" hidden>
+        <span id="update-text" class="banner-text"></span>
+        <button id="update-notes-toggle" class="btn ghost" aria-expanded="false" data-i18n="updates.notes"></button>
+        <button id="update-install" class="btn primary" data-i18n="updates.install"></button>
+        <div id="update-notes" class="banner-notes" hidden></div>
+      </div>
+      <div id="updated-banner" class="banner" role="status" hidden>
+        <span id="updated-text" class="banner-text"></span>
+        <button id="updated-notes-toggle" class="btn ghost" aria-expanded="false" data-i18n="updates.notes"></button>
+        <button id="updated-close" class="btn ghost icon" data-i18n-label="updates.close"><svg class="icon"><use href="#i-x" /></svg></button>
+        <div id="updated-notes" class="banner-notes" hidden></div>
+      </div>
+
       <div class="workspace">
         <aside id="sidebar" class="sidebar" data-i18n-aria="sidebar.label" hidden>
           <div class="sidebar-tabs" role="tablist">
@@ -175,6 +188,17 @@
           <section class="settings-section" data-section="diagnostic" hidden>
             <h2 class="settings-section-title" data-i18n="settings.diagnostic"></h2>
             <div class="field">
+              <label for="set-updates"><span data-i18n="settings.updatesCheck"></span><span class="hint" data-i18n="settings.updatesCheck.hint"></span></label>
+              <input id="set-updates" class="switch" type="checkbox" role="switch" data-setting="updates.check" />
+            </div>
+            <div class="field">
+              <span id="update-check-status" class="muted" role="status"></span>
+              <span class="actions">
+                <button id="update-check" class="btn" data-i18n="updates.check"></button>
+                <button id="settings-update-install" class="btn primary" hidden></button>
+              </span>
+            </div>
+            <div class="field">
               <label for="set-log"><span data-i18n="settings.logLevel"></span><span class="hint" data-i18n="settings.logLevel.hint"></span></label>
               <select id="set-log" class="input" data-setting="diagnostic.log_level">
                 <option value="error" data-i18n="settings.logLevel.error"></option>
@@ -187,6 +211,10 @@
               <span id="app-version" class="muted"></span>
               <button id="open-logs" class="btn" data-i18n="settings.openLogs"></button>
             </div>
+            <details class="notes-details">
+              <summary data-i18n="settings.notes"></summary>
+              <div id="installed-notes" class="release-list"></div>
+            </details>
           </section>
         </div>
       </div>

@@ -65,6 +65,11 @@ impl AppDirs {
     pub fn recent_file(&self) -> PathBuf {
         self.data.join("recent.json")
     }
+
+    /// Versions lancées (nouveautés après une mise à jour).
+    pub fn version_file(&self) -> PathBuf {
+        self.data.join("version.json")
+    }
 }
 
 #[cfg(test)]

@@ -42,6 +42,30 @@ Settings → Branches → *Add branch ruleset* (ou *Branch protection rule*) sur
 Settings → Code security : activer *Secret scanning* et *Push protection*
 (gratuits pour un dépôt public) en plus du job `secrets`.
 
+## Publication d'une version
+
+1. La PR monte `version` dans `Cargo.toml` et ajoute sa section en tête de
+   `CHANGELOG.md` (vérifié par la CI).
+2. Après le merge, le propriétaire lance `./release.sh` (Git Bash sous
+   Windows) : il pose et envoie le tag `vX.Y.Z` sur `main`, après confirmation.
+3. La CI compile l'installeur, le **signe** (secrets
+   `TAURI_SIGNING_PRIVATE_KEY` et `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, lus
+   seulement sur un tag) et publie la release avec `latest.json`. Les
+   applications installées la proposent alors à leurs utilisateurs.
+
+Clé de signature des mises à jour (une fois, par le propriétaire uniquement) :
+
+```bash
+npx @tauri-apps/cli signer generate -w ~/.tauri/pdfeditor.key
+```
+
+Contenu de `~/.tauri/pdfeditor.key` → secret `TAURI_SIGNING_PRIVATE_KEY`,
+son mot de passe → `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (Settings → Secrets
+and variables → Actions). La clé **publique** (`pdfeditor.key.pub`) va dans
+`apps/desktop/tauri.conf.json` (`plugins.updater.pubkey`) ; elle n'est pas
+secrète. Perdre la clé privée empêcherait toute mise à jour automatique des
+versions déjà installées : la sauvegarder.
+
 ## Secrets
 
 - Clés API, jetons, mots de passe, clés privées et certificats ne vont

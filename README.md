@@ -24,6 +24,13 @@ Tout est réglable dans les Réglages.
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Étapes et avancement |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Règles de contribution, protection de `main`, secrets |
 
+## Installer
+
+Les versions publiées sont dans les
+[Releases](https://github.com/Aquadrox/PdfEditor/releases) : télécharger
+l'installeur `PdfEditor_X.Y.Z_x64-setup.exe`. Ensuite, PdfEditor propose
+lui-même ses mises à jour (vérifiées par signature, installées sur votre clic).
+
 ## Construire
 
 Rust stable (voir `rust-toolchain.toml`). Le moteur PDF a besoin de la

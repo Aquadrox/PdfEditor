@@ -22,11 +22,13 @@ pub struct SettingsStore {
     path: PathBuf,
     current: Mutex<Settings>,
     warnings: Vec<String>,
+    existed: bool,
 }
 
 impl SettingsStore {
     /// Lit `path` ; fichier absent : réglages par défaut, sans avertissement.
     pub fn load(path: PathBuf) -> Self {
+        let existed = path.is_file();
         let (settings, warnings) = match std::fs::read_to_string(&path) {
             Ok(text) => {
                 let loaded = Settings::from_toml(&text);
@@ -48,7 +50,13 @@ impl SettingsStore {
             path,
             current: Mutex::new(settings),
             warnings,
+            existed,
         }
+    }
+
+    /// Le fichier existait au lancement : l'application avait déjà servi.
+    pub fn existed(&self) -> bool {
+        self.existed
     }
 
     pub fn get(&self) -> Settings {

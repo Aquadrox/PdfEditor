@@ -12,5 +12,6 @@
     "fit_width": "Ctrl+2",
     "settings": "Ctrl+Comma"
   },
+  "updates": { "check": true },
   "diagnostic": { "log_level": "info" }
 }

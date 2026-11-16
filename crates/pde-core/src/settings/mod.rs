@@ -82,6 +82,20 @@ impl Default for Display {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Updates {
+    /// Vérifier régulièrement si une nouvelle version est publiée. Rien
+    /// n'est jamais installé sans l'accord de l'utilisateur.
+    pub check: bool,
+}
+
+impl Default for Updates {
+    fn default() -> Self {
+        Self { check: true }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Diagnostic {
@@ -94,6 +108,7 @@ pub struct Settings {
     pub general: General,
     pub display: Display,
     pub shortcuts: Shortcuts,
+    pub updates: Updates,
     pub diagnostic: Diagnostic,
 }
 
@@ -199,6 +214,7 @@ mod tests {
         settings.general.theme = Theme::Dark;
         settings.display.default_zoom = DefaultZoom::FitPage;
         settings.diagnostic.log_level = LogLevel::Debug;
+        settings.updates.check = false;
         let loaded = Settings::from_toml(&settings.to_toml());
         assert_eq!(loaded.settings, settings);
         assert!(loaded.warnings.is_empty());

@@ -13,7 +13,8 @@
 - Avant de livrer : `cargo fmt --all`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`.
 - **Git** : `main` est protégée ; tout passe par une PR dont la CI (`linux`, `windows`, `secrets`) est verte. Ne jamais pousser sur `main`, ne jamais mettre `[skip ci]`.
 - **Version** : chaque PR qui change l'application monte `version` dans le Cargo.toml racine et ajoute en tête de `CHANGELOG.md` sa section `## X.Y.Z — AAAA-MM-JJ` (une ligne `- ` par changement, en mots d'utilisateur, `[Windows]` / `[Linux]` si propre à une plateforme).
-- **Publication** : le propriétaire pose les tags `vX.Y.Z` ; ne jamais pousser de tag soi-même.
+- **Publication** : après le merge, le propriétaire lance `./release.sh` qui pose et envoie le tag `vX.Y.Z` ; ne jamais pousser de tag soi-même. La CI signe l'installeur et publie `latest.json` (mises à jour automatiques).
+- **Signature des mises à jour** : la clé privée minisign appartient au propriétaire (secrets GitHub `TAURI_SIGNING_PRIVATE_KEY` / `_PASSWORD`, lus seulement par les builds de tags). Ne jamais la générer, la demander ni la stocker ici ; seule la clé publique est dans `tauri.conf.json`.
 - **Reprise de VoiceToText** (dépôt `Aquadrox/VoiceToText`) : le code LLM, réglages, trousseau, mises à jour est copié puis adapté, voir le tableau de `docs/ARCHITECTURE.md`. Pas de dépendance entre les deux dépôts.
 - **Dépôt public, aucun secret** : jamais de clé API, jeton, mot de passe, clé privée ou certificat (`.p12`, `.pfx`, `.pem`, `.key`), ni dans le code, les tests, les journaux collés ou les PR. Clés et certificats de test générés à l'exécution des tests. Les secrets de la CI passent par les secrets GitHub Actions. Vérifier le diff avant chaque push.
 - **Données des utilisateurs** : jamais de contenu de document ni de prompt dans les journaux ; contenu des PDF affiché uniquement avec `textContent`.

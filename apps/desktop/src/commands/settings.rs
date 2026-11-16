@@ -10,6 +10,7 @@ use tauri_plugin_opener::OpenerExt;
 
 use super::AppState;
 use crate::logging;
+use crate::updates::UpdatesState;
 
 #[tauri::command(async)]
 pub fn get_settings(app: AppState<'_>) -> SettingsView {
@@ -24,9 +25,15 @@ pub fn default_settings() -> Settings {
 
 /// Enregistre et applique ; renvoie les réglages tels qu'enregistrés.
 #[tauri::command(async)]
-pub fn save_settings(app: AppState<'_>, settings: Settings) -> Result<Settings, AppError> {
+pub fn save_settings(
+    handle: AppHandle,
+    app: AppState<'_>,
+    updates: State<'_, UpdatesState>,
+    settings: Settings,
+) -> Result<Settings, AppError> {
     let saved = app.save_settings(&settings)?;
     logging::set_level(saved.diagnostic.log_level);
+    crate::updates::set_auto(&handle, updates.inner(), saved.updates.check);
     Ok(saved)
 }
 
