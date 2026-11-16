@@ -18,10 +18,14 @@ pub enum Action {
     FitPage,
     FitWidth,
     Settings,
+    Undo,
+    Redo,
+    Save,
+    SaveAs,
 }
 
 impl Action {
-    pub const ALL: [Action; 9] = [
+    pub const ALL: [Action; 13] = [
         Action::Open,
         Action::Close,
         Action::Search,
@@ -31,6 +35,10 @@ impl Action {
         Action::FitPage,
         Action::FitWidth,
         Action::Settings,
+        Action::Undo,
+        Action::Redo,
+        Action::Save,
+        Action::SaveAs,
     ];
 
     pub fn default_shortcut(self) -> &'static str {
@@ -44,6 +52,10 @@ impl Action {
             Action::FitPage => "Ctrl+1",
             Action::FitWidth => "Ctrl+2",
             Action::Settings => "Ctrl+Comma",
+            Action::Undo => "Ctrl+Z",
+            Action::Redo => "Ctrl+Y",
+            Action::Save => "Ctrl+S",
+            Action::SaveAs => "Ctrl+Shift+S",
         }
     }
 }

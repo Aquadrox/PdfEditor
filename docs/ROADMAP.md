@@ -40,11 +40,12 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ✅ Tests de rendu comparés à des images de référence (`crates/pde-pdf/tests/fixtures/expected/`, `PDE_UPDATE_EXPECTED=1` pour les régénérer)
 - ✅ Modèle d'édition (`pde-core::edit`) : éléments ajoutés, historique annuler / rétablir, suivi « modifié », coupure des lignes ; le moteur repart du PDF d'origine et repose les éléments à chaque changement
 - ⬜ Sauvegarde automatique et récupération après plantage (F-02)
-- 🚧 Zones de texte (E-01) : écriture par le moteur faite (polices standard, accents, €, œ, alignement, couleur, gras, italique, pages tournées) ; reste l'interface et les polices embarquées pour les autres alphabets
+- ✅ Mode Éditer : barre d'outils, couche d'édition sur les pages, panneau Propriétés (maquette `Main.dc.html`), annuler / rétablir (Ctrl+Z / Ctrl+Y), pastille « modifié », raccourcis réglables ; tests de parcours Playwright
+- 🚧 Zones de texte (E-01) : création par un clic et saisie directe sur la page, police standard, taille, gras, italique, couleur, alignement, déplacement et largeur à la souris ou en mm, dupliquer, supprimer ; reste les polices embarquées pour les autres alphabets (Noto)
 - ⬜ Images (E-02)
-- ⬜ Sélection, déplacement, alignement, magnétisme (E-03)
+- 🚧 Sélection, déplacement, alignement, magnétisme (E-03) : sélection, déplacement (souris, flèches), dupliquer, supprimer faits ; reste sélection au clavier (Tab), alignement, magnétisme
 - ⬜ Annotations et formes (E-04)
-- 🚧 Enregistrer / Enregistrer sous (F-01) : écriture sûre faite (contenu relu avant d'écrire, remplacement atomique, mot de passe conservé) ; reste l'interface
+- ✅ Enregistrer / Enregistrer sous (F-01) : contenu relu avant d'écrire, remplacement atomique, mot de passe conservé ; question avant de fermer le document ou la fenêtre, ou d'en ouvrir un autre, avec des modifications
 - ⬜ Réglages Édition et Fichiers (R-03, R-04)
 
 ## v0.3 — Contenu existant et pages

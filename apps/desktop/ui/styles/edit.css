@@ -1,0 +1,288 @@
+/* Mode Éditer : barre d'outils, couche posée sur les pages, saisie directe,
+   panneau Propriétés, indicateur « modifié ». */
+
+.doc-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.dirty-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.dirty-dot[hidden] {
+  display: none;
+}
+
+/* Barre d'outils du mode (44 px, maquette Main.dc.html). */
+.edit-toolbar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.edit-toolbar[hidden] {
+  display: none;
+}
+
+.edit-toolbar .separator {
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--space-2);
+  background: var(--line);
+}
+
+.edit-toolbar .spacer {
+  flex: 1;
+}
+
+.font-select {
+  width: 128px;
+}
+
+.with-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.size-input {
+  width: 64px;
+}
+
+.btn.bold {
+  font-weight: 600;
+}
+
+.btn.italic {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+}
+
+.color-input {
+  width: 28px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--raised);
+  cursor: pointer;
+}
+
+/* Couche d'édition : au-dessus du texte et des surlignages. En mode Lire
+   elle disparaît, le texte redevient sélectionnable. */
+.edit-layer {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+.edit-layer.active {
+  display: block;
+  cursor: text;
+}
+
+.desk.editing .text-layer {
+  pointer-events: none;
+}
+
+.edit-layer .element {
+  position: absolute;
+  min-height: 6px;
+  outline: 1px dashed transparent;
+  outline-offset: 2px;
+  cursor: move;
+  touch-action: none;
+}
+
+.edit-layer .element:hover {
+  outline-color: var(--on-paper-accent);
+}
+
+.edit-layer .element.selected {
+  outline: 1.5px solid var(--on-paper-accent);
+  background: var(--on-paper-accent-soft);
+}
+
+.edit-layer .handle {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 16px;
+  border: 1.5px solid var(--on-paper-accent);
+  border-radius: 2px;
+  background: var(--paper);
+  transform: translateY(-50%);
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.edit-layer .handle.left {
+  left: -7px;
+}
+
+.edit-layer .handle.right {
+  right: -7px;
+}
+
+/* Saisie directe : au corps de la zone, sur un fond papier qui masque
+   l'ancien rendu pendant la saisie. */
+.text-editor {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  outline: 1.5px solid var(--on-paper-accent);
+  outline-offset: 2px;
+  background: rgb(255 255 255 / 92%);
+  resize: none;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Panneau Propriétés, à droite de la table. */
+.properties {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  flex: none;
+  overflow-y: auto;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.properties[hidden] {
+  display: none;
+}
+
+.properties-empty {
+  margin: 0;
+  padding: var(--space-4);
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.properties-empty[hidden],
+.properties-fields[hidden] {
+  display: none;
+}
+
+.properties-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.properties-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.properties-group.actions-row {
+  flex-direction: row;
+  border-bottom: 0;
+}
+
+.properties .caption {
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.prop-text {
+  height: auto;
+  min-height: 56px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.row2 .input {
+  width: 100%;
+  min-width: 0;
+}
+
+.properties .stacked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.properties .inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.properties .inline .caption {
+  width: 14px;
+}
+
+.swatches {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.swatch[aria-pressed="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.segmented {
+  display: flex;
+  gap: 2px;
+}
+
+.btn.danger {
+  color: var(--danger);
+}
+
+.save-state {
+  color: var(--muted);
+}
+
+@media (max-width: 1199px) {
+  /* Fenêtre étroite : le panneau passe par-dessus la table (DESIGN.md). */
+  .properties {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    box-shadow: var(--shadow-float);
+  }
+}

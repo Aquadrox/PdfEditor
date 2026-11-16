@@ -15,6 +15,7 @@ export class Thumbnails {
     this.list = list;
     this.onSelect = onSelect;
     this.buttons = [];
+    this.revisions = [];
     this.observer = new IntersectionObserver((entries) => this.onVisible(entries), {
       root: scrollRoot,
       rootMargin: "300px 0px",
@@ -51,6 +52,7 @@ export class Thumbnails {
     this.observer.disconnect();
     this.list.replaceChildren();
     this.buttons = [];
+    this.revisions = [];
   }
 
   onVisible(entries) {
@@ -59,8 +61,17 @@ export class Thumbnails {
       const image = entry.target;
       const index = Number(image.dataset.page);
       const scale = renderScale(this.doc.pages[index], Number(image.dataset.zoom), window.devicePixelRatio || 1);
-      image.src = pageUrl(this.doc.id, index, scale);
+      image.src = pageUrl(this.doc.id, index, scale, this.revisions[index]);
       this.observer.unobserve(image);
+    }
+  }
+
+  /** Pages modifiées : nouvelle image si elle était déjà chargée. */
+  setRevisions(revisions, changed) {
+    this.revisions = revisions;
+    for (const index of changed) {
+      const image = this.buttons[index]?.querySelector("img");
+      if (image?.src) this.observer.observe(image);
     }
   }
 

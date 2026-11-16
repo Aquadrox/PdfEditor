@@ -3,6 +3,8 @@
 
 import { attachMenu } from "./components/menu.js";
 import { toast } from "./components/toast.js";
+import { EditMode } from "./features/edit/edit-mode.js";
+import { confirmDiscard, saveDocument, saveDocumentAs } from "./features/edit/saving.js";
 import { showHome, watchDrops } from "./features/home/home.js";
 import { renderRecent } from "./features/home/recent.js";
 import { openPath, pickPdf } from "./features/open/open.js";
@@ -16,7 +18,7 @@ import { Viewer } from "./features/viewer/viewer.js";
 import { zoomIn, zoomOut } from "./features/viewer/zoom.js";
 import { byId } from "./lib/dom.js";
 import { t, translate } from "./lib/i18n.js";
-import { invoke, setWindowTitle } from "./lib/ipc.js";
+import { invoke, listen, setWindowTitle } from "./lib/ipc.js";
 import { eventToShortcut, keymap, shortcutLabel } from "./lib/shortcuts.js";
 import { applyTheme } from "./lib/theme.js";
 
@@ -25,6 +27,7 @@ translate(document);
 let current = null;
 let settings = null;
 let shortcuts = new Map();
+let mode = "read";
 
 const viewer = new Viewer(byId("desk"), {
   onPageChange: (page) => {
@@ -33,11 +36,34 @@ const viewer = new Viewer(byId("desk"), {
   },
   onZoomChange: (zoom) => statusbar.setZoom(zoom),
   loadText: (page) => invoke("page_text", { id: current.id, page }),
+  onPageShown: (frame, page) => edit.layer.pageShown(frame, page),
 });
 const statusbar = attachStatusbar(viewer);
 const search = attachSearch(viewer);
 const thumbnails = new Thumbnails(byId("thumbs"), byId("sidebar-body"), (page) => viewer.goToPage(page));
 const settingsView = attachSettings({ onSaved: applySettings, onClose: closeSettings });
+const edit = new EditMode(viewer, (view, changed) => {
+  if (changed.length > 0) thumbnails.setRevisions(view.revisions, changed);
+  showSaveState(view.dirty);
+});
+
+/** Pastille et barre d'état « modifié » ; Enregistrer actif s'il y a à faire. */
+function showSaveState(dirty) {
+  byId("doc-dirty").hidden = !dirty;
+  byId("save-button").disabled = !dirty;
+  byId("menu-save").disabled = !dirty;
+  byId("save-state").textContent = current ? t(dirty ? "status.unsaved" : "status.saved") : "";
+}
+
+/** Lire ou Éditer ; les autres modes arrivent avec leurs versions. */
+function setMode(next) {
+  mode = current ? next : "read";
+  byId("mode-read").toggleAttribute("aria-current", false);
+  byId("mode-edit").toggleAttribute("aria-current", false);
+  byId(`mode-${mode}`).setAttribute("aria-current", "page");
+  byId("save-button").hidden = mode !== "edit";
+  edit.setActive(mode === "edit");
+}
 
 function show(doc) {
   current = doc;
@@ -45,6 +71,8 @@ function show(doc) {
   byId("sidebar").hidden = !doc;
   byId("doc-name").textContent = doc ? doc.file_name : "";
   byId("menu-close").disabled = !doc;
+  byId("menu-save-as").disabled = !doc;
+  byId("mode-edit").disabled = !doc;
   statusbar.setDocument(doc);
   setWindowTitle(doc ? `${doc.title} – PdfEditor` : "PdfEditor").catch(() => {});
   if (doc) {
@@ -53,16 +81,46 @@ function show(doc) {
     const hasOutline = renderOutline(byId("outline"), doc.outline, (page) => viewer.goToPage(page));
     showSidebarTab(hasOutline && doc.pages.length > 1 ? "outline" : "pages");
     statusbar.setPage(0);
+    edit.load(doc).catch((e) => toast(t("error.unexpected", { message: e?.message ?? String(e) }), "error"));
   } else {
+    edit.load(null);
     viewer.unload();
     thumbnails.clear();
     refreshRecent();
   }
   search.reset();
+  setMode(mode);
+  showSaveState(false);
+}
+
+/** Avant de quitter le document : enregistrer, abandonner ou rester. */
+async function canLeave() {
+  if (!current) return true;
+  edit.layer.commitText();
+  return confirmDiscard(edit.session, () => saveDocument(edit.session));
+}
+
+function renamed(saved) {
+  if (!saved || !current) return;
+  current.file_name = saved.file_name;
+  byId("doc-name").textContent = saved.file_name;
+}
+
+async function save() {
+  if (!current) return;
+  edit.layer.commitText();
+  if (edit.session.dirty) renamed(await saveDocument(edit.session));
+}
+
+async function saveAs() {
+  if (!current) return;
+  edit.layer.commitText();
+  renamed(await saveDocumentAs(edit.session));
 }
 
 /** Ouvre un fichier ; le document précédent n'est fermé qu'en cas de succès. */
 async function open(path) {
+  if (!(await canLeave())) return;
   const doc = await openPath(path);
   if (!doc) return;
   const previous = current;
@@ -70,8 +128,8 @@ async function open(path) {
   if (previous) invoke("close_document", { id: previous.id });
 }
 
-function close() {
-  if (!current) return;
+async function close() {
+  if (!current || !(await canLeave())) return;
   invoke("close_document", { id: current.id });
   show(null);
 }
@@ -140,13 +198,29 @@ const actions = {
   fit_page: () => viewer.fit("page"),
   fit_width: () => viewer.fit("width"),
   settings: openSettings,
+  undo: () => edit.undo(),
+  redo: () => edit.redo(),
+  save,
+  save_as: saveAs,
 };
+
+/** Champ de saisie : Ctrl+Z / Ctrl+Y y gardent leur sens habituel. */
+function isEditable(target) {
+  return target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+}
 
 byId("tab-pages").addEventListener("click", () => showSidebarTab("pages"));
 byId("tab-outline").addEventListener("click", () => showSidebarTab("outline"));
 byId("home-open").addEventListener("click", chooseAndOpen);
 byId("menu-open").addEventListener("click", chooseAndOpen);
 byId("menu-close").addEventListener("click", close);
+byId("menu-save").addEventListener("click", save);
+byId("menu-save-as").addEventListener("click", saveAs);
+byId("save-button").addEventListener("click", save);
+byId("edit-undo").addEventListener("click", () => edit.undo());
+byId("edit-redo").addEventListener("click", () => edit.redo());
+byId("mode-read").addEventListener("click", () => setMode("read"));
+byId("mode-edit").addEventListener("click", () => setMode("edit"));
 byId("menu-settings").addEventListener("click", openSettings);
 byId("recent-clear").addEventListener("click", async () => {
   await invoke("clear_recent_files").catch((e) => toast(e?.message ?? String(e), "error"));
@@ -168,10 +242,15 @@ byId("desk").addEventListener(
 
 document.addEventListener("keydown", (event) => {
   // Page Réglages ouverte : seuls ses propres contrôles réagissent.
-  if (!byId("settings-view").hidden) return;
+  if (!byId("settings-view").hidden || document.querySelector("dialog[open]")) return;
+  const editable = isEditable(event.target);
+  // Suppr, flèches, Entrée, Échap : sur la zone sélectionnée, pas sur un bouton.
+  if (!editable && !(event.target instanceof HTMLButtonElement) && edit.handleKey(event)) {
+    return event.preventDefault();
+  }
   const shortcut = eventToShortcut(event);
   const action = shortcut && shortcuts.get(shortcut);
-  if (!action) return;
+  if (!action || (editable && (action === "undo" || action === "redo"))) return;
   event.preventDefault();
   actions[action]();
 });
@@ -192,6 +271,10 @@ async function start() {
   }
   show(null);
   attachUpdates();
+  // Fermeture de la fenêtre avec des modifications : Rust attend la réponse.
+  listen("close-requested", async () => {
+    if (await canLeave()) invoke("quit_app");
+  }).catch(() => {});
   // Fichier passé en argument (« Ouvrir avec PdfEditor »), sinon le dernier
   // document si le réglage le demande.
   const files = await invoke("initial_files").catch(() => []);

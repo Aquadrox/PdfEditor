@@ -63,6 +63,7 @@ export async function launch(commands = {}) {
   await page.addInitScript((script) => {
     const queues = structuredClone(script);
     window.__calls = [];
+    window.__listeners = {};
     window.__TAURI__ = {
       core: {
         invoke: async (command, args) => {
@@ -73,7 +74,12 @@ export async function launch(commands = {}) {
           return answer?.ok ?? null;
         },
       },
-      event: { listen: async () => () => {} },
+      event: {
+        listen: async (event, handler) => {
+          (window.__listeners[event] ??= []).push(handler);
+          return () => {};
+        },
+      },
       window: { getCurrentWindow: () => ({ setTitle: async () => {} }) },
     };
   }, { ...STARTUP, ...commands });
@@ -82,6 +88,12 @@ export async function launch(commands = {}) {
     page,
     errors,
     calls: () => page.evaluate(() => window.__calls),
+    /** Appels d'une commande, dans l'ordre. */
+    callsTo: (command) =>
+      page.evaluate((name) => window.__calls.filter((c) => c.command === name).map((c) => c.args), command),
+    /** Événement envoyé par Rust (listen). */
+    emit: (event, payload = null) =>
+      page.evaluate(([name, data]) => (window.__listeners[name] ?? []).forEach((h) => h({ payload: data })), [event, payload]),
     async close() {
       await browser.close();
       server.close();

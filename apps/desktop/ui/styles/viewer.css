@@ -155,6 +155,8 @@
   padding: var(--space-4);
   color: var(--danger);
   text-align: center;
+  /* Message seulement : la couche d'édition reste utilisable dessous. */
+  pointer-events: none;
 }
 
 /* Couche de texte : transparente, alignée sur le texte de l'image, elle
