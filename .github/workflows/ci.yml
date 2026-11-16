@@ -33,6 +33,10 @@ jobs:
         with:
           # Cache alimenté par `main` seulement, réutilisé par les PR.
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      # Bibliothèque PDFium figée, empreinte SHA-256 vérifiée (moteur PDF).
+      - name: PDFium
+        shell: bash
+        run: ./scripts/fetch-pdfium.sh
       - name: Formatage
         run: cargo fmt --all --check
       - name: Clippy (avertissements = erreurs)
@@ -51,6 +55,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      # Bibliothèque PDFium figée, empreinte SHA-256 vérifiée (moteur PDF).
+      - name: PDFium
+        shell: bash
+        run: ./scripts/fetch-pdfium.sh
       - name: Clippy (avertissements = erreurs)
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Tests de non-régression

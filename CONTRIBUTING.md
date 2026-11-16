@@ -11,7 +11,7 @@
    code maximum par fichier (hors tests).
 5. **Aucun secret** dans le dépôt (voir plus bas).
 
-Vérifications locales :
+Vérifications locales (une fois : `./scripts/fetch-pdfium.sh`, voir le README) :
 
 ```bash
 cargo fmt --all

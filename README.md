@@ -26,7 +26,13 @@ Tout est réglable dans les Réglages.
 
 ## Construire
 
-Rust stable (voir `rust-toolchain.toml`) :
+Rust stable (voir `rust-toolchain.toml`). Le moteur PDF a besoin de la
+bibliothèque PDFium, téléchargée (version figée, empreinte vérifiée) dans
+`vendor/pdfium/` par :
+
+```bash
+./scripts/fetch-pdfium.sh
+```
 
 ```bash
 cargo test --workspace

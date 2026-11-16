@@ -14,11 +14,12 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 - ✅ Branche `main` créée et protégée (PR obligatoire, jobs `linux`, `windows`, `secrets` requis)
 - ✅ Maquette des écrans principaux validée (`docs/maquette/`, voir `DESIGN.md`)
 
-## v0.1 — Visionneuse
+## v0.1 — Visionneuse 🚧
 
 - ⬜ `cargo-deny` dans la CI (licences compatibles, vulnérabilités connues)
-- ⬜ `pde-pdf` : PDFium figé et vérifié (SHA-256) téléchargé par la CI ; thread moteur dédié ; ouverture, mot de passe, rendu (V-01, V-02, V-03)
-- ⬜ PDF de référence dans `tests/fixtures/` et tests de rendu comparés à des images de référence
+- ✅ `pde-pdf` : PDFium 8125 figé et vérifié (SHA-256, `scripts/fetch-pdfium.sh`) ; thread moteur dédié ; ouverture, mot de passe, rendu, texte avec positions, plan (V-01, V-02, V-03)
+- ✅ PDF de référence générés (`crates/pde-pdf/tests/fixtures/make_fixtures.py`) : pages tournées, plan, chiffrement AES-256, fichiers invalides
+- ⬜ Tests de rendu comparés à des images de référence (aujourd'hui : contrôles de pixels ciblés)
 - ⬜ `apps/desktop` : fenêtre principale selon `DESIGN.md`, protocole `pde://`, zoom, défilement, miniatures, plan (V-03, V-04)
 - ⬜ Couche texte : sélection, copie, recherche (V-05)
 - ⬜ `pde-core::settings` + page Réglages (Général, Affichage, Raccourcis) ; `pde-platform` (dossiers, trousseau repris de VoiceToText)
