@@ -17,6 +17,10 @@ pub fn flip(element: &Element, page: PageSize) -> Element {
             text.top_left = Point::new(text.top_left.x, page.height - text.top_left.y);
             Element::Text(text)
         }
+        Element::Image(mut image) => {
+            image.top_left = Point::new(image.top_left.x, page.height - image.top_left.y);
+            Element::Image(image)
+        }
     }
 }
 
@@ -51,6 +55,15 @@ pub struct EditView {
     pub dirty: bool,
 }
 
+/// Image importée, prête à être posée : taille en pixels pour proposer un
+/// cadre aux bonnes proportions.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct ImportedImage {
+    pub image_id: u64,
+    pub width: u32,
+    pub height: u32,
+}
+
 /// Résultat d'un enregistrement.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct SavedView {
@@ -74,7 +87,9 @@ mod tests {
             style: TextStyle::default(),
         });
         let flipped = flip(&element, page);
-        let Element::Text(text) = &flipped;
+        let Element::Text(text) = &flipped else {
+            panic!("zone de texte attendue");
+        };
         assert_eq!(text.top_left, Point::new(72.0, 142.0));
         assert_eq!(flip(&flipped, page), element);
     }

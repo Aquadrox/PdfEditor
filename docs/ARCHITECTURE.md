@@ -77,7 +77,7 @@ DocumentSession
 ├── source : octets du PDF d'origine (jamais modifiés)
 ├── engine : poignée vers le document ouvert dans PDFium (thread dédié)
 ├── history : Vec<Operation> + curseur (annuler / rétablir)
-└── assets : images et polices ajoutées, référencées par empreinte SHA-256
+└── assets : images (et plus tard polices) ajoutées, par identifiant
 ```
 
 `Operation` est une énumération sérialisable (sauvegarde automatique en JSON) :
@@ -90,7 +90,15 @@ rectangle dans la page…) et produire son **inverse** ; les tests vérifient
 
 À chaque opération, `pde-pdf` recharge le PDF d'origine et y pose tous les
 éléments (`pde-core::edit`) : l'image affichée est exactement ce qui sera
-enregistré, et annuler revient à reposer la liste précédente. À
+enregistré, et annuler revient à reposer la liste précédente.
+
+Images ajoutées (E-02) : `pde-app::images` reconnaît le format au contenu
+(PNG, JPEG, WebP, crate `image` en Rust pur), borne la taille avant de
+décoder (64 Mo, 60 mégapixels) et applique l'orientation EXIF. Un JPEG est
+inclus tel quel dans le PDF (aucune recompression) ; les autres images sont
+écrites en pixels avec leur transparence (masque). Le contenu est importé
+une fois par document (`ImageId`) et partagé par toutes les copies du cadre
+(`ImageBox` : position, taille, quarts de tour, opacité). À
 l'enregistrement, le contenu produit est relu par PDFium (même mot de passe,
 même nombre de pages), écrit dans un fichier temporaire puis renommé à la
 place du fichier cible. Un document protégé par mot de passe le reste. Si le document contient des

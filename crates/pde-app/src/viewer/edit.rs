@@ -14,13 +14,13 @@ use crate::edit_view::{EditView, ElementView, SavedView, flip};
 use crate::error::{AppError, ErrorKind};
 use crate::files::write_atomic;
 
-fn invalid(message: impl Into<String>) -> AppError {
+pub(super) fn invalid(message: impl Into<String>) -> AppError {
     AppError::new(ErrorKind::InvalidRequest, message)
 }
 
 impl Viewer {
     /// Exécute `f` sur le document ouvert `id`, documents verrouillés.
-    fn with_document<T>(
+    pub(super) fn with_document<T>(
         &self,
         id: u64,
         f: impl FnOnce(&mut OpenDocument, DocumentId) -> Result<T, AppError>,
@@ -115,7 +115,9 @@ impl Viewer {
 
     /// Élément venu de l'interface : vérifié, ramené à l'origine en bas.
     fn checked(&self, open: &OpenDocument, element: &Element) -> Result<Element, AppError> {
-        element.validate(open.info.page_count()).map_err(invalid)?;
+        element
+            .validate(open.info.page_count(), Some(&open.images))
+            .map_err(invalid)?;
         let size = open.info.page_size(element.page())?;
         Ok(flip(element, size))
     }
@@ -148,7 +150,9 @@ impl Viewer {
             .elements()
             .map(|(id, e)| (id, e.clone()))
             .collect();
-        let placed = self.engine.apply_edits(doc, elements)?;
+        let placed = self
+            .engine
+            .apply_edits(doc, elements, open.images.clone())?;
         open.placed = placed.into_iter().map(|p| (p.id, p.bounds)).collect();
         for page in change.pages {
             if let Some(revision) = open.revisions.get_mut(page) {
@@ -202,44 +206,12 @@ fn file_name(path: &Path) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
     use pde_core::edit::{Element, TextBox, TextStyle};
     use pde_core::geometry::Point;
 
+    use super::super::testing::Session;
     use super::*;
-    use crate::fake::{FakeEngine, SIMPLE_PDF, UNWRITABLE};
-
-    struct Session {
-        engine: Arc<FakeEngine>,
-        viewer: Viewer,
-        id: u64,
-        dir: PathBuf,
-    }
-
-    impl Session {
-        fn new(name: &str) -> Self {
-            let engine = Arc::new(FakeEngine::default());
-            let viewer = Viewer::new(engine.clone(), 1 << 20);
-            let dir = std::env::temp_dir().join(format!("pde-edit-{name}-{}", std::process::id()));
-            std::fs::create_dir_all(&dir).unwrap();
-            let path = dir.join("contrat.pdf");
-            std::fs::write(&path, SIMPLE_PDF).unwrap();
-            let id = viewer.open_file(&path, None).unwrap().id;
-            Self {
-                engine,
-                viewer,
-                id,
-                dir,
-            }
-        }
-    }
-
-    impl Drop for Session {
-        fn drop(&mut self) {
-            let _ = std::fs::remove_dir_all(&self.dir);
-        }
-    }
+    use crate::fake::{SIMPLE_PDF, UNWRITABLE};
 
     /// Zone de texte en coordonnées de l'interface (origine en haut).
     fn text(page: usize, top: f64, content: &str) -> Element {

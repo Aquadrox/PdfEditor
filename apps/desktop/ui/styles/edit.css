@@ -131,6 +131,42 @@
   touch-action: none;
 }
 
+/* Coins d'une image : poignées carrées, curseur selon la diagonale. */
+.edit-layer .handle.nw,
+.edit-layer .handle.ne,
+.edit-layer .handle.sw,
+.edit-layer .handle.se {
+  width: 10px;
+  height: 10px;
+  transform: none;
+}
+
+.edit-layer .handle.nw {
+  top: -6px;
+  left: -6px;
+  cursor: nwse-resize;
+}
+
+.edit-layer .handle.se {
+  top: auto;
+  right: -6px;
+  bottom: -6px;
+  cursor: nwse-resize;
+}
+
+.edit-layer .handle.ne {
+  top: -6px;
+  right: -6px;
+  cursor: nesw-resize;
+}
+
+.edit-layer .handle.sw {
+  top: auto;
+  bottom: -6px;
+  left: -6px;
+  cursor: nesw-resize;
+}
+
 .edit-layer .handle.left {
   left: -7px;
 }
@@ -240,6 +276,35 @@
 
 .properties .inline .caption {
   width: 14px;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.slider {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.slider-row output {
+  width: 44px;
+  text-align: right;
+}
+
+.properties .checkbox {
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.properties .checkbox input {
+  accent-color: var(--accent);
+}
+
+.properties-group[hidden] {
+  display: none;
 }
 
 .swatches {

@@ -1,9 +1,12 @@
 // Calculs de l'édition, sans DOM : conversions d'unités, création,
-// déplacement, redimensionnement et style d'une zone de texte. Module pur,
-// testé par edit-state.test.js.
+// déplacement, redimensionnement et style d'une zone de texte ; ce qui est
+// propre aux images est dans image-state.js. Module pur, testé par
+// edit-state.test.js.
 //
 // Coordonnées : points de la page affichée, origine en haut à gauche
 // (celles qu'échangent l'interface et pde-app, voir edit_view.rs).
+
+import { withSize } from "./image-state.js";
 
 export const PT_PER_MM = 72 / 25.4;
 /** Largeur d'une nouvelle zone de texte (points). */
@@ -50,13 +53,18 @@ export function newTextBox(pageIndex, point, page, style) {
   };
 }
 
-/** Zone déplacée de (dx, dy) points, sans sortir de la page. */
+/** Hauteur gardée dans la page : le cadre d'une image, une ligne de texte. */
+function keptHeight(element) {
+  return element.kind === "image" ? element.height : element.style.size;
+}
+
+/** Élément déplacé de (dx, dy) points, sans sortir de la page. */
 export function moved(element, dx, dy, page) {
   return {
     ...element,
     top_left: {
       x: clamp(element.top_left.x + dx, 0, page.width - element.width),
-      y: clamp(element.top_left.y + dy, 0, page.height - element.style.size),
+      y: clamp(element.top_left.y + dy, 0, page.height - keptHeight(element)),
     },
   };
 }
@@ -144,6 +152,7 @@ export function withGeometryMm(element, field, value, page) {
   const mm = Number.parseFloat(String(value).replace(",", "."));
   if (!Number.isFinite(mm)) return null;
   const pt = ptFromMm(mm);
+  if (element.kind === "image" && (field === "width" || field === "height")) return withSize(element, field, pt, page);
   if (field === "width") return resized(element, "right", pt - element.width, page);
   const dx = field === "x" ? pt - element.top_left.x : 0;
   const dy = field === "y" ? pt - element.top_left.y : 0;

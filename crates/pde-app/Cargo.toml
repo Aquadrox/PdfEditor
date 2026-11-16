@@ -7,6 +7,8 @@ publish.workspace = true
 license.workspace = true
 
 [dependencies]
+# Images ajoutées aux documents (E-02) : PNG, JPEG, WebP, en Rust pur.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 log = "0.4"
 pde-core = { path = "../pde-core" }
 png = "0.18"

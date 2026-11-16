@@ -66,8 +66,10 @@ export async function launch(commands = {}) {
     window.__listeners = {};
     window.__TAURI__ = {
       core: {
-        invoke: async (command, args) => {
-          window.__calls.push({ command, args });
+        invoke: async (command, args, options) => {
+          // Corps brut (octets) : on en garde la taille et les en-têtes.
+          const recorded = args instanceof Uint8Array ? { bytes: args.length, headers: options?.headers } : args;
+          window.__calls.push({ command, args: recorded });
           const queue = queues[command] ?? [];
           const answer = queue.length > 1 ? queue.shift() : queue[0];
           if (answer && answer.error) throw answer.error;

@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
-use pde_core::edit::{Element, ElementId, leading};
+use pde_core::edit::{Element, ElementId, Images, leading};
 use pde_core::engine::{EngineError, OpenedDocument, PdfEngine, Placed};
 use pde_core::geometry::{Point, Rect};
 use pde_core::render::{Bitmap, RenderRequest, pixel_size};
@@ -105,6 +105,7 @@ impl PdfEngine for FakeEngine {
         &self,
         _doc: DocumentId,
         elements: Vec<(ElementId, Element)>,
+        _images: Images,
     ) -> Result<Vec<Placed>, EngineError> {
         elements
             .into_iter()
@@ -112,6 +113,10 @@ impl PdfEngine for FakeEngine {
                 Element::Text(text) if text.text == UNWRITABLE => {
                     Err(EngineError::Internal("écriture impossible".into()))
                 }
+                Element::Image(image) => Ok(Placed {
+                    id,
+                    bounds: image.bounds(),
+                }),
                 Element::Text(text) => {
                     let height = leading(&text.style);
                     Ok(Placed {
