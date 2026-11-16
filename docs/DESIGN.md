@@ -106,6 +106,17 @@ titre, sur-titres décoratifs au-dessus des sections.
 - Fenêtre minimale 960 × 600 ; en dessous de 1200 px de large, le panneau
   droit passe en tiroir par-dessus la table.
 
+## Tactile (Android, v1.1)
+
+Même identité visuelle (jetons, typographie, sceau). Ce qui change :
+
+- cibles tactiles de 44 px au moins ;
+- panneaux latéraux en tiroirs par-dessus la page, barre d'outils réduite
+  aux outils du mode, actions secondaires dans un menu ;
+- pincer pour zoomer, double-tapotement pour ajuster à la largeur ;
+- l'interface est écrite dès maintenant sans dépendre du survol de la souris
+  pour une information essentielle (infobulles = compléments seulement).
+
 ## Composants
 
 Bibliothèque unique dans `ui/components/` (un fichier JS + un fichier CSS par

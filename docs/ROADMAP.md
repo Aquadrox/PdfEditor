@@ -36,6 +36,7 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 
 ## v0.2 — Édition : ajouts
 
+- ⬜ Garde-fou Android dans la CI : `pde-core`, `pde-app` et `pde-pdf` compilent pour Android (aarch64), pour ne jamais fermer la porte à la v1.1
 - ⬜ Tests de rendu comparés à des images de référence (avant/après une modification de page)
 - ⬜ Modèle d'opérations et historique annuler / rétablir (`pde-core`), sauvegarde automatique et récupération (F-02)
 - ⬜ Zones de texte, polices embarquées (E-01)
@@ -103,6 +104,18 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 ## v1.0 — Version stable
 
 - ⬜ Toutes les fonctions **M** livrées, testées, documentées
+
+## v1.1 — Android
+
+Même code Rust et même interface (Tauri 2 en version mobile), adaptée au
+tactile. Fonctions A-01 à A-05 de `FONCTIONS.md`.
+
+- ⬜ Application Android Tauri 2 (arm64), PDFium pour Android figé et vérifié (SHA-256)
+- ⬜ Interface tactile : panneaux en tiroirs, barre d'outils compacte, pincer pour zoomer, sélection au doigt (A-01)
+- ⬜ Fichiers : sélecteur de documents Android, « Ouvrir avec » et « Partager vers PdfEditor », enregistrement (A-02)
+- ⬜ Lecture, recherche, annotations, signature et IA ; secrets dans le Keystore Android (A-03)
+- ⬜ Mises à jour : APK signé (clé du propriétaire dans les secrets GitHub), manifeste `latest-android.json` avec taille et SHA-256, comme VoiceToText (A-04)
+- ⬜ CI : APK de test à chaque PR, APK signé sur un tag ; tests sur émulateur des parcours principaux (A-05)
 
 ## Plus tard
 

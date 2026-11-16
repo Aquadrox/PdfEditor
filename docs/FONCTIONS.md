@@ -109,6 +109,18 @@ Aucune modification n'est appliquée sans aperçu ni accord de l'utilisateur.
 | IA-13 | Pages scannées : reconnaissance du texte (OCR local, ou modèle IA avec vision) | P |
 | IA-14 | Remplissage assisté de formulaire | P |
 
+## A — Android (v1.1)
+
+Même application, sur téléphone et tablette Android.
+
+| Id | Fonction | Prio |
+|---|---|---|
+| A-01 | Interface tactile : panneaux en tiroirs, pincer pour zoomer, sélection de texte et placement d'éléments au doigt | S |
+| A-02 | Ouvrir depuis le sélecteur de documents, « Ouvrir avec » et « Partager vers PdfEditor » ; enregistrer ou partager le résultat | S |
+| A-03 | Lecture, recherche, annotations, signature et actions IA comme sur PC ; clés et certificats dans le Keystore Android | S |
+| A-04 | Mises à jour proposées par l'application (APK signé, vérifié avant installation) | S |
+| A-05 | Réglages partagés avec le PC dans leur format (`config.toml`), adaptés au téléphone | P |
+
 ## R — Réglages
 
 Comme VoiceToText, **tout est réglable** dans la fenêtre Réglages, appliqué à
