@@ -1,0 +1,28 @@
+name: Titre de PR
+
+# Les titres de PR suivent `type(portée): description (vX.Y.Z)` (voir
+# CONTRIBUTING.md). Vérifié à l'ouverture et à chaque modification du titre,
+# en quelques secondes, sans relancer la CI complète.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  titre:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Format du titre
+        env:
+          # Passé par une variable : le titre n'est jamais interprété par le shell.
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|perf|refactor|test|docs|ci|build|chore)(\([^()]+\))?!?: [^ ].*[^.]$'
+          if [[ "$TITLE" =~ $pattern ]]; then
+            echo "Titre conforme : $TITLE"
+          else
+            echo "::error::titre « $TITLE » non conforme. Attendu : type(portée): description en français (vX.Y.Z), avec type parmi feat, fix, perf, refactor, test, docs, ci, build, chore (voir CONTRIBUTING.md)"
+            exit 1
+          fi

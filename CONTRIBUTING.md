@@ -36,6 +36,43 @@ cargo deny check
 (cd apps/desktop/ui && node --test) && (cd apps/desktop/ui-tests && npm ci && npm test)
 ```
 
+## Titres des PR et des commits
+
+Format (comme VoiceToText, vérifié sur chaque PR par `.github/workflows/titre-pr.yml`) :
+
+```text
+type(portée): description en français (vX.Y.Z)
+```
+
+- **type** :
+  - `feat` : nouvelle fonction pour l'utilisateur ;
+  - `fix` : correction de bogue ;
+  - `perf` : plus rapide ou plus léger ;
+  - `refactor` : réorganisation du code sans changement visible ;
+  - `test` : tests seulement ;
+  - `docs` : documentation (roadmap, architecture, design…) ;
+  - `ci` : intégration continue, publication ;
+  - `build` : dépendances, compilation, installeur ;
+  - `chore` : entretien divers (outillage, scripts).
+- **portée** (facultative, en minuscules) : la partie touchée, par exemple
+  `core`, `pdf`, `app`, `platform`, `desktop`, `ui`, `sign`, `ia`, `cycle`,
+  `android`, `roadmap`, `deps`. Plusieurs portées : `(core,ui)`.
+- **description** : en français, au présent, sans point final, ce que la PR
+  apporte vu de l'utilisateur quand c'est possible.
+- **(vX.Y.Z)** : à la fin, seulement si la PR monte la version.
+
+Exemples :
+
+```text
+feat(ui): recherche dans le document (v0.0.3)
+fix(desktop): Entrée validait « Annuler » dans le dialogue du mot de passe (v0.0.6)
+ci: contrôle des dépendances par cargo-deny
+docs(roadmap): compatibilité Android en v1.1
+```
+
+Les commits d'une PR suivent le même format (première ligne), le détail va
+dans le corps du message.
+
 ## Protection de `main` (réglage GitHub, à faire une fois)
 
 Settings → Branches → *Add branch ruleset* (ou *Branch protection rule*) sur `main` :
