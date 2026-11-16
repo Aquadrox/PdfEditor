@@ -6,6 +6,7 @@
 
 pub mod document;
 pub mod edit;
+pub mod image;
 pub mod settings;
 pub mod updates;
 

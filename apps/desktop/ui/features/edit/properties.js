@@ -1,10 +1,12 @@
-// Panneau Propriétés de la zone sélectionnée (maquette Main.dc.html) :
-// texte, position et largeur en mm, dupliquer, supprimer. Les contrôles de
-// style du panneau sont gérés par style-controls.js.
+// Panneau Propriétés de l'élément sélectionné (maquette Main.dc.html) :
+// texte, ou opacité, rotation et proportions d'une image ; position et
+// taille en mm ; dupliquer, supprimer. Les contrôles de style du panneau
+// sont gérés par style-controls.js.
 
 import { byId, el } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
 import { geometryInMm, SWATCHES, withGeometryMm, withText } from "./edit-state.js";
+import { rotated, withOpacity } from "./image-state.js";
 
 /** Pastilles de couleur et « Autre couleur » ; avant attachStyleControls. */
 export function renderSwatches() {
@@ -26,6 +28,7 @@ export function renderSwatches() {
 
 /**
  * @param {import("./edit-session.js").EditSession} session
+ * @param {() => object[]} pages
  * @param {{ change, duplicate, remove, close }} actions
  */
 export function attachProperties(session, pages, actions) {
@@ -35,9 +38,20 @@ export function attachProperties(session, pages, actions) {
     x: byId("prop-x"),
     y: byId("prop-y"),
     width: byId("prop-width"),
+    height: byId("prop-height"),
   };
-  const height = byId("prop-height");
+  const opacity = byId("prop-opacity");
+  const opacityValue = byId("prop-opacity-value");
+  const keepRatio = byId("prop-keep-ratio");
   const selected = () => session.element(session.selected);
+  const pageOf = (item) => pages()[item.element.page];
+  /** Modifie l'élément sélectionné si `make` renvoie un élément. */
+  const changeSelected = (make) => {
+    const item = selected();
+    const element = item && make(item.element, pageOf(item));
+    if (element) actions.change(item.id, element);
+    else refresh();
+  };
 
   text.addEventListener("change", () => {
     const item = selected();
@@ -46,14 +60,15 @@ export function attachProperties(session, pages, actions) {
     else actions.remove(item.id);
   });
   for (const [field, input] of Object.entries(geometry)) {
-    input.addEventListener("change", () => {
-      const item = selected();
-      if (!item) return;
-      const element = withGeometryMm(item.element, field, input.value, pages()[item.element.page]);
-      if (element) actions.change(item.id, element);
-      else refresh();
-    });
+    input.addEventListener("change", () => changeSelected((element, page) => withGeometryMm(element, field, input.value, page)));
   }
+  opacity.addEventListener("input", () => {
+    opacityValue.textContent = `${opacity.value} %`;
+  });
+  opacity.addEventListener("change", () => changeSelected((element) => withOpacity(element, opacity.value)));
+  byId("prop-rotate-left").addEventListener("click", () => changeSelected((element, page) => rotated(element, -1, page)));
+  byId("prop-rotate-right").addEventListener("click", () => changeSelected((element, page) => rotated(element, 1, page)));
+  keepRatio.addEventListener("change", () => changeSelected((element) => ({ ...element, keep_ratio: keepRatio.checked })));
   byId("prop-duplicate").addEventListener("click", () => selected() && actions.duplicate(selected()));
   byId("prop-delete").addEventListener("click", () => selected() && actions.remove(selected().id));
   byId("prop-close").addEventListener("click", actions.close);
@@ -64,18 +79,28 @@ export function attachProperties(session, pages, actions) {
    */
   function refresh(visible = true) {
     const item = selected();
+    const kind = item?.element.kind;
     panel.hidden = !visible;
     byId("prop-empty").hidden = Boolean(item);
     byId("prop-fields").hidden = !item;
     byId("prop-close").hidden = !item;
-    byId("properties-title").textContent = t(item ? "props.title" : "props.panel");
+    byId("prop-text-fields").hidden = kind !== "text";
+    byId("prop-image-fields").hidden = kind !== "image";
+    byId("properties-title").textContent = t(!item ? "props.panel" : kind === "image" ? "props.imageTitle" : "props.title");
     if (!visible || !item) return;
     const values = geometryInMm(item.element, item.bounds);
-    if (document.activeElement !== text) text.value = item.element.text;
+    if (kind === "text" && document.activeElement !== text) text.value = item.element.text;
+    // Hauteur d'un texte : donnée par ses lignes, pas saisissable.
+    geometry.height.readOnly = kind === "text";
     for (const [field, input] of Object.entries(geometry)) {
       if (document.activeElement !== input) input.value = String(values[field]).replace(".", ",");
     }
-    height.value = String(values.height).replace(".", ",");
+    if (kind === "image") {
+      const percent = Math.round(item.element.opacity * 100);
+      opacity.value = String(percent);
+      opacityValue.textContent = `${percent} %`;
+      keepRatio.checked = item.element.keep_ratio;
+    }
   }
 
   return { refresh };

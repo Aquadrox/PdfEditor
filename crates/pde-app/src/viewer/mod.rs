@@ -1,6 +1,9 @@
 //! Visionneuse : documents ouverts, images et texte de leurs pages.
 
 mod edit;
+mod images;
+#[cfg(test)]
+mod testing;
 mod text;
 
 use std::collections::HashMap;
@@ -8,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
-use pde_core::edit::{Edits, ElementId};
+use pde_core::edit::{Edits, ElementId, Images};
 use pde_core::engine::PdfEngine;
 use pde_core::geometry::Rect;
 use pde_core::render::RenderRequest;
@@ -16,8 +19,8 @@ use pde_core::text::PageText;
 
 use crate::cache::{PageCache, PageKey};
 use crate::error::{AppError, ErrorKind};
-use crate::image::encode_png;
 use crate::lock;
+use crate::page_png::encode_png;
 use crate::view::DocumentView;
 
 /// Plus gros fichier accepté : il est lu entièrement en mémoire.
@@ -32,6 +35,9 @@ struct OpenDocument {
     /// Gardé en mémoire seulement, pour relire le fichier enregistré.
     password: Option<String>,
     edits: Edits,
+    /// Images importées (partagées par leurs copies et avec le moteur),
+    /// gardées pendant toute la session pour annuler / rétablir.
+    images: Images,
     /// Place de chaque élément, telle que posée par le moteur.
     placed: HashMap<ElementId, Rect>,
     /// Version de chaque page, augmentée à chaque changement de son contenu
@@ -83,7 +89,7 @@ impl Viewer {
         path: &Path,
         password: Option<String>,
     ) -> Result<DocumentView, AppError> {
-        let bytes = read_file(path)?;
+        let bytes = read_file(path, MAX_FILE_BYTES)?;
         let size = bytes.len();
         let started = std::time::Instant::now();
         let opened = self.engine.open(bytes, password.clone()).inspect_err(|e| {
@@ -109,6 +115,7 @@ impl Viewer {
                 info: opened.info,
                 password,
                 edits: Edits::new(),
+                images: Images::new(),
                 placed: HashMap::new(),
             },
         );
@@ -176,7 +183,8 @@ fn unknown_document() -> AppError {
     AppError::new(ErrorKind::UnknownDocument, "ce document n'est plus ouvert")
 }
 
-fn read_file(path: &Path) -> Result<Vec<u8>, AppError> {
+/// Lit un fichier entier, refusé au-delà de `limit` octets.
+fn read_file(path: &Path, limit: u64) -> Result<Vec<u8>, AppError> {
     let io_error = |e: std::io::Error| {
         let kind = if e.kind() == std::io::ErrorKind::NotFound {
             ErrorKind::FileNotFound
@@ -186,14 +194,10 @@ fn read_file(path: &Path) -> Result<Vec<u8>, AppError> {
         AppError::new(kind, format!("{} : {e}", path.display()))
     };
     let size = std::fs::metadata(path).map_err(io_error)?.len();
-    if size > MAX_FILE_BYTES {
+    if size > limit {
         return Err(AppError::new(
             ErrorKind::FileTooLarge,
-            format!(
-                "fichier de {} Mo, limite {} Mo",
-                size >> 20,
-                MAX_FILE_BYTES >> 20
-            ),
+            format!("fichier de {} Mo, limite {} Mo", size >> 20, limit >> 20),
         ));
     }
     std::fs::read(path).map_err(io_error)

@@ -1,11 +1,12 @@
-//! Éléments ajoutés à un document : zones de texte pour l'instant (E-01),
-//! images et annotations ensuite.
+//! Éléments ajoutés à un document : zones de texte (E-01), images (E-02) ;
+//! annotations ensuite.
 //!
 //! Coordonnées : page affichée (rotation appliquée), points, origine en bas
 //! à gauche, comme le reste de `pde-core`.
 
 use serde::{Deserialize, Serialize};
 
+use super::image::{ImageBox, Images};
 use crate::document::PageIndex;
 use crate::geometry::Point;
 
@@ -112,22 +113,26 @@ pub struct TextBox {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Element {
     Text(TextBox),
+    Image(ImageBox),
 }
 
 impl Element {
     pub fn page(&self) -> PageIndex {
         match self {
             Element::Text(text) => text.page,
+            Element::Image(image) => image.page,
         }
     }
 
-    /// Vérifie les valeurs (venues de l'interface) avant toute écriture.
-    pub fn validate(&self, page_count: usize) -> Result<(), String> {
+    /// Vérifie les valeurs (venues de l'interface) avant toute écriture ;
+    /// `images` : images importées, si l'appelant les connaît.
+    pub fn validate(&self, page_count: usize, images: Option<&Images>) -> Result<(), String> {
+        if self.page() >= page_count {
+            return Err(format!("la page {} n'existe pas", self.page() + 1));
+        }
         match self {
+            Element::Image(image) => image.validate(images),
             Element::Text(text) => {
-                if text.page >= page_count {
-                    return Err(format!("la page {} n'existe pas", text.page + 1));
-                }
                 let numbers = [
                     text.top_left.x,
                     text.top_left.y,
@@ -180,7 +185,7 @@ mod tests {
 
     #[test]
     fn valid_text_box() {
-        assert_eq!(Element::Text(text_box()).validate(1), Ok(()));
+        assert_eq!(Element::Text(text_box()).validate(1, None), Ok(()));
         assert_eq!(Element::Text(text_box()).page(), 0);
     }
 
@@ -197,7 +202,7 @@ mod tests {
         for change in cases {
             let mut text = text_box();
             change(&mut text);
-            assert!(Element::Text(text).validate(1).is_err());
+            assert!(Element::Text(text).validate(1, None).is_err());
         }
     }
 

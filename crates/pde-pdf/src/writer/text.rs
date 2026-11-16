@@ -1,11 +1,11 @@
-//! Écriture des éléments ajoutés (zones de texte) dans un document PDFium.
+//! Écriture des zones de texte ajoutées dans un document PDFium.
 //!
 //! Les positions viennent de la page affichée : elles sont ramenées à la
 //! page PDF par l'inverse de [`DisplayTransform`], et chaque ligne reçoit la
 //! même rotation que la page, pour rester droite à l'écran.
 
-use pde_core::edit::{Align, Element, ElementId, StandardFont, TextBox, leading, wrap};
-use pde_core::engine::{EngineError, Placed};
+use pde_core::edit::{Align, StandardFont, TextBox, leading, wrap};
+use pde_core::engine::EngineError;
 use pde_core::geometry::{Point, Rect};
 use pdfium_render::prelude::{
     PdfColor, PdfDocument, PdfFontToken, PdfPageObjectCommon, PdfPageObjectsCommon,
@@ -13,7 +13,6 @@ use pdfium_render::prelude::{
 };
 
 use crate::convert::internal;
-use crate::display::DisplayTransform;
 
 /// Hauteur au-dessus de la ligne de base (fraction du corps) des polices
 /// standard : Helvetica 718, Times 683, Courier 629 (millièmes, AFM).
@@ -44,22 +43,7 @@ fn font_token(doc: &mut PdfDocument, text: &TextBox) -> PdfFontToken {
     }
 }
 
-/// Pose les éléments, page par page ; renvoie leur place sur la page affichée.
-pub(crate) fn apply(
-    doc: &mut PdfDocument,
-    elements: &[(ElementId, Element)],
-) -> Result<Vec<Placed>, EngineError> {
-    let mut placed = Vec::with_capacity(elements.len());
-    for (id, element) in elements {
-        let bounds = match element {
-            Element::Text(text) => write_text(doc, text)?,
-        };
-        placed.push(Placed { id: *id, bounds });
-    }
-    Ok(placed)
-}
-
-fn write_text(doc: &mut PdfDocument, text: &TextBox) -> Result<Rect, EngineError> {
+pub(super) fn write_text(doc: &mut PdfDocument, text: &TextBox) -> Result<Rect, EngineError> {
     let font = font_token(doc, text);
     let size = PdfPoints::new(text.style.size as f32);
     let measure = |s: &str| -> f64 {
@@ -74,10 +58,7 @@ fn write_text(doc: &mut PdfDocument, text: &TextBox) -> Result<Rect, EngineError
     let lines = wrap(&text.text, text.width, measure);
     let widths: Vec<f64> = lines.iter().map(|l| measure(l)).collect();
 
-    let index =
-        i32::try_from(text.page).map_err(|_| EngineError::InvalidRender(text.page.to_string()))?;
-    let mut page = doc.pages().get(index).map_err(internal)?;
-    let display = DisplayTransform::for_page(&page)?;
+    let (mut page, display) = super::page_of(doc, text.page)?;
     let step = leading(&text.style);
     let (ux, uy) = display.page_vector(1.0, 0.0);
     let (vx, vy) = display.page_vector(0.0, 1.0);

@@ -1,4 +1,4 @@
-//! Modifications du document (v0.2 : éléments ajoutés).
+//! Modifications du document (v0.2 : éléments ajoutés, textes et images).
 //!
 //! Le PDF d'origine n'est jamais modifié : les éléments ajoutés forment une
 //! liste, posée par le moteur sur une copie du document à chaque changement.
@@ -6,8 +6,12 @@
 
 mod element;
 mod history;
+mod image;
 mod layout;
 
 pub use element::{Align, Color, Element, ElementId, StandardFont, TextBox, TextStyle};
 pub use history::{Change, Edits, Operation};
+pub use image::{
+    ImageAsset, ImageBox, ImageData, ImageId, Images, MIN_IMAGE_SIDE, OPACITY_RANGE, Placement,
+};
 pub use layout::{leading, wrap};

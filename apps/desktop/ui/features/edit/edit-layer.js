@@ -1,12 +1,14 @@
 // Couche d'édition posée sur chaque page : contour des éléments ajoutés,
-// sélection, déplacement et redimensionnement à la souris, création d'une
-// zone de texte par un clic avec l'outil Texte.
+// sélection, déplacement et redimensionnement à la souris (bords gauche et
+// droit d'une zone de texte, coins d'une image), création d'une zone de
+// texte par un clic avec l'outil Texte.
 
 import { toast } from "../../components/toast.js";
 import { el } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
 import { percentBox } from "../viewer/text-geometry.js";
 import { moved, newTextBox, pagePoint, pointsFromPixels, resized, withText } from "./edit-state.js";
+import { resizedFrame } from "./image-state.js";
 import { openTextEditor } from "./text-editor.js";
 
 /** En dessous (pixels), un appui sur un élément est un clic, pas un déplacement. */
@@ -14,6 +16,14 @@ const DRAG_THRESHOLD = 3;
 
 function fail(error) {
   toast(t("edit.failed", { message: error?.message ?? String(error) }), "error");
+}
+
+/** Poignées : largeur d'une zone de texte, coins d'une image. */
+const HANDLES = { text: ["left", "right"], image: ["nw", "ne", "sw", "se"] };
+
+/** Élément après un redimensionnement de (dx, dy) points par la poignée `edge`. */
+function resizedBy(element, edge, dx, dy, page) {
+  return element.kind === "image" ? resizedFrame(element, edge, dx, dy, page) : resized(element, edge, dx, page);
 }
 
 /** Le moteur arrive en premier dans un cadre vidé : couche au-dessus de tout. */
@@ -79,15 +89,17 @@ export class EditLayer {
       class: selected ? "element selected" : "element",
       "data-id": item.id,
       role: "button",
-      "aria-label": t("edit.textBox"),
+      "aria-label": t(item.element.kind === "image" ? "edit.imageBox" : "edit.textBox"),
       "aria-pressed": selected ? "true" : "false",
     });
     Object.assign(box.style, percentBox(item.bounds, page));
     if (this.active) {
       box.addEventListener("pointerdown", (event) => this.onElementDown(event, box, item, page, null));
-      box.addEventListener("dblclick", () => this.editText(box.parentElement, item.id, index));
+      if (item.element.kind === "text") {
+        box.addEventListener("dblclick", () => this.editText(box.parentElement, item.id, index));
+      }
       if (selected) {
-        for (const edge of ["left", "right"]) {
+        for (const edge of HANDLES[item.element.kind]) {
           const handle = el("span", { class: `handle ${edge}`, "aria-hidden": "true" });
           handle.addEventListener("pointerdown", (event) => this.onElementDown(event, box, item, page, edge));
           box.append(handle);
@@ -136,24 +148,26 @@ export class EditLayer {
       dragged ||= Math.hypot(dx, dy) > DRAG_THRESHOLD;
       const target = box.isConnected ? box : this.findBox(item.id);
       if (dragged && target) target.style.transform = edge ? "" : `translate(${dx}px, ${dy}px)`;
-      if (dragged && target && edge) Object.assign(target.style, this.resizedStyle(item, page, edge, dx, frameWidth));
+      if (dragged && target && edge) Object.assign(target.style, this.resizedStyle(item, page, edge, dx, dy, frameWidth));
     };
     const up = async (e) => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       if (!dragged) return;
       const { dx, dy } = pointsFromPixels(e.clientX - start.x, e.clientY - start.y, frameWidth, page);
-      const element = edge ? resized(item.element, edge, dx, page) : moved(item.element, dx, dy, page);
+      const element = edge ? resizedBy(item.element, edge, dx, dy, page) : moved(item.element, dx, dy, page);
       await this.session.change(item.id, element).catch((error) => this.failed(error));
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   }
 
-  resizedStyle(item, page, edge, dxPx, frameWidth) {
-    const { dx } = pointsFromPixels(dxPx, 0, frameWidth, page);
-    const element = resized(item.element, edge, dx, page);
-    return percentBox({ ...item.bounds, x: element.top_left.x, width: element.width }, page);
+  /** Aperçu pendant le glissement ; le moteur donne ensuite la place exacte. */
+  resizedStyle(item, page, edge, dxPx, dyPx, frameWidth) {
+    const { dx, dy } = pointsFromPixels(dxPx, dyPx, frameWidth, page);
+    const element = resizedBy(item.element, edge, dx, dy, page);
+    const height = element.kind === "image" ? element.height : item.bounds.height;
+    return percentBox({ ...element.top_left, width: element.width, height }, page);
   }
 
   findBox(id) {
@@ -163,7 +177,8 @@ export class EditLayer {
   /** Entrée sur la zone sélectionnée : modifier son texte. */
   editSelected() {
     const item = this.session.element(this.session.selected);
-    const frame = item && this.viewer.frames[item.element.page];
+    if (item?.element.kind !== "text") return;
+    const frame = this.viewer.frames[item.element.page];
     if (frame && layerOf(frame)) this.editText(layerOf(frame), item.id, item.element.page);
   }
 

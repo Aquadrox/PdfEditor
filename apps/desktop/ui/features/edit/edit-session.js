@@ -55,14 +55,14 @@ export class EditSession {
 
   async add(element) {
     const added = await invoke("add_element", { id: this.doc.id, element });
-    this.style = { ...element.style };
+    if (element.style) this.style = { ...element.style };
     this.selected = added.id;
     this.update(added.view);
     return added.id;
   }
 
   async change(id, element) {
-    this.style = { ...element.style };
+    if (element.style) this.style = { ...element.style };
     this.update(await invoke("update_element", { id: this.doc.id, elementId: id, element }));
   }
 

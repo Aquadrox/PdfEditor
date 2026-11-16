@@ -9,6 +9,11 @@ export function invoke(command, args = {}) {
   return tauri().core.invoke(command, args);
 }
 
+/** Commande dont le corps est un contenu brut (octets), sans JSON. */
+export function invokeBytes(command, bytes, headers = {}) {
+  return tauri().core.invoke(command, bytes, { headers });
+}
+
 export function listen(event, handler) {
   return tauri().event.listen(event, handler);
 }

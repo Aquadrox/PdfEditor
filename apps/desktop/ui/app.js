@@ -4,6 +4,7 @@
 import { attachMenu } from "./components/menu.js";
 import { toast } from "./components/toast.js";
 import { EditMode } from "./features/edit/edit-mode.js";
+import { isImagePath } from "./features/edit/image-state.js";
 import { confirmDiscard, saveDocument, saveDocumentAs } from "./features/edit/saving.js";
 import { showHome, watchDrops } from "./features/home/home.js";
 import { renderRecent } from "./features/home/recent.js";
@@ -227,7 +228,25 @@ byId("recent-clear").addEventListener("click", async () => {
   refreshRecent();
 });
 attachMenu(byId("menu-button"), byId("main-menu"));
-watchDrops(open);
+/** Fichier déposé : une image s'ajoute au document ouvert, un PDF s'ouvre. */
+function dropped(path, point) {
+  if (!isImagePath(path)) return open(path);
+  if (!current) return toast(t("edit.openFirst"), "error");
+  if (mode !== "edit") setMode("edit");
+  return edit.dropImage(path, point);
+}
+
+watchDrops(dropped);
+
+// Ctrl+V avec une image dans le presse-papiers : ajoutée au document.
+document.addEventListener("paste", (event) => {
+  if (!current || isEditable(event.target) || !byId("settings-view").hidden) return;
+  const file = [...(event.clipboardData?.files ?? [])].find((f) => f.type.startsWith("image/"));
+  if (!file) return;
+  event.preventDefault();
+  if (mode !== "edit") setMode("edit");
+  edit.pasteImage(file);
+});
 
 // Ctrl + molette : zoom, comme dans les autres visionneuses.
 byId("desk").addEventListener(

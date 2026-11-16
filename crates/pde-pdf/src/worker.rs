@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::sync::mpsc::Receiver;
 
 use pde_core::document::DocumentId;
-use pde_core::edit::{Element, ElementId};
+use pde_core::edit::{Element, ElementId, Images};
 use pde_core::engine::{EngineError, OpenedDocument, Placed};
 use pdfium_render::prelude::{PdfDocument, Pdfium};
 
@@ -83,12 +83,13 @@ fn handle<'a>(
         Command::ApplyEdits {
             doc,
             elements,
+            images,
             reply,
         } => {
             let result = docs
                 .get_mut(&doc)
                 .ok_or(EngineError::UnknownDocument)
-                .and_then(|s| apply_edits(pdfium, s, &elements));
+                .and_then(|s| apply_edits(pdfium, s, &elements, &images));
             let _ = reply.send(result);
         }
         Command::Save { doc, reply } => {
@@ -124,9 +125,10 @@ fn apply_edits<'a>(
     pdfium: &'a Pdfium,
     slot: &mut Slot<'a>,
     elements: &[(ElementId, Element)],
+    images: &Images,
 ) -> Result<Vec<Placed>, EngineError> {
     let mut fresh = load(pdfium, &slot.source, slot.password.as_deref()).map_err(internal)?;
-    let placed = writer::apply(&mut fresh, elements)?;
+    let placed = writer::apply(&mut fresh, elements, images)?;
     slot.current = fresh;
     Ok(placed)
 }

@@ -7,7 +7,10 @@ export function showHome(visible) {
   byId("home").hidden = !visible;
 }
 
-/** Appelle `onDrop(chemin)` pour le premier fichier déposé sur la fenêtre. */
+/**
+ * Appelle `onDrop(chemin, point)` pour le premier fichier déposé sur la
+ * fenêtre ; `point` : position en pixels CSS, si Tauri la donne.
+ */
 export function watchDrops(onDrop) {
   const sheet = byId("drop-sheet");
   listen("tauri://drag-enter", () => sheet.classList.add("dragging"));
@@ -15,6 +18,10 @@ export function watchDrops(onDrop) {
   listen("tauri://drag-drop", (event) => {
     sheet.classList.remove("dragging");
     const [path] = event.payload?.paths ?? [];
-    if (path) onDrop(path);
+    const position = event.payload?.position;
+    // Tauri donne des pixels physiques.
+    const ratio = window.devicePixelRatio || 1;
+    const point = position ? { x: position.x / ratio, y: position.y / ratio } : null;
+    if (path) onDrop(path, point);
   });
 }

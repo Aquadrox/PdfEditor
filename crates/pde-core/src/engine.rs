@@ -4,7 +4,7 @@
 use thiserror::Error;
 
 use crate::document::{DocumentId, DocumentInfo, PageIndex};
-use crate::edit::{Element, ElementId};
+use crate::edit::{Element, ElementId, Images};
 use crate::geometry::Rect;
 use crate::render::{Bitmap, RenderRequest};
 use crate::text::PageText;
@@ -62,10 +62,12 @@ pub trait PdfEngine: Send + Sync {
 
     /// Repart du document tel qu'ouvert et y pose `elements` : l'affichage
     /// et l'enregistrement montrent ensuite exactement ce résultat.
+    /// `images` : contenu des images que les éléments désignent.
     fn apply_edits(
         &self,
         doc: DocumentId,
         elements: Vec<(ElementId, Element)>,
+        images: Images,
     ) -> Result<Vec<Placed>, EngineError>;
 
     /// Contenu du document dans son état actuel, prêt à écrire.
@@ -97,8 +99,9 @@ impl<T: PdfEngine + ?Sized> PdfEngine for &T {
         &self,
         doc: DocumentId,
         elements: Vec<(ElementId, Element)>,
+        images: Images,
     ) -> Result<Vec<Placed>, EngineError> {
-        (**self).apply_edits(doc, elements)
+        (**self).apply_edits(doc, elements, images)
     }
 
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError> {
