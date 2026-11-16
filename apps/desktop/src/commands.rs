@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use pde_app::error::{AppError, ErrorKind};
+use pde_app::text_view::{PageTextView, SearchResults};
 use pde_app::view::DocumentView;
 use pde_app::viewer::Viewer;
 use tauri::{AppHandle, Manager, State};
@@ -27,6 +28,22 @@ pub fn open_document(
 #[tauri::command(async)]
 pub fn close_document(viewer: ViewerState<'_>, id: u64) {
     viewer.close(id);
+}
+
+/// Texte d'une page, en segments positionnés (couche sélectionnable).
+#[tauri::command(async)]
+pub fn page_text(viewer: ViewerState<'_>, id: u64, page: usize) -> Result<PageTextView, AppError> {
+    viewer.page_text(id, page)
+}
+
+/// Occurrences d'un texte dans tout le document.
+#[tauri::command(async)]
+pub fn search_document(
+    viewer: ViewerState<'_>,
+    id: u64,
+    query: String,
+) -> Result<SearchResults, AppError> {
+    viewer.search(id, &query)
 }
 
 /// Dialogue « Ouvrir » ; `None` si l'utilisateur annule.

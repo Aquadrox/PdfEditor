@@ -26,6 +26,10 @@
       <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
       <symbol id="i-fit-width" viewBox="0 0 24 24"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" /></symbol>
       <symbol id="i-fit-page" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="1" /><path d="M9 8h6M9 12h6M9 16h3" /></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" /></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></symbol>
       <symbol id="i-file-up" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3" /></symbol>
     </svg>
 
@@ -46,6 +50,9 @@
           <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="mode.sign"></span></button>
           <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-ai" /></svg><span data-i18n="mode.ai"></span></button>
         </nav>
+        <button id="search-button" class="btn ghost icon" disabled data-i18n-label="search.open">
+          <svg class="icon"><use href="#i-search" /></svg>
+        </button>
       </header>
 
       <div class="workspace">
@@ -59,6 +66,14 @@
             <nav id="outline" class="outline" hidden></nav>
           </div>
         </aside>
+
+        <div id="search-bar" class="search-bar" role="search" hidden>
+          <input id="search-input" class="input" type="search" data-i18n-aria="search.label" data-i18n-placeholder="search.placeholder" />
+          <span id="search-count" class="search-count num" aria-live="polite"></span>
+          <button id="search-previous" class="btn ghost icon" data-i18n-label="search.previous"><svg class="icon"><use href="#i-up" /></svg></button>
+          <button id="search-next" class="btn ghost icon" data-i18n-label="search.next"><svg class="icon"><use href="#i-down" /></svg></button>
+          <button id="search-close" class="btn ghost icon" data-i18n-label="search.close"><svg class="icon"><use href="#i-x" /></svg></button>
+        </div>
 
         <main id="desk" class="desk" tabindex="0" data-i18n-aria="desk.label">
           <section id="home" class="home">

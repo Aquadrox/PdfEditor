@@ -76,6 +76,14 @@ impl Rect {
         (r.width() > 0.0 && r.height() > 0.0).then_some(r)
     }
 
+    /// Plus petit rectangle contenant les deux.
+    pub fn union(&self, other: &Rect) -> Rect {
+        Rect {
+            min: Point::new(self.min.x.min(other.min.x), self.min.y.min(other.min.y)),
+            max: Point::new(self.max.x.max(other.max.x), self.max.y.max(other.max.y)),
+        }
+    }
+
     /// Déplace le rectangle sans changer sa taille.
     pub fn translate(&self, dx: f64, dy: f64) -> Rect {
         Rect {
@@ -143,6 +151,12 @@ mod tests {
         assert_eq!(a.intersection(&rect(20.0, 20.0, 30.0, 30.0)), None);
         // Bords communs seulement : aire nulle, pas d'intersection.
         assert_eq!(a.intersection(&rect(10.0, 0.0, 20.0, 10.0)), None);
+    }
+
+    #[test]
+    fn union_contains_both() {
+        let u = rect(0.0, 0.0, 10.0, 10.0).union(&rect(5.0, -5.0, 20.0, 8.0));
+        assert_eq!(u, rect(0.0, -5.0, 20.0, 10.0));
     }
 
     #[test]

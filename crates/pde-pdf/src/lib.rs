@@ -6,6 +6,7 @@
 //! [`pde_core::engine::PdfEngine`].
 
 mod convert;
+mod display;
 mod engine;
 mod library;
 mod reader;

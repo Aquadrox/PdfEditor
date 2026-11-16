@@ -8,6 +8,8 @@ license.workspace = true
 
 [dependencies]
 thiserror.workspace = true
+# Recherche insensible aux accents (décomposition Unicode, Rust pur).
+unicode-normalization = "0.1"
 
 [lints]
 workspace = true
