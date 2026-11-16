@@ -3,6 +3,7 @@
 // commandes Rust sont décrites par chaque test (`commands`) ; chaque appel
 // est enregistré dans `window.__calls` pour les vérifications.
 
+import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
@@ -11,6 +12,22 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const UI = fileURLToPath(new URL("../ui/", import.meta.url));
+
+/** Réglages par défaut, identiques à ceux de l'application (vérifié par pde-app). */
+export const DEFAULT_SETTINGS = JSON.parse(
+  readFileSync(new URL("./fixtures/default-settings.json", import.meta.url), "utf8"),
+);
+
+/** Réponses des commandes que chaque démarrage appelle. */
+const STARTUP = {
+  get_settings: [{ ok: { settings: DEFAULT_SETTINGS, warnings: [] } }],
+  default_settings: [{ ok: DEFAULT_SETTINGS }],
+  recent_files: [{ ok: [] }],
+  app_info: [{ ok: { version: "0.0.0-test" } }],
+  initial_files: [{ ok: [] }],
+  update_status: [{ ok: { current: "0.0.0-test", available: null, notes: [], configured: true } }],
+  changelog_view: [{ ok: { current: "0.0.0-test", releases: [], updated_from: null, news: [] } }],
+};
 const TYPES = {
   ".html": "text/html",
   ".js": "text/javascript",
@@ -59,7 +76,7 @@ export async function launch(commands = {}) {
       event: { listen: async () => () => {} },
       window: { getCurrentWindow: () => ({ setTitle: async () => {} }) },
     };
-  }, commands);
+  }, { ...STARTUP, ...commands });
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
   return {
     page,

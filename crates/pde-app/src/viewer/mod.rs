@@ -4,7 +4,7 @@ mod text;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
 use pde_core::engine::PdfEngine;
@@ -14,6 +14,7 @@ use pde_core::text::PageText;
 use crate::cache::{PageCache, PageKey};
 use crate::error::{AppError, ErrorKind};
 use crate::image::encode_png;
+use crate::lock;
 use crate::view::DocumentView;
 
 /// Plus gros fichier accepté : il est lu entièrement en mémoire.
@@ -34,12 +35,6 @@ pub struct Viewer {
     /// Texte des pages déjà lues (couche de texte, recherche), oublié à la
     /// fermeture du document.
     texts: Mutex<HashMap<(DocumentId, PageIndex), Arc<PageText>>>,
-}
-
-/// Verrou même si un autre thread a paniqué en le tenant : les données
-/// protégées (table, cache) restent cohérentes à chaque instruction.
-fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
-    mutex.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 /// Zoom arrondi au centième : deux demandes à 1,499 et 1,5 partagent la
@@ -78,7 +73,18 @@ impl Viewer {
         password: Option<String>,
     ) -> Result<DocumentView, AppError> {
         let bytes = read_file(path)?;
-        let opened = self.engine.open(bytes, password)?;
+        let size = bytes.len();
+        let started = std::time::Instant::now();
+        let opened = self.engine.open(bytes, password).inspect_err(|e| {
+            // Jamais le nom du fichier : il peut être personnel.
+            log::info!("ouverture refusée : {e}");
+        })?;
+        log::info!(
+            "document ouvert : {} pages, {} Ko, {} ms",
+            opened.info.page_count(),
+            size / 1024,
+            started.elapsed().as_millis()
+        );
         let file_name = path
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
@@ -102,6 +108,11 @@ impl Viewer {
             lock(&self.texts).retain(|(doc, _), _| *doc != id);
             self.engine.close(id);
         }
+    }
+
+    /// Change la mémoire consacrée aux images de pages (réglage appliqué à chaud).
+    pub fn set_cache_bytes(&self, bytes: usize) {
+        lock(&self.cache).set_budget(bytes);
     }
 
     /// Nombre de documents ouverts.

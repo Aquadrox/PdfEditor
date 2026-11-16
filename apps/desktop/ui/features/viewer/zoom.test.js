@@ -7,6 +7,7 @@ import {
   MAX_ZOOM,
   ZOOM_STEPS,
   clampZoom,
+  fitModeFor,
   fitPage,
   fitWidth,
   formatZoom,
@@ -47,4 +48,12 @@ test("page entière : limitée par la hauteur pour une page A4", () => {
 test("affichage en pourcentage", () => {
   assert.equal(formatZoom(1.1), "110 %");
   assert.equal(formatZoom(0.333), "33 %");
+});
+
+test("zoom à l'ouverture selon le réglage", () => {
+  assert.equal(fitModeFor("fit_width"), "width");
+  assert.equal(fitModeFor("fit_page"), "page");
+  assert.equal(fitModeFor("actual"), null);
+  // Valeur inconnue : largeur de la page, le défaut.
+  assert.equal(fitModeFor(undefined), "width");
 });

@@ -3,9 +3,11 @@
   position: absolute;
   inset: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  padding: 48px;
+  gap: 48px;
+  padding: 48px 64px;
   overflow: auto;
 }
 
@@ -62,4 +64,82 @@
   border-color: #d5dae0;
   background: #fff;
   color: #566170;
+}
+
+/* Documents récents, à droite de la feuille. */
+.recent-panel {
+  flex: 1 1 380px;
+  max-width: 560px;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-float);
+  background: var(--raised);
+}
+
+.recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.panel-title {
+  margin: 0;
+  font-size: var(--text-panel);
+  font-weight: 600;
+}
+
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recent {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-3);
+  width: 100%;
+  padding: var(--space-2) 10px;
+  border: 0;
+  border-radius: var(--radius-float);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.recent:hover:not(:disabled) {
+  background: var(--surface);
+}
+
+.recent:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.recent-name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-date,
+.recent-folder {
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.recent-date {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.recent-folder {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
