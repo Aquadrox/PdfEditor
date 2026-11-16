@@ -1,5 +1,6 @@
 //! Visionneuse : documents ouverts, images et texte de leurs pages.
 
+mod edit;
 mod text;
 
 use std::collections::HashMap;
@@ -7,7 +8,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
+use pde_core::edit::{Edits, ElementId};
 use pde_core::engine::PdfEngine;
+use pde_core::geometry::Rect;
 use pde_core::render::RenderRequest;
 use pde_core::text::PageText;
 
@@ -23,9 +26,17 @@ pub const MAX_FILE_BYTES: u64 = 1024 * 1024 * 1024;
 pub const DEFAULT_CACHE_BYTES: usize = 256 * 1024 * 1024;
 
 struct OpenDocument {
-    #[allow(dead_code)] // servira à « Enregistrer » (v0.2)
+    /// Fichier enregistré par « Enregistrer » (« Enregistrer sous » le change).
     path: PathBuf,
     info: DocumentInfo,
+    /// Gardé en mémoire seulement, pour relire le fichier enregistré.
+    password: Option<String>,
+    edits: Edits,
+    /// Place de chaque élément, telle que posée par le moteur.
+    placed: HashMap<ElementId, Rect>,
+    /// Version de chaque page, augmentée à chaque changement de son contenu
+    /// (l'interface la met dans l'adresse de l'image pour la recharger).
+    revisions: Vec<u64>,
 }
 
 pub struct Viewer {
@@ -75,7 +86,7 @@ impl Viewer {
         let bytes = read_file(path)?;
         let size = bytes.len();
         let started = std::time::Instant::now();
-        let opened = self.engine.open(bytes, password).inspect_err(|e| {
+        let opened = self.engine.open(bytes, password.clone()).inspect_err(|e| {
             // Jamais le nom du fichier : il peut être personnel.
             log::info!("ouverture refusée : {e}");
         })?;
@@ -94,7 +105,11 @@ impl Viewer {
             opened.id,
             OpenDocument {
                 path: path.to_path_buf(),
+                revisions: vec![0; opened.info.page_count()],
                 info: opened.info,
+                password,
+                edits: Edits::new(),
+                placed: HashMap::new(),
             },
         );
         Ok(view)

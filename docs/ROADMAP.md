@@ -34,16 +34,17 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ✅ Mises à jour automatiques (repris de VoiceToText) : vérification au démarrage puis toutes les 6 h (réglable), bandeau avec nouveautés, installation sur clic après vérification de la signature minisign et de la version signée ; release publiée par la CI avec `latest.json`
 - ✅ Clé de signature des mises à jour : générée par le propriétaire (identifiant `D6F1230550475C66`), clé publique dans `tauri.conf.json`, clé privée dans les secrets GitHub
 
-## v0.2 — Édition : ajouts
+## v0.2 — Édition : ajouts 🚧
 
-- ⬜ Garde-fou Android dans la CI : `pde-core`, `pde-app` et `pde-pdf` compilent pour Android (aarch64), pour ne jamais fermer la porte à la v1.1
-- ⬜ Tests de rendu comparés à des images de référence (avant/après une modification de page)
-- ⬜ Modèle d'opérations et historique annuler / rétablir (`pde-core`), sauvegarde automatique et récupération (F-02)
-- ⬜ Zones de texte, polices embarquées (E-01)
+- ✅ Garde-fou Android dans la CI : `pde-core`, `pde-app`, `pde-pdf` et `pde-platform` compilent pour Android (aarch64), pour ne jamais fermer la porte à la v1.1
+- ✅ Tests de rendu comparés à des images de référence (`crates/pde-pdf/tests/fixtures/expected/`, `PDE_UPDATE_EXPECTED=1` pour les régénérer)
+- ✅ Modèle d'édition (`pde-core::edit`) : éléments ajoutés, historique annuler / rétablir, suivi « modifié », coupure des lignes ; le moteur repart du PDF d'origine et repose les éléments à chaque changement
+- ⬜ Sauvegarde automatique et récupération après plantage (F-02)
+- 🚧 Zones de texte (E-01) : écriture par le moteur faite (polices standard, accents, €, œ, alignement, couleur, gras, italique, pages tournées) ; reste l'interface et les polices embarquées pour les autres alphabets
 - ⬜ Images (E-02)
 - ⬜ Sélection, déplacement, alignement, magnétisme (E-03)
 - ⬜ Annotations et formes (E-04)
-- ⬜ Enregistrer / Enregistrer sous, écriture sûre (F-01)
+- 🚧 Enregistrer / Enregistrer sous (F-01) : écriture sûre faite (contenu relu avant d'écrire, remplacement atomique, mot de passe conservé) ; reste l'interface
 - ⬜ Réglages Édition et Fichiers (R-03, R-04)
 
 ## v0.3 — Contenu existant et pages

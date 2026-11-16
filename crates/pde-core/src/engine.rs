@@ -4,6 +4,8 @@
 use thiserror::Error;
 
 use crate::document::{DocumentId, DocumentInfo, PageIndex};
+use crate::edit::{Element, ElementId};
+use crate::geometry::Rect;
 use crate::render::{Bitmap, RenderRequest};
 use crate::text::PageText;
 
@@ -35,6 +37,14 @@ pub struct OpenedDocument {
     pub info: DocumentInfo,
 }
 
+/// Élément posé par le moteur : sa place réelle sur la page affichée (la
+/// hauteur d'une zone de texte dépend de ses lignes).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Placed {
+    pub id: ElementId,
+    pub bounds: Rect,
+}
+
 /// Moteur PDF partagé par toute l'application.
 ///
 /// Les implémentations sont utilisables depuis n'importe quel thread ; un
@@ -49,6 +59,17 @@ pub trait PdfEngine: Send + Sync {
 
     /// Texte d'une page, caractère par caractère, avec sa position.
     fn page_text(&self, doc: DocumentId, page: PageIndex) -> Result<PageText, EngineError>;
+
+    /// Repart du document tel qu'ouvert et y pose `elements` : l'affichage
+    /// et l'enregistrement montrent ensuite exactement ce résultat.
+    fn apply_edits(
+        &self,
+        doc: DocumentId,
+        elements: Vec<(ElementId, Element)>,
+    ) -> Result<Vec<Placed>, EngineError>;
+
+    /// Contenu du document dans son état actuel, prêt à écrire.
+    fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError>;
 
     /// Ferme le document et libère sa mémoire ; sans effet s'il est déjà fermé.
     fn close(&self, doc: DocumentId);
@@ -70,6 +91,18 @@ impl<T: PdfEngine + ?Sized> PdfEngine for &T {
 
     fn page_text(&self, doc: DocumentId, page: PageIndex) -> Result<PageText, EngineError> {
         (**self).page_text(doc, page)
+    }
+
+    fn apply_edits(
+        &self,
+        doc: DocumentId,
+        elements: Vec<(ElementId, Element)>,
+    ) -> Result<Vec<Placed>, EngineError> {
+        (**self).apply_edits(doc, elements)
+    }
+
+    fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError> {
+        (**self).save(doc)
     }
 
     fn close(&self, doc: DocumentId) {

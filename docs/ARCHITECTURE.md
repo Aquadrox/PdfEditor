@@ -88,9 +88,12 @@ Chaque opération sait se **valider** contre le document (page existante,
 rectangle dans la page…) et produire son **inverse** ; les tests vérifient
 `appliquer ∘ inverse = identité` sur des documents de référence.
 
-À l'enregistrement, `pde-pdf` rejoue les opérations sur une copie dans
-PDFium, écrit un fichier temporaire, le relit pour vérifier qu'il s'ouvre, puis
-remplace le fichier cible (renommage atomique). Si le document contient des
+À chaque opération, `pde-pdf` recharge le PDF d'origine et y pose tous les
+éléments (`pde-core::edit`) : l'image affichée est exactement ce qui sera
+enregistré, et annuler revient à reposer la liste précédente. À
+l'enregistrement, le contenu produit est relu par PDFium (même mot de passe,
+même nombre de pages), écrit dans un fichier temporaire puis renommé à la
+place du fichier cible. Un document protégé par mot de passe le reste. Si le document contient des
 signatures, l'enregistrement est **incrémental** (F-03) ; s'il est verrouillé
 (DocMDP sans modification permise), l'édition est désactivée.
 

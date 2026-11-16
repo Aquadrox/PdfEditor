@@ -2,7 +2,8 @@
 //! démarre quand même et explique le problème à chaque ouverture.
 
 use pde_core::document::{DocumentId, PageIndex};
-use pde_core::engine::{EngineError, OpenedDocument, PdfEngine};
+use pde_core::edit::{Element, ElementId};
+use pde_core::engine::{EngineError, OpenedDocument, PdfEngine, Placed};
 use pde_core::render::{Bitmap, RenderRequest};
 use pde_core::text::PageText;
 
@@ -26,6 +27,18 @@ impl PdfEngine for UnavailableEngine {
     }
 
     fn page_text(&self, _: DocumentId, _: PageIndex) -> Result<PageText, EngineError> {
+        Err(self.error.clone())
+    }
+
+    fn apply_edits(
+        &self,
+        _: DocumentId,
+        _: Vec<(ElementId, Element)>,
+    ) -> Result<Vec<Placed>, EngineError> {
+        Err(self.error.clone())
+    }
+
+    fn save(&self, _: DocumentId) -> Result<Vec<u8>, EngineError> {
         Err(self.error.clone())
     }
 

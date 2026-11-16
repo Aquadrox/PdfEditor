@@ -5,7 +5,8 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
-use pde_core::engine::{EngineError, OpenedDocument, PdfEngine};
+use pde_core::edit::{Element, ElementId, leading};
+use pde_core::engine::{EngineError, OpenedDocument, PdfEngine, Placed};
 use pde_core::geometry::{Point, Rect};
 use pde_core::render::{Bitmap, RenderRequest, pixel_size};
 use pde_core::text::{PageText, TextChar};
@@ -15,6 +16,8 @@ pub const SIMPLE_PDF: &[u8] = b"%PDF-faux simple";
 /// Contenu reconnu comme un PDF protégé par [`PASSWORD`].
 pub const LOCKED_PDF: &[u8] = b"%PDF-faux verrouille";
 pub const PASSWORD: &str = "ouvre-toi";
+/// Texte qu'un faux moteur refuse d'écrire (test des échecs).
+pub const UNWRITABLE: &str = "ÉCHEC";
 
 #[derive(Default)]
 pub struct FakeEngine {
@@ -95,6 +98,37 @@ impl PdfEngine for FakeEngine {
             })
             .collect();
         Ok(PageText { chars })
+    }
+
+    /// Chaque zone de texte occupe une ligne ; le texte UNWRITABLE échoue.
+    fn apply_edits(
+        &self,
+        _doc: DocumentId,
+        elements: Vec<(ElementId, Element)>,
+    ) -> Result<Vec<Placed>, EngineError> {
+        elements
+            .into_iter()
+            .map(|(id, element)| match element {
+                Element::Text(text) if text.text == UNWRITABLE => {
+                    Err(EngineError::Internal("écriture impossible".into()))
+                }
+                Element::Text(text) => {
+                    let height = leading(&text.style);
+                    Ok(Placed {
+                        id,
+                        bounds: Rect::from_corners(
+                            Point::new(text.top_left.x, text.top_left.y - height),
+                            Point::new(text.top_left.x + text.width, text.top_left.y),
+                        ),
+                    })
+                }
+            })
+            .collect()
+    }
+
+    /// Enregistre un PDF reconnu par ce faux moteur.
+    fn save(&self, _doc: DocumentId) -> Result<Vec<u8>, EngineError> {
+        Ok(SIMPLE_PDF.to_vec())
     }
 
     fn close(&self, doc: DocumentId) {

@@ -1,24 +1,22 @@
 //! Thread dédié à PDFium et poignée pour lui adresser des demandes.
 
-use std::collections::HashMap;
-use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::OnceLock;
-use std::sync::mpsc::{Receiver, Sender, SyncSender, channel, sync_channel};
+use std::sync::mpsc::{Sender, SyncSender, channel, sync_channel};
 
 use pde_core::document::{DocumentId, PageIndex};
-use pde_core::engine::{EngineError, OpenedDocument, PdfEngine};
+use pde_core::edit::{Element, ElementId};
+use pde_core::engine::{EngineError, OpenedDocument, PdfEngine, Placed};
 use pde_core::render::{Bitmap, RenderRequest};
 use pde_core::text::PageText;
-use pdfium_render::prelude::{PdfDocument, Pdfium};
+use pdfium_render::prelude::Pdfium;
 
-use crate::convert::open_error;
 use crate::library::current_candidates;
-use crate::reader;
+use crate::worker::serve;
 
-type Reply<T> = SyncSender<Result<T, EngineError>>;
+pub(crate) type Reply<T> = SyncSender<Result<T, EngineError>>;
 
 /// Demandes traitées par le thread de PDFium.
-enum Command {
+pub(crate) enum Command {
     Open {
         bytes: Vec<u8>,
         password: Option<String>,
@@ -33,6 +31,15 @@ enum Command {
         doc: DocumentId,
         page: PageIndex,
         reply: Reply<PageText>,
+    },
+    ApplyEdits {
+        doc: DocumentId,
+        elements: Vec<(ElementId, Element)>,
+        reply: Reply<Vec<Placed>>,
+    },
+    Save {
+        doc: DocumentId,
+        reply: Reply<Vec<u8>>,
     },
     Close {
         doc: DocumentId,
@@ -118,6 +125,22 @@ impl PdfEngine for PdfiumEngine {
         self.ask(|reply| Command::Text { doc, page, reply })
     }
 
+    fn apply_edits(
+        &self,
+        doc: DocumentId,
+        elements: Vec<(ElementId, Element)>,
+    ) -> Result<Vec<Placed>, EngineError> {
+        self.ask(|reply| Command::ApplyEdits {
+            doc,
+            elements,
+            reply,
+        })
+    }
+
+    fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError> {
+        self.ask(|reply| Command::Save { doc, reply })
+    }
+
     fn close(&self, doc: DocumentId) {
         // Moteur arrêté : il n'y a plus rien à fermer.
         let _ = self.commands.send(Command::Close { doc });
@@ -140,67 +163,4 @@ fn bind() -> Result<Pdfium, EngineError> {
         "bibliothèque PDFium introuvable (cherchée dans : {})",
         tried.join(", ")
     )))
-}
-
-/// Boucle du thread : traite les demandes jusqu'à ce que toutes les
-/// poignées soient lâchées. Les documents sont fermés avant PDFium.
-fn serve(pdfium: &Pdfium, commands: Receiver<Command>) {
-    let mut docs: HashMap<DocumentId, PdfDocument<'_>> = HashMap::new();
-    let mut next_id = 1;
-    for command in commands {
-        // Une panique sur un fichier piégé ne doit pas arrêter le moteur :
-        // la demande échoue (réponse perdue → erreur chez l'appelant), les
-        // autres documents restent ouverts.
-        let _ = catch_unwind(AssertUnwindSafe(|| {
-            handle(pdfium, &mut docs, &mut next_id, command);
-        }));
-    }
-}
-
-fn handle<'a>(
-    pdfium: &'a Pdfium,
-    docs: &mut HashMap<DocumentId, PdfDocument<'a>>,
-    next_id: &mut u64,
-    command: Command,
-) {
-    match command {
-        Command::Open {
-            bytes,
-            password,
-            reply,
-        } => {
-            let result = pdfium
-                .load_pdf_from_byte_vec(bytes, password.as_deref())
-                .map_err(|e| open_error(e, password.is_some()))
-                .and_then(|doc| {
-                    let info = reader::document_info(&doc)?;
-                    let id = DocumentId(*next_id);
-                    *next_id += 1;
-                    docs.insert(id, doc);
-                    Ok(OpenedDocument { id, info })
-                });
-            let _ = reply.send(result);
-        }
-        Command::Render {
-            doc,
-            request,
-            reply,
-        } => {
-            let result = docs
-                .get(&doc)
-                .ok_or(EngineError::UnknownDocument)
-                .and_then(|d| reader::render(d, request));
-            let _ = reply.send(result);
-        }
-        Command::Text { doc, page, reply } => {
-            let result = docs
-                .get(&doc)
-                .ok_or(EngineError::UnknownDocument)
-                .and_then(|d| reader::page_text(d, page));
-            let _ = reply.send(result);
-        }
-        Command::Close { doc } => {
-            docs.remove(&doc);
-        }
-    }
 }

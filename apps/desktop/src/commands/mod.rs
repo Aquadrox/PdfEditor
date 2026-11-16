@@ -5,6 +5,7 @@
 //! pendant la lecture d'un gros fichier.
 
 pub mod document;
+pub mod edit;
 pub mod settings;
 pub mod updates;
 

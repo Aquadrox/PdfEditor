@@ -79,6 +79,19 @@ impl PageCache {
         self.order.push_back(key);
     }
 
+    /// Oublie toutes les images d'une page (son contenu a changé).
+    pub fn remove_page(&mut self, doc: DocumentId, page: PageIndex) {
+        let keys: Vec<PageKey> = self
+            .order
+            .iter()
+            .filter(|k| k.doc == doc && k.page == page)
+            .copied()
+            .collect();
+        for key in keys {
+            self.remove(&key);
+        }
+    }
+
     /// Oublie toutes les pages d'un document (à sa fermeture).
     pub fn remove_document(&mut self, doc: DocumentId) {
         let keys: Vec<PageKey> = self
@@ -174,6 +187,22 @@ mod tests {
         cache.set_budget(50);
         assert_eq!((cache.len(), cache.used()), (1, 40));
         assert!(cache.get(&key(1, 1)).is_some());
+    }
+
+    #[test]
+    fn changed_page_is_forgotten_at_every_zoom() {
+        let mut cache = PageCache::new(100);
+        cache.insert(key(1, 0), image(4));
+        cache.insert(
+            PageKey {
+                scale_centi: 200,
+                ..key(1, 0)
+            },
+            image(4),
+        );
+        cache.insert(key(1, 1), image(4));
+        cache.remove_page(DocumentId(1), 0);
+        assert_eq!((cache.len(), cache.used()), (1, 4));
     }
 
     #[test]

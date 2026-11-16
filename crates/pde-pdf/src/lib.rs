@@ -10,6 +10,8 @@ mod display;
 mod engine;
 mod library;
 mod reader;
+mod worker;
+mod writer;
 
 pub use engine::PdfiumEngine;
 pub use library::{LIBRARY_DIR_ENV, library_candidates};

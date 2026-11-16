@@ -3,25 +3,12 @@
 //!
 //! PDFium doit être présent : `scripts/fetch-pdfium.sh` le télécharge.
 
+mod common;
+
+use common::{ENCRYPTED, SIMPLE, TEST_PASSWORD, engine, open_simple};
 use pde_core::document::{OutlineItem, PageSize};
-use pde_core::engine::{EngineError, OpenedDocument, PdfEngine};
+use pde_core::engine::{EngineError, PdfEngine};
 use pde_core::render::RenderRequest;
-use pde_pdf::PdfiumEngine;
-
-const SIMPLE: &[u8] = include_bytes!("fixtures/simple.pdf");
-const ENCRYPTED: &[u8] = include_bytes!("fixtures/encrypted.pdf");
-/// Mot de passe fictif du PDF chiffré de test (voir make_fixtures.py).
-const TEST_PASSWORD: &str = "mot-de-passe-de-test";
-
-fn engine() -> &'static PdfiumEngine {
-    PdfiumEngine::global().expect("PDFium absent : lancer scripts/fetch-pdfium.sh")
-}
-
-fn open_simple() -> OpenedDocument {
-    engine()
-        .open(SIMPLE.to_vec(), None)
-        .expect("simple.pdf doit s'ouvrir")
-}
 
 fn titles(items: &[OutlineItem]) -> Vec<(&str, Option<usize>)> {
     items.iter().map(|i| (i.title.as_str(), i.page)).collect()

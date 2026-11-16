@@ -2,13 +2,14 @@
 //! récents, et les règles qui les relient (un document ouvert entre dans
 //! les récents, un réglage enregistré s'applique tout de suite).
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use pde_core::engine::PdfEngine;
 use pde_core::settings::Settings;
 
+use crate::edit_view::SavedView;
 use crate::error::AppError;
 use crate::recent::{RecentFiles, RecentView};
 use crate::settings_store::{SettingsStore, SettingsView};
@@ -74,6 +75,20 @@ impl App {
             log::warn!("liste des documents récents non enregistrée : {e}");
         }
         Ok(view)
+    }
+
+    /// Enregistre ; « Enregistrer sous » (`target`) met la copie dans les récents.
+    pub fn save_document(&self, id: u64, target: Option<PathBuf>) -> Result<SavedView, AppError> {
+        let save_as = target.is_some();
+        let saved = self.viewer.save(id, target)?;
+        let max = self.settings.get().general.recent_files as usize;
+        if save_as
+            && max > 0
+            && let Err(e) = self.recent.record(Path::new(&saved.path), now(), max)
+        {
+            log::warn!("liste des documents récents non enregistrée : {e}");
+        }
+        Ok(saved)
     }
 
     pub fn recent_files(&self) -> Vec<RecentView> {
@@ -145,6 +160,19 @@ mod tests {
         f.app.save_settings(&settings).unwrap();
         f.app.open_document(&f.pdf("c.pdf"), None).unwrap();
         assert!(f.app.recent_files().is_empty());
+    }
+
+    #[test]
+    fn save_as_puts_the_copy_in_recent_files() {
+        let f = Fixture::new("saveas", "");
+        let doc = f.app.open_document(&f.pdf("a.pdf"), None).unwrap();
+        f.app.save_document(doc.id, None).unwrap();
+        assert_eq!(f.app.recent_files().len(), 1);
+        f.app
+            .save_document(doc.id, Some(f.dir.join("b.pdf")))
+            .unwrap();
+        let names: Vec<String> = f.app.recent_files().into_iter().map(|r| r.name).collect();
+        assert_eq!(names, ["b.pdf", "a.pdf"]);
     }
 
     #[test]
