@@ -14,12 +14,14 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 - ✅ Branche `main` créée et protégée (PR obligatoire, jobs `linux`, `windows`, `secrets` requis)
 - ✅ Maquette des écrans principaux validée (`docs/maquette/`, voir `DESIGN.md`)
 
-## v0.1 — Visionneuse 🚧
+## v0.1 — Visionneuse ✅
 
-- ⬜ `cargo-deny` dans la CI (licences compatibles, vulnérabilités connues)
+Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et mises à jour automatiques.
+
+- ✅ `cargo-deny` dans la CI (`deny.toml`) : aucune vulnérabilité connue, licences compatibles avec MIT, sources crates.io uniquement
 - ✅ `pde-pdf` : PDFium 8125 figé et vérifié (SHA-256, `scripts/fetch-pdfium.sh`) ; thread moteur dédié ; ouverture, mot de passe, rendu, texte avec positions, plan (V-01, V-02, V-03)
 - ✅ PDF de référence générés (`crates/pde-pdf/tests/fixtures/make_fixtures.py`) : pages tournées, plan, chiffrement AES-256, fichiers invalides
-- ⬜ Tests de rendu comparés à des images de référence (aujourd'hui : contrôles de pixels ciblés)
+- ➡️ Tests de rendu comparés à des images de référence : reportés en v0.2 (aujourd'hui : contrôles de pixels ciblés)
 - ✅ `pde-app` : visionneuse testable sans interface (faux moteur), cache des pages limité en mémoire, PNG
 - ✅ `apps/desktop` : fenêtre principale selon la maquette, protocole `pde://`, zoom, défilement continu, miniatures, plan, aller à la page, mot de passe, glisser-déposer, ouverture en argument (V-01 à V-04)
 - ✅ Tests de l'interface : modules JS (`node --test`) et parcours dans Chromium avec Tauri simulé (Playwright)
@@ -34,6 +36,7 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 
 ## v0.2 — Édition : ajouts
 
+- ⬜ Tests de rendu comparés à des images de référence (avant/après une modification de page)
 - ⬜ Modèle d'opérations et historique annuler / rétablir (`pde-core`), sauvegarde automatique et récupération (F-02)
 - ⬜ Zones de texte, polices embarquées (E-01)
 - ⬜ Images (E-02)

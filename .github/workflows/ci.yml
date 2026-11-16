@@ -40,6 +40,12 @@ jobs:
       # Chaque version a ses notes, affichées avec la mise à jour.
       - name: Notes de version (CHANGELOG.md)
         run: python3 .github/scripts/changelog.py check
+      # Dépendances : aucune vulnérabilité connue, licences compatibles,
+      # sources crates.io (deny.toml).
+      - name: Dépendances (cargo-deny)
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
       # Bibliothèques de Tauri sous Linux (WebView WebKitGTK).
       - name: Dépendances système
         run: |

@@ -25,6 +25,13 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
+Après un ajout ou une mise à jour de dépendance (vulnérabilités connues,
+licences compatibles, voir `deny.toml`) :
+
+```bash
+cargo deny check
+```
+
 ```bash
 (cd apps/desktop/ui && node --test) && (cd apps/desktop/ui-tests && npm ci && npm test)
 ```
