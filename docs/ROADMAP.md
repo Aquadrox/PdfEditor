@@ -6,16 +6,17 @@ Chaque version est livrée par une ou plusieurs PR, chacune avec ses tests ;
 une version n'est terminée que lorsque la CI est verte et que la fonction a
 été essayée sur le PC (Windows).
 
-## v0.0 — Fondations 🚧
+## v0.0 — Fondations ✅
 
 - ✅ Fonctions (`FONCTIONS.md`), architecture (`ARCHITECTURE.md`), design (`DESIGN.md`), règles de contribution
 - ✅ Workspace Cargo, règles de lint communes, crate `pde-core` (unités, géométrie) avec tests
 - ✅ CI GitHub Actions : `linux` (format, clippy, tests), `windows`, `secrets` (gitleaks)
-- ⬜ Branche `main` créée et protégée (PR obligatoire, jobs `linux`, `windows`, `secrets` requis)
-- ⬜ `cargo-deny` dans la CI (licences compatibles, vulnérabilités connues)
+- ✅ Branche `main` créée et protégée (PR obligatoire, jobs `linux`, `windows`, `secrets` requis)
+- ✅ Maquette des écrans principaux validée (`docs/maquette/`, voir `DESIGN.md`)
 
 ## v0.1 — Visionneuse
 
+- ⬜ `cargo-deny` dans la CI (licences compatibles, vulnérabilités connues)
 - ⬜ `pde-pdf` : PDFium figé et vérifié (SHA-256) téléchargé par la CI ; thread moteur dédié ; ouverture, mot de passe, rendu (V-01, V-02, V-03)
 - ⬜ PDF de référence dans `tests/fixtures/` et tests de rendu comparés à des images de référence
 - ⬜ `apps/desktop` : fenêtre principale selon `DESIGN.md`, protocole `pde://`, zoom, défilement, miniatures, plan (V-03, V-04)

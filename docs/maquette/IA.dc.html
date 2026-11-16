@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>IA : modifier ou analyser</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&amp;family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&amp;display=swap">
+<style>
+body{margin:0}
+.app{--desk:#E3E6EA;--surface:#F6F7F8;--raised:#FFFFFF;--paper:#FFFFFF;--ink:#1C2430;--muted:#566170;--line:#D5DAE0;--accent:#2747B8;--accent-soft:#E6EBFA;--accent-fg:#FFFFFF;--seal:#8A1C2B;--ai:#0F6E67;--ai-soft:#E2F2F0;--ai-fg:#FFFFFF;--ok:#1E7344;--warn:#8A5700;--danger:#B3261E;--shadow:0 1px 2px rgba(20,28,40,.12),0 10px 28px rgba(20,28,40,.12);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;line-height:1.45;color:var(--ink);background:var(--surface)}
+.app.dark{--desk:#181B1F;--surface:#22262B;--raised:#2A2F35;--ink:#E6E9ED;--muted:#9AA4AF;--line:#343A41;--accent:#8FA6FF;--accent-soft:#283252;--accent-fg:#141821;--seal:#F0909C;--ai:#5CCFC3;--ai-soft:#1D3533;--ai-fg:#0E2321;--ok:#5CC98D;--warn:#E8B65A;--danger:#F28B82;--shadow:0 1px 2px rgba(0,0,0,.5),0 10px 28px rgba(0,0,0,.45)}
+.app *{box-sizing:border-box}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:4px;border:1px solid var(--line);background:var(--raised);color:var(--ink);font:inherit;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn.ai{background:var(--ai);border-color:var(--ai);color:var(--ai-fg);font-weight:600}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--desk);color:var(--ink)}
+.btn.icon{width:28px;padding:0;justify-content:center}
+.btn.sm{height:24px;padding:0 8px;font-size:12px}
+.mode{height:32px;padding:0 12px;border:0;border-radius:4px;background:transparent;color:var(--muted);font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.mode:hover{color:var(--ink);background:var(--desk)}
+.mode.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.in{height:28px;border:1px solid var(--line);border-radius:4px;background:var(--raised);color:var(--ink);padding:0 8px;font:inherit;min-width:0}
+.lbl{font-size:12px;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+.seal{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px 0 4px;border-radius:16px;border:1px solid var(--line);background:var(--raised);color:var(--ink);font:inherit;cursor:pointer}
+.wax{width:24px;height:24px;display:grid;place-items:center;border-radius:48% 52% 50% 50% / 52% 48% 52% 48%;border:1.5px dashed var(--muted);color:var(--muted)}
+.wax svg.i{width:14px;height:14px}
+.doc{font-family:'Source Serif 4',Georgia,serif;color:#1d1d1d;font-size:12.5px;line-height:1.55}
+.doc h1{font-size:19px;font-weight:600;margin:0 0 4px;text-align:center}
+.doc h2{font-size:13px;font-weight:600;margin:16px 0 4px}
+.doc p{margin:0 0 6px}
+.del{text-decoration:line-through;text-decoration-color:#B3261E;color:#7a6f6f}
+.ins{text-decoration:underline;text-decoration-color:#0F6E67;text-decoration-thickness:2px;text-underline-offset:2px;background:#E2F2F0}
+.cite{background:#E2F2F0;box-shadow:inset 0 -2px 0 #0F6E67}
+.tab{height:36px;padding:0 10px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font:inherit;cursor:pointer}
+.tab.on{color:var(--ink);border-bottom-color:var(--ai);font-weight:600}
+.seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{flex:1;height:28px;border:0;border-right:1px solid var(--line);background:var(--raised);color:var(--muted);font:inherit;cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ai-soft);color:var(--ai);font-weight:600}
+.prop{border:1px solid var(--line);border-left:0;border-radius:6px;background:var(--raised);overflow:hidden}
+.prop-h{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--ai-soft);color:var(--ai);font-size:12px;font-weight:600}
+.pagelink{border:0;background:var(--ai-soft);color:var(--ai);font:inherit;font-size:12px;font-weight:600;padding:0 6px;border-radius:3px;cursor:pointer}
+.panel p{margin:0}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="width: 100%; height: 900px; display: flex; flex-direction: column; overflow: hidden">
+
+<header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap">
+<button class="btn ghost icon" aria-label="Menu"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+<span style="font-weight: 600; white-space: nowrap">contrat-prestation-2026.pdf</span>
+<nav aria-label="Modes" style="display: flex; gap: 2px; margin: 0 auto">
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg>Lire</button>
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Éditer</button>
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="12" height="15" rx="1"/><path d="M4 7v12a2 2 0 0 0 2 2h10"/></svg>Pages</button>
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-3 5-7 7-7s-1 7 2 7 3-4 5-4 2 3 4 3"/></svg>Signer</button>
+<button class="mode on" aria-current="page"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/></svg>IA</button>
+</nav>
+<button class="seal" aria-label="État de signature : non signé"><span class="wax"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.8-1.2"/></svg></span>Non signé</button>
+</header>
+
+<div style="flex: 1; min-height: 0; display: flex">
+<main aria-label="Document" style="flex: 1; min-width: 0; background: var(--desk); overflow: hidden; display: flex; justify-content: center; padding-top: 28px">
+<div class="doc" style="position: relative; width: 640px; height: 905px; flex: none; background: var(--paper); box-shadow: var(--shadow); padding: 64px 72px">
+<h1>Contrat de prestation de services</h1>
+<p style="text-align: center; color: #555; margin-bottom: 22px">Référence CPS-2026-118</p>
+<h2>Entre les soussignés</h2>
+<p>La société Atelier Morel SARL, au capital de 20 000 euros, dont le siège est situé 12 rue des Tanneurs, 69002 Lyon, représentée par Claire Martin, gérante, ci-après « le Prestataire »,</p>
+<p>et la société Nordtech SAS, dont le siège est situé 4 quai de la Douane, 29200 Brest, représentée par Hugo Bernard, directeur général, ci-après « le Client ».</p>
+<h2>Article 1 : Objet</h2>
+<p>Le présent contrat a pour objet la conception et la réalisation de la nouvelle identité graphique du Client, telle que décrite dans l'annexe A (cahier des charges).</p>
+<h2>Article 2 : Durée</h2>
+<p>Le contrat prend effet à la date de sa signature par les deux parties. Il est conclu pour une durée de six mois et peut être prolongé par avenant.</p>
+<h2>Article 3 : Prix et paiement</h2>
+<p>Le prix forfaitaire de la prestation est fixé à 18 400 euros hors taxes. Il est payable en trois échéances : 30 % à la signature, 40 % à la remise des maquettes, 30 % à la livraison finale.</p>
+<sc-if value="{{isModify}}" hint-placeholder-val="{{ true }}">
+<div style="position: relative">
+<span aria-hidden="true" style="position: absolute; left: -16px; top: 2px; bottom: 2px; width: 3px; background: #0F6E67"></span>
+<p><span class="del">Les factures sont payables dans un délai raisonnable à compter de leur réception.</span> <span class="ins">Les factures sont payables à 30 jours à compter de leur date d'émission. Tout retard entraîne des pénalités au taux de trois fois l'intérêt légal et une indemnité forfaitaire de 40 euros pour frais de recouvrement.</span></p>
+<span style="position: absolute; right: -64px; top: 0; font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; font-weight: 600; color: #FFFFFF; background: #0F6E67; padding: 1px 6px; border-radius: 3px">1</span>
+</div>
+</sc-if>
+<sc-if value="{{isAnalyze}}" hint-placeholder-val="{{ false }}">
+<p><span class="cite">Les factures sont payables dans un délai raisonnable à compter de leur réception.</span></p>
+</sc-if>
+<h2>Article 4 : Propriété intellectuelle</h2>
+<p>Les droits patrimoniaux sur les créations livrées sont cédés au Client au fur et à mesure des paiements, pour le monde entier et pour la durée légale de protection.</p>
+</div>
+</main>
+
+<aside class="panel" aria-label="Assistant IA" style="width: 380px; flex: none; border-left: 1px solid var(--line); background: var(--surface); overflow: hidden; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px; border-bottom: 1px solid var(--line)">
+<div role="tablist" aria-label="Actions IA" style="display: flex; gap: 2px">
+<button class="{{tabAnalyze}}" role="tab">Analyser</button>
+<button class="tab" role="tab">Questions</button>
+<button class="tab" role="tab">Traduire</button>
+<button class="{{tabModify}}" role="tab">Modifier</button>
+</div>
+<select class="in" aria-label="Profil IA" style="width: 116px; height: 26px; font-size: 12px"><option>DeepSeek</option></select>
+</div>
+
+<sc-if value="{{isModify}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-bottom: 1px solid var(--line)">
+<span class="lbl">Portée</span>
+<div class="seg" role="radiogroup" aria-label="Portée"><button role="radio" aria-checked="false">Sélection</button><button class="on" role="radio" aria-checked="true">Pages 1 à 2</button><button role="radio" aria-checked="false">Document</button></div>
+<label style="display: flex; flex-direction: column; gap: 4px"><span class="lbl">Consigne</span>
+<textarea class="in" style="height: 64px; padding: 6px 8px; resize: none">Rends les conditions de paiement précises et conformes au droit français.</textarea></label>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<span class="lbl num">Environ 2 100 jetons envoyés à DeepSeek, moins de 0,01 $</span>
+<button class="btn ai">Proposer</button>
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 4px">
+<span style="font-weight: 600">2 propositions</span>
+<span style="display: flex; gap: 4px"><button class="btn sm">Tout refuser</button><button class="btn sm ai">Tout accepter</button></span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 8px 16px 16px; overflow: hidden">
+<div class="prop" style="border-left: 3px solid var(--ai)">
+<div class="prop-h"><span>1. Article 3, page 1</span><span style="font-weight: 400">Paiement</span></div>
+<div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px">
+<p class="lbl">Délai précis à 30 jours, pénalités de retard et indemnité de 40 euros, obligatoires entre professionnels.</p>
+<div style="display: flex; gap: 6px; justify-content: flex-end"><button class="btn sm">Refuser</button><button class="btn sm">Modifier le texte</button><button class="btn sm ai">Accepter</button></div>
+</div>
+</div>
+<div class="prop" style="border-left: 3px solid var(--ai)">
+<div class="prop-h"><span>2. Article 3, page 1</span><span style="font-weight: 400">Échéances</span></div>
+<div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px">
+<p style="font-size: 12px"><span class="del">30 % à la livraison finale.</span> <span class="ins">30 % à la livraison finale, constatée par un procès-verbal de recette.</span></p>
+<div style="display: flex; gap: 6px; justify-content: flex-end"><button class="btn sm">Refuser</button><button class="btn sm">Modifier le texte</button><button class="btn sm ai">Accepter</button></div>
+</div>
+</div>
+<p class="lbl">Les propositions acceptées deviennent des modifications ordinaires, annulables avec Ctrl+Z.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{isAnalyze}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 16px; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-weight: 600">Analyse du document entier</span><span class="lbl num">4 pages, 0,004 $</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-weight: 600">Résumé</span>
+<p>Contrat de prestation entre Atelier Morel (prestataire) et Nordtech (client) pour une nouvelle identité graphique, sur six mois, au forfait de 18 400 euros HT payé en trois échéances <button class="pagelink">p. 1</button>. Les droits sont cédés au fil des paiements <button class="pagelink">p. 1</button>, litiges à Lyon <button class="pagelink">p. 4</button>.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-weight: 600">Points d'attention</span>
+<div style="display: flex; gap: 8px"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--warn); margin-top: 1px"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h0"/></svg><p>Délai de paiement « raisonnable » non chiffré, sans pénalités de retard <button class="pagelink">p. 1</button></p></div>
+<div style="display: flex; gap: 8px"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--warn); margin-top: 1px"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h0"/></svg><p>Aucune clause de résiliation anticipée <button class="pagelink">p. 3</button></p></div>
+<div style="display: flex; gap: 8px"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--warn); margin-top: 1px"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h0"/></svg><p>L'annexe B est citée mais absente du fichier <button class="pagelink">p. 4</button></p></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-weight: 600">Montants et dates</span>
+<p class="num">18 400 € HT <button class="pagelink">p. 1</button>, capital de 20 000 € <button class="pagelink">p. 1</button>, durée 6 mois <button class="pagelink">p. 1</button></p>
+</div>
+<div style="display: flex; gap: 6px"><button class="btn sm">Copier</button><button class="btn sm">Insérer comme note</button><button class="btn sm ai">Corriger les points d'attention</button></div>
+</div>
+</sc-if>
+</aside>
+</div>
+
+<footer style="height: 28px; display: flex; align-items: center; gap: 16px; padding: 0 12px; border-top: 1px solid var(--line); background: var(--surface); font-size: 12px; color: var(--muted)">
+<span class="num">Page 1 sur 4</span>
+<span class="num">100 %</span>
+<span>Le texte des pages choisies est envoyé à DeepSeek. Les consignes contenues dans le document sont ignorées.</span>
+<span class="num" style="margin-left: auto">IA ce mois-ci : 0,42 $ sur 5 $</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["Clair","Sombre"],"default":"Clair"},"vue":{"editor":"enum","options":["Modifier","Analyser"],"default":"Modifier"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const dark = (this.props.theme ?? 'Clair') === 'Sombre';
+const modify = (this.props.vue ?? 'Modifier') === 'Modifier';
+return {
+themeClass: dark ? 'app dark' : 'app',
+isModify: modify,
+isAnalyze: !modify,
+tabModify: modify ? 'tab on' : 'tab',
+tabAnalyze: modify ? 'tab' : 'tab on'
+};
+}
+}
+</script>
+</body>
+</html>
