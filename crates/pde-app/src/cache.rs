@@ -33,6 +33,17 @@ impl PageCache {
         }
     }
 
+    /// Nouveau budget ; les images les plus anciennes partent si besoin.
+    pub fn set_budget(&mut self, budget: usize) {
+        self.budget = budget;
+        while self.used > self.budget {
+            match self.order.pop_front() {
+                Some(oldest) => self.forget(&oldest),
+                None => break,
+            }
+        }
+    }
+
     pub fn used(&self) -> usize {
         self.used
     }
@@ -153,6 +164,16 @@ mod tests {
         cache.insert(key(1, 0), image(4));
         cache.insert(key(1, 0), image(6));
         assert_eq!((cache.len(), cache.used()), (1, 6));
+    }
+
+    #[test]
+    fn smaller_budget_evicts_oldest_images() {
+        let mut cache = PageCache::new(100);
+        cache.insert(key(1, 0), image(40));
+        cache.insert(key(1, 1), image(40));
+        cache.set_budget(50);
+        assert_eq!((cache.len(), cache.used()), (1, 40));
+        assert!(cache.get(&key(1, 1)).is_some());
     }
 
     #[test]

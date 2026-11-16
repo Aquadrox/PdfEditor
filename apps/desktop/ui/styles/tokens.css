@@ -49,8 +49,9 @@
   --duration: 150ms;
 }
 
+/* Sombre : selon le système, sauf thème clair forcé dans les réglages… */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --desk: #181b1f;
     --surface: #22262b;
     --raised: #2a2f35;
@@ -73,6 +74,36 @@
     --shadow-page: 0 1px 2px rgb(0 0 0 / 50%), 0 10px 28px rgb(0 0 0 / 45%);
     --shadow-float: 0 2px 6px rgb(0 0 0 / 50%), 0 12px 32px rgb(0 0 0 / 50%);
   }
+}
+
+/* … ou forcé dans les réglages (mêmes valeurs). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --desk: #181b1f;
+  --surface: #22262b;
+  --raised: #2a2f35;
+  --ink: #e6e9ed;
+  --muted: #9aa4af;
+  --line: #343a41;
+  --accent: #8fa6ff;
+  --accent-soft: #283252;
+  --accent-fg: #141821;
+  --seal: #f0909c;
+  --seal-soft: #3a2328;
+  --seal-fg: #2a0f14;
+  --ai: #5ccfc3;
+  --ai-soft: #1d3533;
+  --ok: #5cc98d;
+  --warn: #e8b65a;
+  --danger: #f28b82;
+  --danger-soft: #3a2220;
+  --scrim: rgb(0 0 0 / 55%);
+  --shadow-page: 0 1px 2px rgb(0 0 0 / 50%), 0 10px 28px rgb(0 0 0 / 45%);
+  --shadow-float: 0 2px 6px rgb(0 0 0 / 50%), 0 12px 32px rgb(0 0 0 / 50%);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 @media (prefers-reduced-motion: reduce) {

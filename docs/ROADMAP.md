@@ -24,8 +24,10 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 - ✅ `apps/desktop` : fenêtre principale selon la maquette, protocole `pde://`, zoom, défilement continu, miniatures, plan, aller à la page, mot de passe, glisser-déposer, ouverture en argument (V-01 à V-04)
 - ✅ Tests de l'interface : modules JS (`node --test`) et parcours dans Chromium avec Tauri simulé (Playwright)
 - ✅ Couche texte : sélection, copie, recherche insensible à la casse et aux accents, positions correctes sur les pages tournées (V-05)
-- ⬜ `pde-core::settings` + page Réglages (Général, Affichage, Raccourcis) ; `pde-platform` (dossiers, trousseau repris de VoiceToText)
-- ⬜ Journaux, rapport de plantage
+- ✅ `pde-core::settings` (`config.toml` tolérant, valeurs bornées, raccourcis vérifiés) + page Réglages : Général, Affichage, Raccourcis clavier, Diagnostic, appliqués à chaud (R-01, R-02, R-08, R-09)
+- ✅ `pde-platform` : dossiers de l'application (`PDE_HOME` pour les tests) ; le trousseau arrive avec la signature (v0.4)
+- ✅ Documents récents sur l'accueil, rouvrir le dernier document au démarrage (V-01)
+- ✅ Journal repris de VoiceToText (purge automatique, niveau réglable, paniques notées), sans nom ni contenu de document
 - ⬜ Installeur Windows construit par la CI ; version vérifiée contre le tag ; `CHANGELOG.md` contrôlé (`changelog.py`, repris de VoiceToText)
 
 ## v0.2 — Édition : ajouts
@@ -48,6 +50,8 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 - ⬜ Tests de parcours de l'interface (Playwright)
 
 ## v0.4 — Signature et verrouillage
+
+- ⬜ `pde-platform` : trousseau du système (repris de VoiceToText) pour les mots de passe de certificats
 
 - ⬜ `pde-sign` : écriture incrémentale, signature PAdES B-B (S-05), vérifiée par `pdfsig` / `qpdf` dans la CI
 - ⬜ Identités : certificat auto-signé, import PKCS#12 (S-01, S-02)

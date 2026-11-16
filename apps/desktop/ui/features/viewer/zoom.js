@@ -46,3 +46,13 @@ export function fitPage(page, availableWidth, availableHeight) {
 export function formatZoom(zoom) {
   return `${Math.round(zoom * 100)} %`;
 }
+
+/**
+ * Ajustement à l'ouverture selon le réglage display.default_zoom :
+ * "width", "page", ou null pour la taille réelle (zoom 1).
+ */
+export function fitModeFor(defaultZoom) {
+  if (defaultZoom === "fit_page") return "page";
+  if (defaultZoom === "actual") return null;
+  return "width";
+}

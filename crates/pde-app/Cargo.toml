@@ -7,13 +7,12 @@ publish.workspace = true
 license.workspace = true
 
 [dependencies]
+log = "0.4"
 pde-core = { path = "../pde-core" }
 png = "0.18"
 serde.workspace = true
-thiserror.workspace = true
-
-[dev-dependencies]
 serde_json = "1"
+thiserror.workspace = true
 
 [lints]
 workspace = true

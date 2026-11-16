@@ -10,11 +10,18 @@ license.workspace = true
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+log = "0.4"
 pde-app = { path = "../../crates/pde-app" }
+pde-core = { path = "../../crates/pde-core" }
 pde-pdf = { path = "../../crates/pde-pdf" }
+pde-platform = { path = "../../crates/pde-platform" }
 serde.workspace = true
+simplelog = "0.12"
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+# Horodatage du journal (macro de format utilisée par simplelog).
+time = { version = "0.3", features = ["formatting", "local-offset", "macros"] }
 
 [lints]
 workspace = true

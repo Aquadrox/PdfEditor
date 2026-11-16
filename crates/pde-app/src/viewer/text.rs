@@ -6,8 +6,9 @@ use pde_core::document::{DocumentId, PageIndex};
 use pde_core::search::{find, match_rects};
 use pde_core::text::PageText;
 
-use super::{Viewer, lock};
+use super::Viewer;
 use crate::error::AppError;
+use crate::lock;
 use crate::text_view::{BoxView, PageTextView, SearchHit, SearchResults};
 
 /// Au-delà, la recherche s'arrête : l'interface n'en afficherait pas plus.

@@ -1,0 +1,16 @@
+{
+  "general": { "theme": "system", "recent_files": 10, "reopen_last": false },
+  "display": { "default_zoom": "fit_width", "page_cache_mb": 256 },
+  "shortcuts": {
+    "open": "Ctrl+O",
+    "close": "Ctrl+W",
+    "search": "Ctrl+F",
+    "zoom_in": "Ctrl+Plus",
+    "zoom_out": "Ctrl+Minus",
+    "zoom_reset": "Ctrl+0",
+    "fit_page": "Ctrl+1",
+    "fit_width": "Ctrl+2",
+    "settings": "Ctrl+Comma"
+  },
+  "diagnostic": { "log_level": "info" }
+}

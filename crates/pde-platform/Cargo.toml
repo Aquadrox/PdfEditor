@@ -1,0 +1,13 @@
+[package]
+name = "pde-platform"
+description = "Intégration au système : dossiers de l'application (plus tard : trousseau, chiffrement local)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+dirs = "6"
+
+[lints]
+workspace = true

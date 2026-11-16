@@ -18,7 +18,7 @@ import {
 } from "./layout.js";
 import { highlightLayer, textLayer } from "./page-layers.js";
 import { scrollTopForRect } from "./text-geometry.js";
-import { CSS_PX_PER_POINT, clampZoom, fitPage, fitWidth } from "./zoom.js";
+import { CSS_PX_PER_POINT, clampZoom, fitModeFor, fitPage, fitWidth } from "./zoom.js";
 
 /** Délai avant de redemander les images après un changement de zoom (ms). */
 const RERENDER_DELAY = 150;
@@ -40,6 +40,8 @@ export class Viewer {
     this.doc = null;
     this.zoom = 1;
     this.fitMode = "width";
+    /** Réglage display.default_zoom : "fit_width", "fit_page" ou "actual". */
+    this.defaultZoom = "fit_width";
     this.page = 0;
     this.frames = [];
     this.layout = computeLayout([], 1);
@@ -62,7 +64,8 @@ export class Viewer {
       el("div", { class: "page", role: "group", "aria-label": t("thumb.label", { n: index + 1 }) }),
     );
     this.container.append(...this.frames);
-    this.fitMode = "width";
+    // Zoom d'ouverture (réglage display.default_zoom).
+    this.fitMode = fitModeFor(this.defaultZoom);
     this.applyZoom(this.fittedZoom() ?? 1, { page: 0, fraction: 0 });
     this.desk.scrollTop = 0;
   }

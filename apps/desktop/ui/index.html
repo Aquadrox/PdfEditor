@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="styles/viewer.css" />
     <link rel="stylesheet" href="styles/home.css" />
     <link rel="stylesheet" href="styles/dialog.css" />
+    <link rel="stylesheet" href="styles/settings.css" />
     <script type="module" src="app.js"></script>
   </head>
   <body>
@@ -30,6 +31,7 @@
       <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" /></symbol>
       <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
       <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol>
       <symbol id="i-file-up" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3" /></symbol>
     </svg>
 
@@ -39,8 +41,9 @@
           <svg class="icon"><use href="#i-menu" /></svg>
         </button>
         <div id="main-menu" class="menu" role="menu" hidden>
-          <button id="menu-open" role="menuitem"><span data-i18n="menu.open"></span><kbd>Ctrl O</kbd></button>
-          <button id="menu-close" role="menuitem" disabled><span data-i18n="menu.close"></span><kbd>Ctrl W</kbd></button>
+          <button id="menu-open" role="menuitem"><span data-i18n="menu.open"></span><kbd data-shortcut="open"></kbd></button>
+          <button id="menu-close" role="menuitem" disabled><span data-i18n="menu.close"></span><kbd data-shortcut="close"></kbd></button>
+          <button id="menu-settings" role="menuitem"><span data-i18n="menu.settings"></span><kbd data-shortcut="settings"></kbd></button>
         </div>
         <span id="doc-name" class="doc-name"></span>
         <nav class="modes" data-i18n-aria="modes.label">
@@ -50,7 +53,7 @@
           <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="mode.sign"></span></button>
           <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-ai" /></svg><span data-i18n="mode.ai"></span></button>
         </nav>
-        <button id="search-button" class="btn ghost icon" disabled data-i18n-label="search.open">
+        <button id="search-button" class="btn ghost icon" disabled data-i18n-label="search.open" data-shortcut-hint="search">
           <svg class="icon"><use href="#i-search" /></svg>
         </button>
       </header>
@@ -82,8 +85,15 @@
               <h1 class="drop-title" data-i18n="home.title"></h1>
               <p class="drop-hint" data-i18n="home.hint"></p>
               <button id="home-open" class="btn primary large" data-i18n="home.open"></button>
-              <span><kbd>Ctrl</kbd> <kbd>O</kbd></span>
+              <kbd data-shortcut="open"></kbd>
             </div>
+            <section id="recent" class="recent-panel" aria-labelledby="recent-title" hidden>
+              <div class="recent-header">
+                <h2 id="recent-title" class="panel-title" data-i18n="recent.title"></h2>
+                <button id="recent-clear" class="btn ghost" data-i18n="recent.clear"></button>
+              </div>
+              <ul id="recent-list" class="recent-list"></ul>
+            </section>
           </section>
         </main>
       </div>
@@ -95,15 +105,97 @@
           &nbsp;<span id="page-count" class="num"></span>
         </span>
         <span class="group">
-          <button id="zoom-out" class="btn ghost icon small" data-i18n-label="zoom.out"><svg class="icon"><use href="#i-minus" /></svg></button>
+          <button id="zoom-out" class="btn ghost icon small" data-i18n-label="zoom.out" data-shortcut-hint="zoom_out"><svg class="icon"><use href="#i-minus" /></svg></button>
           <span id="zoom-value" class="zoom-value num" data-i18n-title="zoom.value"></span>
-          <button id="zoom-in" class="btn ghost icon small" data-i18n-label="zoom.in"><svg class="icon"><use href="#i-plus" /></svg></button>
-          <button id="fit-width" class="btn ghost icon small" data-i18n-label="zoom.fitWidth"><svg class="icon"><use href="#i-fit-width" /></svg></button>
-          <button id="fit-page" class="btn ghost icon small" data-i18n-label="zoom.fitPage"><svg class="icon"><use href="#i-fit-page" /></svg></button>
+          <button id="zoom-in" class="btn ghost icon small" data-i18n-label="zoom.in" data-shortcut-hint="zoom_in"><svg class="icon"><use href="#i-plus" /></svg></button>
+          <button id="fit-width" class="btn ghost icon small" data-i18n-label="zoom.fitWidth" data-shortcut-hint="fit_width"><svg class="icon"><use href="#i-fit-width" /></svg></button>
+          <button id="fit-page" class="btn ghost icon small" data-i18n-label="zoom.fitPage" data-shortcut-hint="fit_page"><svg class="icon"><use href="#i-fit-page" /></svg></button>
         </span>
         <span class="spacer"></span>
       </footer>
     </div>
+
+    <section id="settings-view" class="settings-view" aria-labelledby="settings-title" hidden>
+      <header class="topbar">
+        <button id="settings-back" class="btn ghost"><svg class="icon"><use href="#i-back" /></svg><span data-i18n="settings.back"></span></button>
+        <h1 id="settings-title" class="settings-heading" data-i18n="settings.title"></h1>
+      </header>
+      <div class="settings-body">
+        <nav class="settings-nav" data-i18n-aria="settings.sections">
+          <button class="nav-item" data-section="general" data-i18n="settings.general"></button>
+          <button class="nav-item" data-section="display" data-i18n="settings.display"></button>
+          <button class="nav-item" data-section="shortcuts" data-i18n="settings.shortcuts"></button>
+          <button class="nav-item" data-section="diagnostic" data-i18n="settings.diagnostic"></button>
+        </nav>
+        <div class="settings-content">
+          <p id="settings-warnings" class="notice" role="alert" hidden></p>
+
+          <section class="settings-section" data-section="general">
+            <h2 class="settings-section-title" data-i18n="settings.general"></h2>
+            <div class="field">
+              <label for="set-theme" data-i18n="settings.theme"></label>
+              <select id="set-theme" class="input" data-setting="general.theme">
+                <option value="system" data-i18n="settings.theme.system"></option>
+                <option value="light" data-i18n="settings.theme.light"></option>
+                <option value="dark" data-i18n="settings.theme.dark"></option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="set-recent"><span data-i18n="settings.recentFiles"></span><span class="hint" data-i18n="settings.recentFiles.hint"></span></label>
+              <input id="set-recent" class="input num narrow" type="number" min="0" max="50" data-setting="general.recent_files" data-type="number" />
+            </div>
+            <div class="field">
+              <label for="set-reopen" data-i18n="settings.reopenLast"></label>
+              <input id="set-reopen" class="switch" type="checkbox" role="switch" data-setting="general.reopen_last" />
+            </div>
+          </section>
+
+          <section class="settings-section" data-section="display" hidden>
+            <h2 class="settings-section-title" data-i18n="settings.display"></h2>
+            <div class="field">
+              <label for="set-zoom" data-i18n="settings.defaultZoom"></label>
+              <select id="set-zoom" class="input" data-setting="display.default_zoom">
+                <option value="fit_width" data-i18n="settings.defaultZoom.fit_width"></option>
+                <option value="fit_page" data-i18n="settings.defaultZoom.fit_page"></option>
+                <option value="actual" data-i18n="settings.defaultZoom.actual"></option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="set-cache"><span data-i18n="settings.pageCache"></span><span class="hint" data-i18n="settings.pageCache.hint"></span></label>
+              <input id="set-cache" class="input num narrow" type="number" min="64" max="2048" step="64" data-setting="display.page_cache_mb" data-type="number" />
+            </div>
+          </section>
+
+          <section class="settings-section" data-section="shortcuts" hidden>
+            <h2 class="settings-section-title" data-i18n="settings.shortcuts"></h2>
+            <table class="shortcuts-table"><tbody id="shortcuts-body"></tbody></table>
+            <div><button id="shortcuts-reset" class="btn" data-i18n="settings.shortcuts.reset"></button></div>
+          </section>
+
+          <section class="settings-section" data-section="diagnostic" hidden>
+            <h2 class="settings-section-title" data-i18n="settings.diagnostic"></h2>
+            <div class="field">
+              <label for="set-log"><span data-i18n="settings.logLevel"></span><span class="hint" data-i18n="settings.logLevel.hint"></span></label>
+              <select id="set-log" class="input" data-setting="diagnostic.log_level">
+                <option value="error" data-i18n="settings.logLevel.error"></option>
+                <option value="warn" data-i18n="settings.logLevel.warn"></option>
+                <option value="info" data-i18n="settings.logLevel.info"></option>
+                <option value="debug" data-i18n="settings.logLevel.debug"></option>
+              </select>
+            </div>
+            <div class="field">
+              <span id="app-version" class="muted"></span>
+              <button id="open-logs" class="btn" data-i18n="settings.openLogs"></button>
+            </div>
+          </section>
+        </div>
+      </div>
+      <footer class="settings-footer">
+        <span id="settings-dirty" class="muted"></span>
+        <button id="settings-cancel" class="btn" data-i18n="settings.cancel"></button>
+        <button id="settings-save" class="btn primary" data-i18n="settings.save" disabled></button>
+      </footer>
+    </section>
 
     <dialog id="password-dialog" aria-labelledby="password-title">
       <form method="dialog">
