@@ -11,7 +11,7 @@
    code maximum par fichier (hors tests).
 5. **Aucun secret** dans le dépôt (voir plus bas).
 
-Vérifications locales :
+Vérifications locales (une fois : `./scripts/fetch-pdfium.sh`, voir le README) :
 
 ```bash
 cargo fmt --all
@@ -23,6 +23,10 @@ cargo clippy --workspace --all-targets -- -D warnings
 
 ```bash
 cargo test --workspace
+```
+
+```bash
+(cd apps/desktop/ui && node --test) && (cd apps/desktop/ui-tests && npm ci && npm test)
 ```
 
 ## Protection de `main` (réglage GitHub, à faire une fois)

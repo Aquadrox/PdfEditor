@@ -26,10 +26,33 @@ Tout est réglable dans les Réglages.
 
 ## Construire
 
-Rust stable (voir `rust-toolchain.toml`) :
+Rust stable (voir `rust-toolchain.toml`). Le moteur PDF a besoin de la
+bibliothèque PDFium, téléchargée (version figée, empreinte vérifiée) dans
+`vendor/pdfium/` par :
+
+```bash
+./scripts/fetch-pdfium.sh
+```
 
 ```bash
 cargo test --workspace
+```
+
+Lancer l'application (sous Linux, paquets `libwebkit2gtk-4.1-dev` et
+`librsvg2-dev` nécessaires) :
+
+```bash
+cargo run -p pdfeditor -- chemin/vers/document.pdf
+```
+
+Tests de l'interface (Node 22) :
+
+```bash
+cd apps/desktop/ui && node --test
+```
+
+```bash
+cd apps/desktop/ui-tests && npm ci && npm test
 ```
 
 ## Licence

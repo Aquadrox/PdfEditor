@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Éditer : ajout de texte</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&amp;family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&amp;family=Caveat:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+.app{--desk:#E3E6EA;--surface:#F6F7F8;--raised:#FFFFFF;--paper:#FFFFFF;--ink:#1C2430;--muted:#566170;--line:#D5DAE0;--accent:#2747B8;--accent-soft:#E6EBFA;--accent-fg:#FFFFFF;--seal:#8A1C2B;--seal-soft:#F6E7E9;--seal-fg:#FFFFFF;--ai:#0F6E67;--ai-soft:#E2F2F0;--ok:#1E7344;--ok-soft:#E3F1E8;--warn:#8A5700;--danger:#B3261E;--mark:#FFF0A8;--shadow:0 1px 2px rgba(20,28,40,.12),0 10px 28px rgba(20,28,40,.12);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;line-height:1.45;color:var(--ink);background:var(--surface)}
+.app.dark{--desk:#181B1F;--surface:#22262B;--raised:#2A2F35;--ink:#E6E9ED;--muted:#9AA4AF;--line:#343A41;--accent:#8FA6FF;--accent-soft:#283252;--accent-fg:#141821;--seal:#F0909C;--seal-soft:#3A2328;--seal-fg:#2A0F14;--ai:#5CCFC3;--ai-soft:#1D3533;--ok:#5CC98D;--ok-soft:#1F3328;--warn:#E8B65A;--danger:#F28B82;--shadow:0 1px 2px rgba(0,0,0,.5),0 10px 28px rgba(0,0,0,.45)}
+.app *{box-sizing:border-box}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:4px;border:1px solid var(--line);background:var(--raised);color:var(--ink);font:inherit;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--desk);color:var(--ink)}
+.btn.on{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:600}
+.btn.icon{width:28px;padding:0;justify-content:center}
+.btn.danger{color:var(--danger)}
+.mode{height:32px;padding:0 12px;border:0;border-radius:4px;background:transparent;color:var(--muted);font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.mode:hover{color:var(--ink);background:var(--desk)}
+.mode.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sep{width:1px;height:20px;background:var(--line);flex:none}
+.in{height:28px;border:1px solid var(--line);border-radius:4px;background:var(--raised);color:var(--ink);padding:0 8px;font:inherit;min-width:0}
+.lbl{font-size:12px;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+.seal{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px 0 4px;border-radius:16px;border:1px solid var(--line);background:var(--raised);color:var(--ink);font:inherit;cursor:pointer}
+.wax{width:24px;height:24px;display:grid;place-items:center;border-radius:48% 52% 50% 50% / 52% 48% 52% 48%;border:1.5px dashed var(--muted);color:var(--muted)}
+.wax svg.i{width:14px;height:14px}
+.thumb{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:inherit;cursor:pointer}
+.thumb .pg{width:96px;height:136px;background:var(--paper);box-shadow:0 0 0 1px var(--line);padding:10px 9px;display:flex;flex-direction:column;gap:4px}
+.thumb .pg i{display:block;height:3px;background:#C9CED6}
+.thumb.on .pg{box-shadow:0 0 0 2px var(--accent)}
+.thumb.on{color:var(--accent);font-weight:600}
+.doc{font-family:'Source Serif 4',Georgia,serif;color:#1d1d1d;font-size:12.5px;line-height:1.55}
+.doc h1{font-size:19px;font-weight:600;margin:0 0 4px;text-align:center}
+.doc h2{font-size:13px;font-weight:600;margin:16px 0 4px}
+.doc p{margin:0 0 6px}
+.handle{position:absolute;width:8px;height:8px;background:#fff;border:1.5px solid var(--accent);border-radius:1px}
+.sw{width:22px;height:22px;border-radius:4px;border:1px solid var(--line);cursor:pointer}
+.sw.on{outline:2px solid var(--accent);outline-offset:1px}
+.group{display:flex;flex-direction:column;gap:8px;padding:16px;border-bottom:1px solid var(--line)}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="width: 100%; height: 900px; display: flex; flex-direction: column; overflow: hidden">
+
+<header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap">
+<button class="btn ghost icon" aria-label="Menu"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+<div style="display: flex; align-items: center; gap: 8px; min-width: 0">
+<span style="font-weight: 600; white-space: nowrap">contrat-prestation-2026.pdf</span>
+<span title="Modifications non enregistrées" style="width: 7px; height: 7px; border-radius: 50%; background: var(--accent)"></span>
+</div>
+<nav aria-label="Modes" style="display: flex; gap: 2px; margin: 0 auto">
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg>Lire</button>
+<button class="mode on" aria-current="page"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Éditer</button>
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="12" height="15" rx="1"/><path d="M4 7v12a2 2 0 0 0 2 2h10"/></svg>Pages</button>
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-3 5-7 7-7s-1 7 2 7 3-4 5-4 2 3 4 3"/></svg>Signer</button>
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/></svg>IA</button>
+</nav>
+<button class="btn ghost icon" aria-label="Rechercher dans le document"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+<button class="btn primary">Enregistrer</button>
+<button class="seal" aria-label="État de signature : non signé"><span class="wax"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.8-1.2"/></svg></span>Non signé</button>
+</header>
+
+<div role="toolbar" aria-label="Outils d'édition" style="min-height: 44px; display: flex; align-items: center; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap">
+<button class="btn on"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>Texte</button>
+<button class="btn ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Image</button>
+<button class="btn ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>Surligner</button>
+<button class="btn ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-3 5-7 7-7s-1 7 2 7 3-4 5-4 2 3 4 3"/></svg>Dessin</button>
+<button class="btn ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"/></svg>Forme</button>
+<button class="btn ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="18" height="6" rx="1" fill="currentColor"/><path d="M3 5h10M3 19h14"/></svg>Caviarder</button>
+<span class="sep" style="margin: 0 8px"></span>
+<select class="in" aria-label="Police" style="width: 150px"><option>Noto Sans</option></select>
+<select class="in num" aria-label="Taille" style="width: 76px"><option>11 pt</option></select>
+<button class="btn ghost icon" aria-label="Gras" style="font-weight: 600">G</button>
+<button class="btn ghost icon" aria-label="Italique" style="font-style: italic; font-family: Georgia, serif">I</button>
+<span style="display: inline-flex; align-items: center; gap: 6px; margin-left: 4px"><span class="sw on" style="background: #1C2430" aria-label="Couleur : encre"></span></span>
+<span style="flex: 1"></span>
+<button class="btn ghost icon" aria-label="Annuler (Ctrl+Z)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+<button class="btn ghost icon" aria-label="Rétablir (Ctrl+Y)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+</div>
+
+<div style="flex: 1; min-height: 0; display: flex">
+
+<aside aria-label="Pages du document" style="width: 152px; flex: none; border-right: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column">
+<div style="display: flex; gap: 2px; padding: 8px">
+<button class="btn on" style="flex: 1; justify-content: center">Pages</button>
+<button class="btn ghost" style="flex: 1; justify-content: center">Plan</button>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 0; overflow: hidden">
+<button class="thumb on" aria-current="page"><span class="pg"><i style="width: 60%; margin: 2px auto 6px; height: 4px"></i><i></i><i style="width: 90%"></i><i></i><i style="width: 70%"></i><i style="width: 40%; background: var(--accent); opacity: .5; margin-left: auto"></i><i></i><i style="width: 85%"></i></span><span class="num">1</span></button>
+<button class="thumb"><span class="pg"><i></i><i style="width: 90%"></i><i></i><i style="width: 60%"></i><i></i><i></i><i style="width: 80%"></i></span><span class="num">2</span></button>
+<button class="thumb"><span class="pg"><i></i><i></i><i style="width: 75%"></i><i></i><i style="width: 95%"></i><i style="width: 50%"></i></span><span class="num">3</span></button>
+<button class="thumb"><span class="pg"><i></i><i style="width: 70%"></i><i></i><i style="width: 40%"></i><i style="height: 14px; width: 40%; margin-top: 20px; background: transparent; border: 1px dashed #C9CED6"></i></span><span class="num">4</span></button>
+</div>
+</aside>
+
+<main aria-label="Document" style="flex: 1; min-width: 0; background: var(--desk); overflow: hidden; display: flex; justify-content: center; padding-top: 28px">
+<div class="doc" style="position: relative; width: 640px; height: 905px; flex: none; background: var(--paper); box-shadow: var(--shadow); padding: 64px 72px">
+<h1>Contrat de prestation de services</h1>
+<p style="text-align: center; color: #555; margin-bottom: 22px">Référence CPS-2026-118</p>
+<h2>Entre les soussignés</h2>
+<p>La société Atelier Morel SARL, au capital de 20 000 euros, dont le siège est situé 12 rue des Tanneurs, 69002 Lyon, représentée par Claire Martin, gérante, ci-après « le Prestataire »,</p>
+<p>et la société Nordtech SAS, dont le siège est situé 4 quai de la Douane, 29200 Brest, représentée par Hugo Bernard, directeur général, ci-après « le Client ».</p>
+<h2>Article 1 : Objet</h2>
+<p>Le présent contrat a pour objet la conception et la réalisation de la nouvelle identité graphique du Client, telle que décrite dans <span style="background: var(--mark)">l'annexe A (cahier des charges)</span>.</p>
+<h2>Article 2 : Durée</h2>
+<p>Le contrat prend effet à la date de sa signature par les deux parties. Il est conclu pour une durée de six mois et peut être prolongé par avenant.</p>
+<h2>Article 3 : Prix et paiement</h2>
+<p>Le prix forfaitaire de la prestation est fixé à 18 400 euros hors taxes. Il est payable en trois échéances : 30 % à la signature, 40 % à la remise des maquettes, 30 % à la livraison finale.</p>
+<p>Les factures sont payables dans un délai raisonnable à compter de leur réception.</p>
+<h2>Article 4 : Propriété intellectuelle</h2>
+<p>Les droits patrimoniaux sur les créations livrées sont cédés au Client au fur et à mesure des paiements, pour le monde entier et pour la durée légale de protection.</p>
+
+<div style="position: absolute; left: 352px; top: 312px; width: 216px; padding: 6px 8px; outline: 1.5px solid var(--accent); font-family: 'Noto Sans', 'IBM Plex Sans', sans-serif; font-size: 11px; color: #1C2430; background: rgba(255,255,255,.6)">Annexe B jointe le 16/11/2026, voir page 4.
+<span class="handle" style="left: -5px; top: -5px"></span><span class="handle" style="right: -5px; top: -5px"></span><span class="handle" style="left: -5px; bottom: -5px"></span><span class="handle" style="right: -5px; bottom: -5px"></span>
+<span style="position: absolute; left: 0; top: -26px; font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; color: var(--accent-fg); background: var(--accent); padding: 1px 6px; border-radius: 3px; white-space: nowrap">Zone de texte ajoutée</span>
+</div>
+</div>
+</main>
+
+<aside aria-label="Propriétés" style="width: 300px; flex: none; border-left: 1px solid var(--line); background: var(--surface); overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line)">
+<h2 style="font-size: 15px; font-weight: 600; margin: 0">Zone de texte</h2>
+<button class="btn ghost icon" aria-label="Fermer le panneau"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
+<div class="group">
+<label class="lbl" for="t-content">Texte</label>
+<textarea id="t-content" class="in" style="height: 56px; padding: 6px 8px; resize: none">Annexe B jointe le 16/11/2026, voir page 4.</textarea>
+</div>
+<div class="group">
+<div class="row2">
+<label style="display: flex; flex-direction: column; gap: 4px"><span class="lbl">Police</span><select class="in"><option>Noto Sans</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 4px"><span class="lbl">Taille</span><select class="in num"><option>11 pt</option></select></label>
+</div>
+<span class="lbl">Couleur</span>
+<div style="display: flex; gap: 8px">
+<button class="sw on" style="background: #1C2430" aria-label="Encre"></button>
+<button class="sw" style="background: #2747B8" aria-label="Bleu"></button>
+<button class="sw" style="background: #8A1C2B" aria-label="Bordeaux"></button>
+<button class="sw" style="background: #1E7344" aria-label="Vert"></button>
+<button class="sw" style="background: #FFFFFF" aria-label="Blanc"></button>
+<button class="btn ghost icon" aria-label="Autre couleur" style="width: 22px; height: 22px"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<span class="lbl">Alignement</span>
+<div style="display: flex; gap: 2px">
+<button class="btn on icon" aria-label="Aligner à gauche"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h14"/></svg></button>
+<button class="btn ghost icon" aria-label="Centrer"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M5 18h14"/></svg></button>
+<button class="btn ghost icon" aria-label="Aligner à droite"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M10 12h10M6 18h14"/></svg></button>
+</div>
+</div>
+<div class="group">
+<span class="lbl">Position et taille (mm)</span>
+<div class="row2">
+<label style="display: flex; align-items: center; gap: 6px"><span class="lbl" style="width: 14px">X</span><input class="in num" value="124,2" style="width: 100%"></label>
+<label style="display: flex; align-items: center; gap: 6px"><span class="lbl" style="width: 14px">Y</span><input class="in num" value="110,1" style="width: 100%"></label>
+<label style="display: flex; align-items: center; gap: 6px"><span class="lbl" style="width: 14px">L</span><input class="in num" value="76,2" style="width: 100%"></label>
+<label style="display: flex; align-items: center; gap: 6px"><span class="lbl" style="width: 14px">H</span><input class="in num" value="8,5" style="width: 100%"></label>
+</div>
+</div>
+<div class="group" style="flex-direction: row; border-bottom: 0">
+<button class="btn">Dupliquer</button>
+<button class="btn ghost danger">Supprimer</button>
+</div>
+</aside>
+</div>
+
+<footer style="height: 28px; display: flex; align-items: center; gap: 16px; padding: 0 12px; border-top: 1px solid var(--line); background: var(--surface); font-size: 12px; color: var(--muted)">
+<span class="num">Page 1 sur 4</span>
+<span style="display: inline-flex; align-items: center; gap: 2px"><button class="btn ghost icon" aria-label="Zoom arrière" style="height: 22px; width: 22px"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="width: 14px; height: 14px"><path d="M5 12h14"/></svg></button><span class="num" style="width: 40px; text-align: center">100 %</span><button class="btn ghost icon" aria-label="Zoom avant" style="height: 22px; width: 22px"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="width: 14px; height: 14px"><path d="M12 5v14M5 12h14"/></svg></button></span>
+<span>Sauvegarde automatique il y a 1 min</span>
+<span style="margin-left: auto">2 modifications non enregistrées</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["Clair","Sombre"],"default":"Clair"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const dark = (this.props.theme ?? 'Clair') === 'Sombre';
+return { themeClass: dark ? 'app dark' : 'app' };
+}
+}
+</script>
+</body>
+</html>

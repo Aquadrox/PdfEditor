@@ -1,0 +1,108 @@
+/* Cadre de l'application : barre du haut, espace de travail, barre d'état. */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 48px;
+  flex: none;
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.doc-name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modes {
+  display: flex;
+  gap: 2px;
+  margin: 0 auto;
+}
+
+.mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.mode:hover:not(:disabled) {
+  background: var(--desk);
+  color: var(--ink);
+}
+
+.mode[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.mode:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 28px;
+  flex: none;
+  padding: 0 var(--space-3);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.statusbar .group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.page-input {
+  width: 44px;
+  height: 22px;
+  text-align: right;
+  appearance: textfield;
+}
+
+.page-input::-webkit-inner-spin-button,
+.page-input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.zoom-value {
+  width: 48px;
+  text-align: center;
+}
+
+.statusbar .spacer {
+  flex: 1;
+}

@@ -56,7 +56,7 @@ adaptateur (il passe par un trait de `pde-core`) ; seul `apps/desktop` connaît 
 | Langage | Rust (édition 2024), toolchain stable | Règle du projet ; binaire unique, sûreté mémoire sur des fichiers non fiables |
 | Interface | Tauri 2, HTML / CSS / JS en modules ES **sans framework ni étape de build** | Comme VoiceToText : léger (WebView2 déjà présent sur Windows), rien à installer pour développer. Si la complexité de l'éditeur l'exige, passage à un framework léger réévalué en v0.2 |
 | Moteur PDF | **PDFium** via `pdfium-render` | Le moteur de Chrome : rendu fidèle, extraction du texte avec positions, création d'objets texte / image, polices embarquées, formulaires, enregistrement incrémental. Licence BSD-3 / Apache-2.0. Alternative pur Rust (`hayro`) trop jeune en 2026 pour un éditeur |
-| Distribution de PDFium | Bibliothèque précompilée (`bblanchon/pdfium-binaries`), version figée et SHA-256 vérifié, téléchargée par la CI, livrée avec l'installeur (~6 Mo) | Pas de compilation de PDFium (des heures) ; pas de binaire dans le dépôt |
+| Distribution de PDFium | Bibliothèque précompilée (`bblanchon/pdfium-binaries`, build 8125), version figée et SHA-256 vérifié par `scripts/fetch-pdfium.sh`, livrée avec l'installeur (~6 Mo) ; cherchée dans `PDE_PDFIUM_DIR`, puis à côté de l'exécutable, puis (développement) dans `vendor/pdfium/` | Pas de compilation de PDFium (des heures) ; pas de binaire dans le dépôt |
 | Fil d'exécution PDFium | Un **thread dédié** qui possède PDFium, piloté par messages (acteur) ; l'interface n'attend jamais | PDFium n'est pas thread-safe ; rendu et enregistrement ne bloquent pas l'interface |
 | Images des pages | Protocole Tauri `pde://doc/{id}/page/{n}?scale=…` ; rendu en tuiles au-delà d'un seuil de zoom ; cache LRU borné en mémoire | Pas de base64 dans l'IPC ; le WebView met en cache ; mémoire maîtrisée sur les gros documents |
 | Couches d'affichage | Image de la page + couche texte invisible (sélection, recherche, copie) + couche d'édition (éléments ajoutés, poignées) en HTML/SVG | Édition fluide sans re-rendu PDFium à chaque déplacement de souris ; même principe que pdf.js |
@@ -186,7 +186,8 @@ Code **copié puis adapté** (pas de dépendance entre les dépôts : chacun év
   des réponses scriptées (y compris malformées ou malveillantes) pour tester
   découpage, prompts, validation et désamorçage.
 - **Interface** : modules JS purs testés avec `node --test` (sans
-  dépendance) ; parcours principaux avec Playwright à partir de la v0.3.
+  dépendance) ; parcours dans Chromium avec Playwright et un faux Tauri
+  (`apps/desktop/ui-tests`).
 - **CI** (obligatoire pour merger) : `linux` (format, clippy `-D warnings`,
   tests), `windows` (clippy, tests, puis installeur), `secrets` (gitleaks sur
   tout l'historique). À venir : `cargo-deny` (licences, vulnérabilités), couverture.

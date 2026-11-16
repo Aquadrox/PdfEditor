@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Réglages : intelligence artificielle</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&amp;display=swap">
+<style>
+body{margin:0}
+.app{--desk:#E3E6EA;--surface:#F6F7F8;--raised:#FFFFFF;--ink:#1C2430;--muted:#566170;--line:#D5DAE0;--accent:#2747B8;--accent-soft:#E6EBFA;--accent-fg:#FFFFFF;--ai:#0F6E67;--ai-soft:#E2F2F0;--ok:#1E7344;--ok-soft:#E3F1E8;--warn:#8A5700;--danger:#B3261E;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;line-height:1.45;color:var(--ink);background:var(--surface)}
+.app.dark{--desk:#181B1F;--surface:#22262B;--raised:#2A2F35;--ink:#E6E9ED;--muted:#9AA4AF;--line:#343A41;--accent:#8FA6FF;--accent-soft:#283252;--accent-fg:#141821;--ai:#5CCFC3;--ai-soft:#1D3533;--ok:#5CC98D;--ok-soft:#1F3328;--warn:#E8B65A;--danger:#F28B82}
+.app *{box-sizing:border-box}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:4px;border:1px solid var(--line);background:var(--raised);color:var(--ink);font:inherit;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--desk);color:var(--ink)}
+.in{height:28px;border:1px solid var(--line);border-radius:4px;background:var(--raised);color:var(--ink);padding:0 8px;font:inherit;min-width:0;width:100%}
+.lbl{font-size:12px;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+.nav{display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border:0;border-radius:4px;background:transparent;color:var(--muted);font:inherit;cursor:pointer;text-align:left;width:100%}
+.nav:hover{background:var(--desk);color:var(--ink)}
+.nav.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sec{display:flex;flex-direction:column;gap:12px;padding:20px 0;border-bottom:1px solid var(--line)}
+.sec h3{font-size:15px;font-weight:600;margin:0}
+.field{display:grid;grid-template-columns:200px minmax(0,1fr);gap:16px;align-items:center}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.toggle{width:34px;height:20px;border-radius:10px;background:var(--line);position:relative;flex:none;border:0;cursor:pointer}
+.toggle::after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff}
+.toggle.on{background:var(--accent)}
+.toggle.on::after{left:17px}
+.prof{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--raised);cursor:pointer}
+.prof.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tag{font-size:11px;padding:0 6px;border-radius:3px;background:var(--desk);color:var(--muted)}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="width: 100%; height: 900px; display: flex; flex-direction: column; overflow: hidden">
+
+<header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--surface)">
+<button class="btn ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Retour au document</button>
+<h1 style="font-size: 15px; font-weight: 600; margin: 0">Réglages</h1>
+<span style="flex: 1"></span>
+<label style="position: relative; width: 260px"><span style="position: absolute; left: 8px; top: 5px; color: var(--muted)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span><input class="in" aria-label="Chercher un réglage" placeholder="Chercher un réglage" style="padding-left: 32px"></label>
+</header>
+
+<div style="flex: 1; min-height: 0; display: flex; flex-wrap: wrap">
+<nav aria-label="Rubriques des réglages" style="width: 232px; flex: none; padding: 12px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px">
+<button class="nav">Général</button>
+<button class="nav">Affichage</button>
+<button class="nav">Édition</button>
+<button class="nav">Fichiers</button>
+<button class="nav">Signature</button>
+<button class="nav">Cycle de signature</button>
+<button class="nav on" aria-current="page">Intelligence artificielle</button>
+<button class="nav">Raccourcis clavier</button>
+<button class="nav">Mises à jour et diagnostic</button>
+</nav>
+
+<div style="flex: 999 1 560px; min-width: 0; background: var(--raised); overflow: hidden; display: flex; flex-direction: column">
+<div style="flex: 1; overflow: hidden; padding: 8px 40px 0">
+<div style="max-width: 760px">
+<h2 style="font-size: 18px; font-weight: 600; margin: 16px 0 4px">Intelligence artificielle</h2>
+<p class="hint" style="max-width: 72ch">Le texte des pages que vous choisissez est envoyé au fournisseur du profil actif. Avec un modèle local, rien ne quitte ce PC.</p>
+
+<section class="sec">
+<div style="display: flex; align-items: center; justify-content: space-between"><h3>Profils</h3><button class="btn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nouveau profil</button></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div class="prof on"><div style="display: flex; flex-direction: column; min-width: 0"><span style="font-weight: 600">DeepSeek</span><span class="lbl">deepseek-flash</span></div><span class="tag" style="margin-left: auto; background: var(--accent-soft); color: var(--accent)">Actif</span></div>
+<div class="prof"><div style="display: flex; flex-direction: column; min-width: 0"><span style="font-weight: 600">Ollama</span><span class="lbl">qwen3:14b, ce PC</span></div><span class="tag" style="margin-left: auto">Local</span></div>
+<div class="prof"><div style="display: flex; flex-direction: column; min-width: 0"><span style="font-weight: 600">Mistral</span><span class="lbl">mistral-small-latest</span></div><span class="tag" style="margin-left: auto">Secours</span></div>
+</div>
+</section>
+
+<section class="sec">
+<h3>Profil DeepSeek</h3>
+<div class="field"><label class="lbl" for="p-preset">Fournisseur</label><select id="p-preset" class="in"><option>DeepSeek</option></select></div>
+<div class="field"><label class="lbl" for="p-url">Adresse</label><input id="p-url" class="in" value="https://api.deepseek.com"></div>
+<div class="field"><label class="lbl" for="p-model">Modèle</label><div style="display: flex; gap: 8px"><input id="p-model" class="in" value="deepseek-flash"><button class="btn">Choisir</button></div></div>
+<div class="field"><span class="lbl">Clé API</span><div style="display: flex; align-items: center; gap: 8px"><span style="display: inline-flex; align-items: center; gap: 6px; color: var(--ok)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="width: 15px; height: 15px"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/></svg>Enregistrée dans le Gestionnaire d'identifiants Windows</span><button class="btn ghost" style="margin-left: auto">Remplacer</button></div></div>
+<div class="field"><span class="lbl">Tarif par million de jetons</span><div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px"><label style="display: flex; flex-direction: column; gap: 2px"><span class="lbl">Entrée</span><input class="in num" value="0,30 $"></label><label style="display: flex; flex-direction: column; gap: 2px"><span class="lbl">Entrée en cache</span><input class="in num" value="0,006 $"></label><label style="display: flex; flex-direction: column; gap: 2px"><span class="lbl">Sortie</span><input class="in num" value="1,20 $"></label></div></div>
+<div class="field"><label class="lbl" for="p-fallback">Si le fournisseur échoue</label><select id="p-fallback" class="in"><option>Essayer le profil Mistral</option></select></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; background: var(--ok-soft)">
+<button class="btn">Tester ces réglages</button>
+<span style="color: var(--ok)" class="num">Réponse en 0,8 s, 14 modèles disponibles, clé acceptée.</span>
+</div>
+</section>
+
+<section class="sec" style="border-bottom: 0">
+<h3>Envois et coûts</h3>
+<div class="field"><div><div>Confirmer avant chaque envoi</div><p class="hint">Affiche ce qui part, vers quel fournisseur, et le coût estimé.</p></div><button class="toggle" role="switch" aria-checked="false" aria-label="Confirmer avant chaque envoi"></button></div>
+<div class="field"><label for="p-seuil"><div>Demander au-delà de</div><p class="hint">Confirmation pour toute action plus chère.</p></label><input id="p-seuil" class="in num" value="0,05 $" style="width: 120px"></div>
+<div class="field"><label for="p-cap"><div>Plafond mensuel</div><p class="hint">Les actions IA s'arrêtent une fois le plafond atteint.</p></label><div style="display: flex; align-items: center; gap: 12px"><input id="p-cap" class="in num" value="5,00 $" style="width: 120px"><span class="lbl num">0,42 $ dépensés en novembre</span></div></div>
+</section>
+</div>
+</div>
+<div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 12px 40px; border-top: 1px solid var(--line); background: var(--surface)">
+<span class="lbl" style="margin-right: auto">3 réglages modifiés</span>
+<button class="btn">Annuler</button>
+<button class="btn primary">Enregistrer</button>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["Clair","Sombre"],"default":"Clair"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const dark = (this.props.theme ?? 'Clair') === 'Sombre';
+return { themeClass: dark ? 'app dark' : 'app' };
+}
+}
+</script>
+</body>
+</html>

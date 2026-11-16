@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Signer et verrouiller</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&amp;family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&amp;family=Caveat:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+.app{--desk:#E3E6EA;--surface:#F6F7F8;--raised:#FFFFFF;--paper:#FFFFFF;--ink:#1C2430;--muted:#566170;--line:#D5DAE0;--accent:#2747B8;--accent-soft:#E6EBFA;--accent-fg:#FFFFFF;--seal:#8A1C2B;--seal-soft:#F6E7E9;--seal-fg:#FFFFFF;--ai:#0F6E67;--ai-soft:#E2F2F0;--ok:#1E7344;--ok-soft:#E3F1E8;--warn:#8A5700;--danger:#B3261E;--mark:#FFF0A8;--scrim:rgba(20,28,40,.38);--shadow:0 1px 2px rgba(20,28,40,.12),0 10px 28px rgba(20,28,40,.12);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;line-height:1.45;color:var(--ink);background:var(--surface)}
+.app.dark{--desk:#181B1F;--surface:#22262B;--raised:#2A2F35;--ink:#E6E9ED;--muted:#9AA4AF;--line:#343A41;--accent:#8FA6FF;--accent-soft:#283252;--accent-fg:#141821;--seal:#F0909C;--seal-soft:#3A2328;--seal-fg:#2A0F14;--ai:#5CCFC3;--ai-soft:#1D3533;--ok:#5CC98D;--ok-soft:#1F3328;--warn:#E8B65A;--danger:#F28B82;--scrim:rgba(0,0,0,.55);--shadow:0 1px 2px rgba(0,0,0,.5),0 10px 28px rgba(0,0,0,.45)}
+.app *{box-sizing:border-box}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:4px;border:1px solid var(--line);background:var(--raised);color:var(--ink);font:inherit;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}
+.btn.sealed{background:var(--seal);border-color:var(--seal);color:var(--seal-fg);font-weight:600}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--desk);color:var(--ink)}
+.btn.on{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:600}
+.btn.icon{width:28px;padding:0;justify-content:center}
+.mode{height:32px;padding:0 12px;border:0;border-radius:4px;background:transparent;color:var(--muted);font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.mode:hover{color:var(--ink);background:var(--desk)}
+.mode.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sep{width:1px;height:20px;background:var(--line);flex:none}
+.in{height:28px;border:1px solid var(--line);border-radius:4px;background:var(--raised);color:var(--ink);padding:0 8px;font:inherit;min-width:0}
+.lbl{font-size:12px;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+.seal{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px 0 4px;border-radius:16px;border:1px solid var(--line);background:var(--raised);color:var(--ink);font:inherit;cursor:pointer}
+.wax{width:24px;height:24px;display:grid;place-items:center;border-radius:48% 52% 50% 50% / 52% 48% 52% 48%;border:1.5px dashed var(--muted);color:var(--muted)}
+.wax.half{border:1.5px solid var(--seal);color:var(--seal);background:var(--seal-soft)}
+.wax.full{border:0;background:var(--seal);color:var(--seal-fg);box-shadow:inset 0 0 0 2px rgba(255,255,255,.28)}
+.wax svg.i{width:14px;height:14px}
+.doc{font-family:'Source Serif 4',Georgia,serif;color:#1d1d1d;font-size:12.5px;line-height:1.55}
+.doc h2{font-size:13px;font-weight:600;margin:16px 0 4px}
+.doc p{margin:0 0 6px}
+.group{display:flex;flex-direction:column;gap:8px;padding:16px;border-bottom:1px solid var(--line)}
+.tab{height:32px;padding:0 12px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font:inherit;cursor:pointer}
+.tab.on{color:var(--ink);border-bottom-color:var(--seal);font-weight:600}
+.radio{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:6px;cursor:pointer}
+.radio.on{border-color:var(--seal);background:var(--seal-soft)}
+.dot{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--muted);flex:none;margin-top:1px;display:grid;place-items:center}
+.radio.on .dot{border-color:var(--seal)}
+.radio.on .dot::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--seal)}
+.check{width:16px;height:16px;border-radius:3px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;flex:none}
+.check svg.i{width:12px;height:12px;stroke-width:2.5}
+.sigitem{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="width: 100%; height: 900px; display: flex; flex-direction: column; overflow: hidden; position: relative">
+
+<header style="height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap">
+<button class="btn ghost icon" aria-label="Menu"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+<span style="font-weight: 600; white-space: nowrap">contrat-prestation-2026.pdf</span>
+<nav aria-label="Modes" style="display: flex; gap: 2px; margin: 0 auto">
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg>Lire</button>
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Éditer</button>
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="12" height="15" rx="1"/><path d="M4 7v12a2 2 0 0 0 2 2h10"/></svg>Pages</button>
+<button class="mode on" aria-current="page"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-3 5-7 7-7s-1 7 2 7 3-4 5-4 2 3 4 3"/></svg>Signer</button>
+<button class="mode"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/></svg>IA</button>
+</nav>
+<button class="btn ghost icon" aria-label="Rechercher dans le document"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+<button class="seal" aria-label="État de signature : une signature sur deux"><span class="wax half"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-3 5-7 7-7s-1 7 2 7 3-4 5-4 2 3 4 3"/></svg></span>1 signature sur 2</button>
+</header>
+
+<div role="toolbar" aria-label="Outils de signature" style="min-height: 44px; display: flex; align-items: center; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap">
+<button class="btn on"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-3 5-7 7-7s-1 7 2 7 3-4 5-4 2 3 4 3"/></svg>Signer</button>
+<button class="btn ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="1" stroke-dasharray="3 2"/><path d="M12 10v4M10 12h4"/></svg>Placer un champ</button>
+<button class="btn ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Cycle de signature</button>
+<span class="sep" style="margin: 0 8px"></span>
+<button class="btn ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>Vérifier les signatures</button>
+<span style="flex: 1"></span>
+<span class="lbl">Identité : Claire Martin, certificat personnel</span>
+</div>
+
+<div style="flex: 1; min-height: 0; display: flex">
+<main aria-label="Document" style="flex: 1; min-width: 0; background: var(--desk); overflow: hidden; display: flex; justify-content: center; padding-top: 28px">
+<div class="doc" style="position: relative; width: 640px; height: 905px; flex: none; background: var(--paper); box-shadow: var(--shadow); padding: 64px 72px">
+<h2 style="margin-top: 0">Article 9 : Droit applicable</h2>
+<p>Le présent contrat est soumis au droit français. Tout litige relatif à son interprétation ou à son exécution relève des tribunaux de Lyon, après tentative de règlement amiable.</p>
+<h2>Article 10 : Intégralité</h2>
+<p>Le présent contrat et ses annexes A et B expriment l'intégralité de l'accord des parties. Ils annulent tout échange antérieur portant sur le même objet.</p>
+<p style="margin-top: 22px">Fait en deux exemplaires électroniques, signés numériquement par chacune des parties.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 30px">
+<div>
+<p style="font-weight: 600; margin-bottom: 8px">Le Prestataire</p>
+<div style="height: 108px; border: 1px solid #c9ced6; padding: 8px 10px; display: flex; flex-direction: column; justify-content: space-between; background: #fff">
+<span style="font-family: 'Caveat', cursive; font-size: 34px; line-height: 1; color: #1f2f6b">Claire Martin</span>
+<span style="font-family: 'IBM Plex Sans', sans-serif; font-size: 9.5px; color: #444; line-height: 1.35">Signé numériquement par Claire Martin<br>Atelier Morel SARL, 16/11/2026 14:32</span>
+</div>
+</div>
+<div>
+<p style="font-weight: 600; margin-bottom: 8px">Le Client</p>
+<div style="height: 108px; border: 1.5px dashed var(--seal); background: var(--seal-soft); display: grid; place-items: center; font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; color: var(--seal); font-weight: 600">Champ de Hugo Bernard</div>
+</div>
+</div>
+</div>
+</main>
+
+<aside aria-label="Signatures du document" style="width: 300px; flex: none; border-left: 1px solid var(--line); background: var(--surface); overflow: hidden">
+<div style="padding: 12px 16px; border-bottom: 1px solid var(--line)">
+<h2 style="font-size: 15px; font-weight: 600; margin: 0">Signatures</h2>
+</div>
+<div class="sigitem">
+<span style="width: 22px; height: 22px; border-radius: 50%; background: var(--ok-soft); color: var(--ok); display: grid; place-items: center; flex: none"><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="width: 14px; height: 14px; stroke-width: 2.5"><path d="M20 6 9 17l-5-5"/></svg></span>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<span style="font-weight: 600">Claire Martin</span>
+<span style="color: var(--ok)">Signature valide</span>
+<span class="lbl">16/11/2026 à 14:32, page 4. Document inchangé depuis.</span>
+<span class="lbl">Certificat personnel, non reconnu par une autorité.</span>
+</div>
+</div>
+<div class="sigitem">
+<span style="width: 22px; height: 22px; border-radius: 50%; border: 1.5px dashed var(--seal); flex: none"></span>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-weight: 600">Hugo Bernard</span>
+<span class="lbl">Champ vide, page 4</span>
+</div>
+</div>
+</aside>
+</div>
+
+<div style="position: absolute; inset: 92px 0 0 0; background: var(--scrim); display: flex; align-items: center; justify-content: center">
+<div role="dialog" aria-modal="true" aria-labelledby="sign-title" style="width: 560px; background: var(--raised); border-radius: 6px; box-shadow: var(--shadow); overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 8px">
+<h2 id="sign-title" style="font-size: 22px; font-weight: 600; margin: 0">Signer le document</h2>
+<button class="btn ghost icon" aria-label="Fermer"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</div>
+<div style="padding: 0 20px">
+<div role="tablist" aria-label="Apparence de la signature" style="display: flex; gap: 4px; border-bottom: 1px solid var(--line)">
+<button class="tab on" role="tab" aria-selected="true">Dessiner</button>
+<button class="tab" role="tab" aria-selected="false">Taper</button>
+<button class="tab" role="tab" aria-selected="false">Importer une image</button>
+<button class="tab" role="tab" aria-selected="false">Mes signatures</button>
+</div>
+<div style="margin-top: 12px; height: 132px; border: 1px solid var(--line); border-radius: 4px; background: #fff; position: relative">
+<svg viewBox="0 0 520 132" aria-label="Aperçu de la signature dessinée" role="img" style="position: absolute; inset: 0; width: 100%; height: 100%"><path d="M60 92c14-30 30-58 40-56 12 3-14 56-4 58 12 2 22-40 34-40 10 0 0 30 10 30 12 0 18-34 30-32 10 2 2 26 12 26 14 0 20-22 34-22 8 0 6 14 14 14 22 0 46-18 74-20 30-2 58 6 90 4" fill="none" stroke="#1f2f6b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<span style="position: absolute; left: 24px; right: 24px; bottom: 26px; border-top: 1px solid var(--line)"></span>
+<button class="btn ghost" style="position: absolute; right: 6px; top: 6px">Effacer</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px">
+<label style="display: flex; flex-direction: column; gap: 4px"><span class="lbl">Identité</span><select class="in"><option>Claire Martin, certificat personnel</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 4px"><span class="lbl">Motif (facultatif)</span><input class="in" value="Accord sur le contrat"></label>
+</div>
+<p style="margin: 18px 0 8px; font-weight: 600">Après la signature</p>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div class="radio"><span class="dot"></span><div><div>Laisser modifiable</div><div class="lbl">Toute modification ultérieure apparaîtra dans le panneau Signatures.</div></div></div>
+<div class="radio on"><span class="dot"></span><div><div style="font-weight: 600">Verrouiller, sauf l'autre signature</div><div class="lbl">Seul le champ de Hugo Bernard pourra encore être signé.</div></div></div>
+<div class="radio"><span class="dot"></span><div><div>Verrouiller entièrement</div><div class="lbl">Plus aucune modification ni signature possible.</div></div></div>
+</div>
+<label style="display: flex; align-items: center; gap: 8px; margin-top: 14px"><span class="check"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>Horodater par le serveur configuré dans les réglages</label>
+</div>
+<div style="display: flex; justify-content: flex-end; gap: 8px; padding: 16px 20px; margin-top: 16px; border-top: 1px solid var(--line); background: var(--surface)">
+<button class="btn">Annuler</button>
+<button class="btn sealed"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Signer et verrouiller</button>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["Clair","Sombre"],"default":"Clair"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const dark = (this.props.theme ?? 'Clair') === 'Sombre';
+return { themeClass: dark ? 'app dark' : 'app' };
+}
+}
+</script>
+</body>
+</html>

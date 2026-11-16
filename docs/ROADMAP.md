@@ -6,19 +6,23 @@ Chaque version est livrée par une ou plusieurs PR, chacune avec ses tests ;
 une version n'est terminée que lorsque la CI est verte et que la fonction a
 été essayée sur le PC (Windows).
 
-## v0.0 — Fondations 🚧
+## v0.0 — Fondations ✅
 
 - ✅ Fonctions (`FONCTIONS.md`), architecture (`ARCHITECTURE.md`), design (`DESIGN.md`), règles de contribution
 - ✅ Workspace Cargo, règles de lint communes, crate `pde-core` (unités, géométrie) avec tests
 - ✅ CI GitHub Actions : `linux` (format, clippy, tests), `windows`, `secrets` (gitleaks)
-- ⬜ Branche `main` créée et protégée (PR obligatoire, jobs `linux`, `windows`, `secrets` requis)
+- ✅ Branche `main` créée et protégée (PR obligatoire, jobs `linux`, `windows`, `secrets` requis)
+- ✅ Maquette des écrans principaux validée (`docs/maquette/`, voir `DESIGN.md`)
+
+## v0.1 — Visionneuse 🚧
+
 - ⬜ `cargo-deny` dans la CI (licences compatibles, vulnérabilités connues)
-
-## v0.1 — Visionneuse
-
-- ⬜ `pde-pdf` : PDFium figé et vérifié (SHA-256) téléchargé par la CI ; thread moteur dédié ; ouverture, mot de passe, rendu (V-01, V-02, V-03)
-- ⬜ PDF de référence dans `tests/fixtures/` et tests de rendu comparés à des images de référence
-- ⬜ `apps/desktop` : fenêtre principale selon `DESIGN.md`, protocole `pde://`, zoom, défilement, miniatures, plan (V-03, V-04)
+- ✅ `pde-pdf` : PDFium 8125 figé et vérifié (SHA-256, `scripts/fetch-pdfium.sh`) ; thread moteur dédié ; ouverture, mot de passe, rendu, texte avec positions, plan (V-01, V-02, V-03)
+- ✅ PDF de référence générés (`crates/pde-pdf/tests/fixtures/make_fixtures.py`) : pages tournées, plan, chiffrement AES-256, fichiers invalides
+- ⬜ Tests de rendu comparés à des images de référence (aujourd'hui : contrôles de pixels ciblés)
+- ✅ `pde-app` : visionneuse testable sans interface (faux moteur), cache des pages limité en mémoire, PNG
+- ✅ `apps/desktop` : fenêtre principale selon la maquette, protocole `pde://`, zoom, défilement continu, miniatures, plan, aller à la page, mot de passe, glisser-déposer, ouverture en argument (V-01 à V-04)
+- ✅ Tests de l'interface : modules JS (`node --test`) et parcours dans Chromium avec Tauri simulé (Playwright)
 - ⬜ Couche texte : sélection, copie, recherche (V-05)
 - ⬜ `pde-core::settings` + page Réglages (Général, Affichage, Raccourcis) ; `pde-platform` (dossiers, trousseau repris de VoiceToText)
 - ⬜ Journaux, rapport de plantage

@@ -174,6 +174,26 @@ apps/desktop/ui/
 Les textes de l'interface passent par `i18n.js` (français d'abord, anglais
 prévu) ; aucun contenu de document n'est inséré autrement qu'avec `textContent`.
 
+## Maquette
+
+Validée le 16/11/2026 : [maquette interactive](https://claude.ai/artifact/6P7jizQwgEs1PpXCsqTTND)
+(accès réservé au propriétaire). Les sources sont dans `docs/maquette/`, un
+fichier par écran ; elles servent de référence à l'implémentation (jetons,
+dimensions, libellés), pas de code à reprendre tel quel.
+
+| Écran | Fichier | Ce qu'il fixe |
+|---|---|---|
+| Éditer | `Main.dc.html` | Barre du haut, modes, outils, miniatures, table et page, panneau Propriétés, barre d'état |
+| Signer et verrouiller | `Signer.dc.html` | Dialogue de signature (dessiner, taper, importer), options de verrouillage, panneau Signatures |
+| Cycle de signature | `Cycle.dc.html` | Bandeau « À vous de signer », champ attribué, étapes, journal, document verrouillé |
+| IA | `IA.dc.html` | Portée, consigne, estimation du coût, propositions en différences, analyse avec renvois aux pages |
+| Réglages IA | `Reglages.dc.html` | Navigation des réglages, profils, test, envois et coûts |
+| Accueil | `Accueil.dc.html` | État vide, documents récents avec état de signature, création |
+
+Dimensions retenues : barre du haut 48 px, barre d'outils 44 px, barre d'état
+28 px, miniatures 152 px, panneau droit 300 à 380 px. Le texte des pages de
+la maquette est un contrat fictif.
+
 ## Références
 
 Principes recoupés avec les guides fournis par le propriétaire (skills de

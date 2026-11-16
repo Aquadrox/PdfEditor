@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>PdfEditor</title>
+    <link rel="stylesheet" href="styles/fonts.css" />
+    <link rel="stylesheet" href="styles/tokens.css" />
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+    <link rel="stylesheet" href="styles/layout.css" />
+    <link rel="stylesheet" href="styles/viewer.css" />
+    <link rel="stylesheet" href="styles/home.css" />
+    <link rel="stylesheet" href="styles/dialog.css" />
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <!-- Icônes : Lucide (licence ISC), un symbole par sens, le même partout. -->
+    <svg class="sprite" aria-hidden="true">
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></symbol>
+      <symbol id="i-read" viewBox="0 0 24 24"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z" /><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z" /></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></symbol>
+      <symbol id="i-pages" viewBox="0 0 24 24"><rect x="8" y="3" width="12" height="15" rx="1" /><path d="M4 7v12a2 2 0 0 0 2 2h10" /></symbol>
+      <symbol id="i-sign" viewBox="0 0 24 24"><path d="M3 17c3-3 5-7 7-7s-1 7 2 7 3-4 5-4 2 3 4 3" /></symbol>
+      <symbol id="i-ai" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z" /><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z" /></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+      <symbol id="i-fit-width" viewBox="0 0 24 24"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" /></symbol>
+      <symbol id="i-fit-page" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="1" /><path d="M9 8h6M9 12h6M9 16h3" /></symbol>
+      <symbol id="i-file-up" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3" /></symbol>
+    </svg>
+
+    <div class="app">
+      <header class="topbar">
+        <button id="menu-button" class="btn ghost icon" data-i18n-label="menu.label">
+          <svg class="icon"><use href="#i-menu" /></svg>
+        </button>
+        <div id="main-menu" class="menu" role="menu" hidden>
+          <button id="menu-open" role="menuitem"><span data-i18n="menu.open"></span><kbd>Ctrl O</kbd></button>
+          <button id="menu-close" role="menuitem" disabled><span data-i18n="menu.close"></span><kbd>Ctrl W</kbd></button>
+        </div>
+        <span id="doc-name" class="doc-name"></span>
+        <nav class="modes" data-i18n-aria="modes.label">
+          <button class="mode" aria-current="page"><svg class="icon"><use href="#i-read" /></svg><span data-i18n="mode.read"></span></button>
+          <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-edit" /></svg><span data-i18n="mode.edit"></span></button>
+          <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-pages" /></svg><span data-i18n="mode.pages"></span></button>
+          <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="mode.sign"></span></button>
+          <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-ai" /></svg><span data-i18n="mode.ai"></span></button>
+        </nav>
+      </header>
+
+      <div class="workspace">
+        <aside id="sidebar" class="sidebar" data-i18n-aria="sidebar.label" hidden>
+          <div class="sidebar-tabs" role="tablist">
+            <button id="tab-pages" class="btn on" role="tab" aria-selected="true" data-i18n="sidebar.pages"></button>
+            <button id="tab-outline" class="btn ghost" role="tab" aria-selected="false" data-i18n="sidebar.outline"></button>
+          </div>
+          <div id="sidebar-body" class="sidebar-body">
+            <div id="thumbs" class="thumbs"></div>
+            <nav id="outline" class="outline" hidden></nav>
+          </div>
+        </aside>
+
+        <main id="desk" class="desk" tabindex="0" data-i18n-aria="desk.label">
+          <section id="home" class="home">
+            <div id="drop-sheet" class="drop-sheet">
+              <svg class="icon" aria-hidden="true"><use href="#i-file-up" /></svg>
+              <h1 class="drop-title" data-i18n="home.title"></h1>
+              <p class="drop-hint" data-i18n="home.hint"></p>
+              <button id="home-open" class="btn primary large" data-i18n="home.open"></button>
+              <span><kbd>Ctrl</kbd> <kbd>O</kbd></span>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <footer id="statusbar" class="statusbar" hidden>
+        <span class="group">
+          <label for="page-input" data-i18n="status.page"></label>&nbsp;
+          <input id="page-input" class="input page-input num" type="number" min="1" data-i18n-label="status.pageInput" />
+          &nbsp;<span id="page-count" class="num"></span>
+        </span>
+        <span class="group">
+          <button id="zoom-out" class="btn ghost icon small" data-i18n-label="zoom.out"><svg class="icon"><use href="#i-minus" /></svg></button>
+          <span id="zoom-value" class="zoom-value num" data-i18n-title="zoom.value"></span>
+          <button id="zoom-in" class="btn ghost icon small" data-i18n-label="zoom.in"><svg class="icon"><use href="#i-plus" /></svg></button>
+          <button id="fit-width" class="btn ghost icon small" data-i18n-label="zoom.fitWidth"><svg class="icon"><use href="#i-fit-width" /></svg></button>
+          <button id="fit-page" class="btn ghost icon small" data-i18n-label="zoom.fitPage"><svg class="icon"><use href="#i-fit-page" /></svg></button>
+        </span>
+        <span class="spacer"></span>
+      </footer>
+    </div>
+
+    <dialog id="password-dialog" aria-labelledby="password-title">
+      <form method="dialog">
+        <div class="dialog-body">
+          <h2 id="password-title" class="dialog-title" data-i18n="password.title"></h2>
+          <p id="password-text"></p>
+          <label>
+            <span data-i18n="password.label"></span>
+            <input id="password-input" class="input" type="password" autocomplete="off" />
+          </label>
+          <p id="password-error" class="dialog-error" role="alert" data-i18n="password.wrong" hidden></p>
+        </div>
+        <div class="dialog-actions">
+          <!-- type="button" : Entrée valide le formulaire avec « Ouvrir », jamais « Annuler ». -->
+          <button id="password-cancel" class="btn" type="button" data-i18n="password.cancel"></button>
+          <button class="btn primary" value="ok" data-i18n="password.submit"></button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

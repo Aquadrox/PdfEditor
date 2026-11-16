@@ -1,0 +1,65 @@
+/* Accueil : aucun document ouvert, une feuille vierge où déposer un PDF. */
+.home {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  overflow: auto;
+}
+
+.drop-sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  width: min(420px, 100%);
+  aspect-ratio: 210 / 297;
+  padding: 48px;
+  background: var(--paper);
+  box-shadow: var(--shadow-page);
+  outline: 2px dashed #d5dae0;
+  outline-offset: -18px;
+  color: #1c2430;
+  text-align: center;
+  transition: outline-color var(--duration) ease-out;
+}
+
+/* Fichier glissé au-dessus de la fenêtre. */
+.drop-sheet.dragging {
+  outline-color: #2747b8;
+}
+
+.drop-sheet .icon {
+  width: 36px;
+  height: 36px;
+  color: #566170;
+  stroke-width: 1.5;
+}
+
+.drop-title {
+  margin: 0;
+  font-size: var(--text-page);
+  font-weight: 600;
+}
+
+.drop-hint {
+  max-width: 30ch;
+  margin: 0;
+  color: #566170;
+}
+
+/* La feuille reste claire en thème sombre : couleurs fixes, comme le papier. */
+.drop-sheet .btn.primary {
+  background: #2747b8;
+  border-color: #2747b8;
+  color: #fff;
+}
+
+.drop-sheet kbd {
+  border-color: #d5dae0;
+  background: #fff;
+  color: #566170;
+}

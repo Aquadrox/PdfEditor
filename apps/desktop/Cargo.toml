@@ -1,0 +1,20 @@
+[package]
+name = "pdfeditor"
+description = "PdfEditor : éditeur de PDF"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+pde-app = { path = "../../crates/pde-app" }
+pde-pdf = { path = "../../crates/pde-pdf" }
+serde.workspace = true
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+
+[lints]
+workspace = true

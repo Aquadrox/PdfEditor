@@ -1,10 +1,10 @@
 [workspace]
 resolver = "3"
 # Les crates s'ajoutent au fil de la roadmap (voir docs/ARCHITECTURE.md).
-members = ["crates/pde-core"]
+members = ["crates/pde-core", "crates/pde-pdf", "crates/pde-app", "apps/desktop"]
 
 [workspace.package]
-version = "0.0.1"
+version = "0.0.2"
 edition = "2024"
 publish = false
 license = "MIT"

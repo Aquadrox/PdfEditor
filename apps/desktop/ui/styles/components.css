@@ -1,0 +1,172 @@
+/* Composants : boutons, champs, menu, notification. Tous les états. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-h);
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--raised);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--duration) ease-out, border-color var(--duration) ease-out;
+}
+
+.btn:hover {
+  border-color: var(--muted);
+}
+
+.btn:active {
+  background: var(--desk);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.btn.primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.btn.ghost:hover:not(:disabled) {
+  background: var(--desk);
+  color: var(--ink);
+}
+
+.btn.on {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.btn.icon {
+  width: var(--control-h);
+  padding: 0;
+  justify-content: center;
+}
+
+.btn.small {
+  height: 22px;
+}
+
+.btn.small.icon {
+  width: 22px;
+}
+
+.btn.small svg.icon {
+  width: 14px;
+  height: 14px;
+}
+
+.btn.large {
+  height: 36px;
+  padding: 0 16px;
+}
+
+.input {
+  height: var(--control-h);
+  min-width: 0;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--raised);
+}
+
+.input:hover {
+  border-color: var(--muted);
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+kbd {
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: var(--raised);
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+}
+
+/* Menu déroulant (components/menu.js). */
+.menu {
+  position: absolute;
+  z-index: 20;
+  min-width: 220px;
+  padding: var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-float);
+  background: var(--raised);
+  box-shadow: var(--shadow-float);
+}
+
+.menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu button:hover:not(:disabled),
+.menu button:focus-visible {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.menu button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.menu .shortcut {
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+/* Notification non bloquante (components/toast.js). */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 44px;
+  z-index: 30;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border-radius: var(--radius-float);
+  background: var(--ink);
+  color: var(--surface);
+  box-shadow: var(--shadow-float);
+  transform: translateX(-50%);
+}
+
+.toast.error {
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Version simplifiée pour 16 à 32 px : feuille et sceau, sans les lignes. -->
+  <path d="M7 2.5h12l6 6V27a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4.5a2 2 0 0 1 2-2z" fill="#FFFFFF" stroke="#1C2430" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M19 2.5v5a1 1 0 0 0 1 1h5" fill="#E3E6EA" stroke="#1C2430" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M9 12.5h10M9 16.5h6" stroke="#2747B8" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="22" cy="24" r="6.5" fill="#8A1C2B"/>
+</svg>

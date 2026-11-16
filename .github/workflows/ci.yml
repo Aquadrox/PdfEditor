@@ -26,6 +26,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+      # Bibliothèques de Tauri sous Linux (WebView WebKitGTK).
+      - name: Dépendances système
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
@@ -33,12 +38,27 @@ jobs:
         with:
           # Cache alimenté par `main` seulement, réutilisé par les PR.
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      # Bibliothèque PDFium figée, empreinte SHA-256 vérifiée (moteur PDF).
+      - name: PDFium
+        shell: bash
+        run: ./scripts/fetch-pdfium.sh
       - name: Formatage
         run: cargo fmt --all --check
       - name: Clippy (avertissements = erreurs)
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Tests de non-régression
         run: cargo test --workspace
+      # Modules JS purs de l'interface (zoom, disposition, traductions).
+      - name: Tests de l'interface (modules)
+        working-directory: apps/desktop/ui
+        run: node --test
+      # Parcours de l'interface dans Chromium, Tauri simulé.
+      - name: Tests de l'interface (parcours)
+        working-directory: apps/desktop/ui-tests
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm test
 
   windows:
     runs-on: windows-latest
@@ -51,6 +71,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      # Bibliothèque PDFium figée, empreinte SHA-256 vérifiée (moteur PDF).
+      - name: PDFium
+        shell: bash
+        run: ./scripts/fetch-pdfium.sh
       - name: Clippy (avertissements = erreurs)
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Tests de non-régression
