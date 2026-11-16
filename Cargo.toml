@@ -1,0 +1,29 @@
+[workspace]
+resolver = "3"
+# Les crates s'ajoutent au fil de la roadmap (voir docs/ARCHITECTURE.md).
+members = ["crates/pde-core"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+publish = false
+license = "MIT"
+repository = "https://github.com/Aquadrox/PdfEditor"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+
+# Règles communes à tous les crates (chaque crate les reprend par `[lints]`).
+[workspace.lints.rust]
+# Code `unsafe` interdit par défaut ; seuls les adaptateurs système
+# (pde-platform) l'autorisent localement, chaque bloc justifié par `// SAFETY:`.
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+# Pas de `unwrap()` hors des tests : une erreur se propage ou se traite.
+unwrap_used = "warn"
+dbg_macro = "warn"
+todo = "warn"
+print_stdout = "warn"
+print_stderr = "warn"

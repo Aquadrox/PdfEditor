@@ -1,0 +1,12 @@
+[package]
+name = "pde-core"
+description = "Domaine de l'éditeur : géométrie, modèle de document, opérations d'édition, réglages"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

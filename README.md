@@ -1,0 +1,37 @@
+# PdfEditor
+
+Éditeur de PDF open source pour Windows (puis Linux), écrit en Rust :
+
+- **éditer** : ajouter du texte, des images, des annotations ; modifier le
+  texte existant ; caviarder ; organiser les pages ;
+- **signer** (signature numérique PAdES) et **verrouiller** le document ;
+- lancer un **cycle de signature** entre plusieurs personnes, sans serveur ;
+- faire **analyser**, **traduire** ou **modifier** tout ou partie du
+  document par une **IA** au choix (DeepSeek, OpenAI, Mistral, OpenRouter,
+  modèle local Ollama…), toujours avec aperçu et accord avant application.
+
+Tout est réglable dans les Réglages.
+
+> Projet en démarrage : voir l'avancement dans [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## Documentation
+
+| Document | Contenu |
+|---|---|
+| [docs/FONCTIONS.md](docs/FONCTIONS.md) | Liste des fonctions et priorités |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Couches, crates, choix techniques, tests, confidentialité |
+| [docs/DESIGN.md](docs/DESIGN.md) | Direction visuelle, jetons, composants, rédaction |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Étapes et avancement |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Règles de contribution, protection de `main`, secrets |
+
+## Construire
+
+Rust stable (voir `rust-toolchain.toml`) :
+
+```bash
+cargo test --workspace
+```
+
+## Licence
+
+MIT. PDFium (moteur PDF) est distribué sous licence BSD-3 / Apache-2.0.

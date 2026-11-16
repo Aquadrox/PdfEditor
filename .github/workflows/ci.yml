@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+# Un nouveau push sur une PR annule la vérification devenue inutile.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+# Les trois jobs sont obligatoires pour merger sur `main` (voir CONTRIBUTING.md).
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    # Un outil bloqué ne doit pas occuper la CI 6 h (délai par défaut).
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          # Cache alimenté par `main` seulement, réutilisé par les PR.
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Formatage
+        run: cargo fmt --all --check
+      - name: Clippy (avertissements = erreurs)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Tests de non-régression
+        run: cargo test --workspace
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Clippy (avertissements = erreurs)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Tests de non-régression
+        run: cargo test --workspace
+
+  # Aucun secret dans le dépôt : tout l'historique de la branche est analysé.
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
