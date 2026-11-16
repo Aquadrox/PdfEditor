@@ -30,7 +30,7 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 - ✅ Journal repris de VoiceToText (purge automatique, niveau réglable, paniques notées), sans nom ni contenu de document
 - ✅ Installeur Windows (NSIS, PDFium inclus) construit par la CI ; version vérifiée contre le tag ; `CHANGELOG.md` contrôlé (`changelog.py`) ; `release.sh` (repris de VoiceToText)
 - ✅ Mises à jour automatiques (repris de VoiceToText) : vérification au démarrage puis toutes les 6 h (réglable), bandeau avec nouveautés, installation sur clic après vérification de la signature minisign et de la version signée ; release publiée par la CI avec `latest.json`
-- ⬜ Clé de signature des mises à jour : générée par le propriétaire, clé publique dans `tauri.conf.json` (la CI refuse de publier sans elle)
+- ✅ Clé de signature des mises à jour : générée par le propriétaire (identifiant `D6F1230550475C66`), clé publique dans `tauri.conf.json`, clé privée dans les secrets GitHub
 
 ## v0.2 — Édition : ajouts
 

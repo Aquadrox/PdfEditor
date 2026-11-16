@@ -46,7 +46,7 @@
       "endpoints": [
         "https://github.com/Aquadrox/PdfEditor/releases/latest/download/latest.json"
       ],
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ2RjEyMzA1NTA0NzVDNjYKUldSbVhFZFFCU1B4MW5mNHpUaS91ZkNyL0dSTnZnZUhWRzE0ZG5uUEl2bEl3N3BzOGxKR1FRYUYK",
       "requireSignedVersion": true,
       "windows": {
         "installMode": "passive"
