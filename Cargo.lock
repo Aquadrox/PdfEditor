@@ -2726,7 +2726,7 @@ dependencies = [
 
 [[package]]
 name = "pde-app"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "log",
  "pde-core",
@@ -2738,7 +2738,7 @@ dependencies = [
 
 [[package]]
 name = "pde-core"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "serde",
  "serde_json",
@@ -2749,7 +2749,7 @@ dependencies = [
 
 [[package]]
 name = "pde-pdf"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "pde-core",
  "pdfium-render",
@@ -2758,14 +2758,14 @@ dependencies = [
 
 [[package]]
 name = "pde-platform"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "dirs 6.0.0",
 ]
 
 [[package]]
 name = "pdfeditor"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "log",
  "pde-app",

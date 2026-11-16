@@ -5,6 +5,7 @@
 // Pas de console en plus de la fenêtre sous Windows (version publiée).
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod closing;
 mod commands;
 mod logging;
 mod protocol;
@@ -64,6 +65,7 @@ fn main() {
         .manage(app)
         .manage(dirs)
         .manage(news)
+        .on_window_event(closing::on_window_event)
         .setup(move |tauri_app| {
             let updates = updates::Updates::new(tauri_app.handle(), check_updates);
             updates::spawn_checks(tauri_app.handle().clone(), updates.clone());
@@ -103,6 +105,7 @@ fn main() {
             commands::updates::install_update,
             commands::updates::changelog_view,
             commands::updates::dismiss_update_news,
+            closing::quit_app,
         ])
         .run(tauri::generate_context!());
     if let Err(error) = result {

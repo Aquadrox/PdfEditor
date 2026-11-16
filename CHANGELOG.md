@@ -4,6 +4,14 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.6 — 2026-11-16
+
+- Nouveau mode Éditer : cliquez sur la page pour ajouter du texte, puis choisissez police, taille, gras, italique, couleur et alignement.
+- Les zones de texte se déplacent et s'élargissent à la souris, ou au millimètre près dans le panneau Propriétés ; elles se dupliquent et se suppriment.
+- Annuler et rétablir chaque modification (Ctrl+Z, Ctrl+Y).
+- Enregistrer (Ctrl+S) et Enregistrer sous (Ctrl+Maj+S) : le fichier n'est remplacé qu'une fois le nouveau contenu vérifié, et un document protégé garde son mot de passe.
+- Avant de fermer un document modifié ou de quitter, PdfEditor propose d'enregistrer.
+
 ## 0.0.5 — 2026-11-16
 
 - Mises à jour automatiques : PdfEditor recherche les nouvelles versions au démarrage puis toutes les 6 heures, les annonce avec leurs nouveautés, et ne les installe que sur votre clic, après vérification de leur signature.

@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="styles/home.css" />
     <link rel="stylesheet" href="styles/dialog.css" />
     <link rel="stylesheet" href="styles/settings.css" />
+    <link rel="stylesheet" href="styles/edit.css" />
     <script type="module" src="app.js"></script>
   </head>
   <body>
@@ -32,6 +33,13 @@
       <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
       <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></symbol>
       <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol>
+      <symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16" /></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" /></symbol>
+      <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></symbol>
+      <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5" /><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" /></symbol>
+      <symbol id="i-align-left" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14" /></symbol>
+      <symbol id="i-align-center" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M5 18h14" /></symbol>
+      <symbol id="i-align-right" viewBox="0 0 24 24"><path d="M4 6h16M10 12h10M6 18h14" /></symbol>
       <symbol id="i-file-up" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3" /></symbol>
     </svg>
 
@@ -42,13 +50,18 @@
         </button>
         <div id="main-menu" class="menu" role="menu" hidden>
           <button id="menu-open" role="menuitem"><span data-i18n="menu.open"></span><kbd data-shortcut="open"></kbd></button>
+          <button id="menu-save" role="menuitem" disabled><span data-i18n="menu.save"></span><kbd data-shortcut="save"></kbd></button>
+          <button id="menu-save-as" role="menuitem" disabled><span data-i18n="menu.saveAs"></span><kbd data-shortcut="save_as"></kbd></button>
           <button id="menu-close" role="menuitem" disabled><span data-i18n="menu.close"></span><kbd data-shortcut="close"></kbd></button>
           <button id="menu-settings" role="menuitem"><span data-i18n="menu.settings"></span><kbd data-shortcut="settings"></kbd></button>
         </div>
-        <span id="doc-name" class="doc-name"></span>
+        <span class="doc-title">
+          <span id="doc-name" class="doc-name"></span>
+          <span id="doc-dirty" class="dirty-dot" role="img" data-i18n-label="status.unsaved" hidden></span>
+        </span>
         <nav class="modes" data-i18n-aria="modes.label">
-          <button class="mode" aria-current="page"><svg class="icon"><use href="#i-read" /></svg><span data-i18n="mode.read"></span></button>
-          <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-edit" /></svg><span data-i18n="mode.edit"></span></button>
+          <button id="mode-read" class="mode" aria-current="page"><svg class="icon"><use href="#i-read" /></svg><span data-i18n="mode.read"></span></button>
+          <button id="mode-edit" class="mode" disabled><svg class="icon"><use href="#i-edit" /></svg><span data-i18n="mode.edit"></span></button>
           <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-pages" /></svg><span data-i18n="mode.pages"></span></button>
           <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="mode.sign"></span></button>
           <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-ai" /></svg><span data-i18n="mode.ai"></span></button>
@@ -56,7 +69,29 @@
         <button id="search-button" class="btn ghost icon" disabled data-i18n-label="search.open" data-shortcut-hint="search">
           <svg class="icon"><use href="#i-search" /></svg>
         </button>
+        <button id="save-button" class="btn primary" data-i18n="menu.save" data-i18n-label="menu.save" data-shortcut-hint="save" hidden></button>
       </header>
+
+      <div id="edit-toolbar" class="edit-toolbar" role="toolbar" data-i18n-aria="edit.toolbar" hidden>
+        <button id="tool-text" class="btn on" aria-pressed="true"><svg class="icon"><use href="#i-type" /></svg><span data-i18n="edit.text"></span></button>
+        <button class="btn ghost" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-image" /></svg><span data-i18n="edit.image"></span></button>
+        <span class="separator" aria-hidden="true"></span>
+        <select class="input font-select" data-style="font" data-i18n-aria="edit.font" data-i18n-title="edit.font">
+          <option value="sans" data-i18n="font.sans"></option>
+          <option value="serif" data-i18n="font.serif"></option>
+          <option value="mono" data-i18n="font.mono"></option>
+        </select>
+        <span class="with-unit">
+          <input class="input num size-input" type="number" min="4" max="200" step="0.5" data-style="size" data-i18n-aria="edit.size" />
+          <span class="unit" aria-hidden="true">pt</span>
+        </span>
+        <button class="btn ghost icon bold" data-style="bold" data-i18n-label="edit.bold">G</button>
+        <button class="btn ghost icon italic" data-style="italic" data-i18n-label="edit.italic">I</button>
+        <input class="color-input" type="color" data-style="color" data-i18n-aria="edit.color" />
+        <span class="spacer"></span>
+        <button id="edit-undo" class="btn ghost icon" disabled data-i18n-label="edit.undo" data-shortcut-hint="undo"><svg class="icon"><use href="#i-undo" /></svg></button>
+        <button id="edit-redo" class="btn ghost icon" disabled data-i18n-label="edit.redo" data-shortcut-hint="redo"><svg class="icon"><use href="#i-redo" /></svg></button>
+      </div>
 
       <div id="update-banner" class="banner" role="status" hidden>
         <span id="update-text" class="banner-text"></span>
@@ -109,6 +144,55 @@
             </section>
           </section>
         </main>
+
+        <aside id="properties" class="properties" aria-labelledby="properties-title" hidden>
+          <div class="properties-header">
+            <h2 id="properties-title" class="panel-title" data-i18n="props.title"></h2>
+            <button id="prop-close" class="btn ghost icon" data-i18n-label="props.close"><svg class="icon"><use href="#i-x" /></svg></button>
+          </div>
+          <p id="prop-empty" class="properties-empty" data-i18n="props.empty"></p>
+          <div id="prop-fields" class="properties-fields">
+          <div class="properties-group">
+            <label class="caption" for="prop-text" data-i18n="props.text"></label>
+            <textarea id="prop-text" class="input prop-text" rows="3"></textarea>
+          </div>
+          <div class="properties-group">
+            <div class="row2">
+              <label class="stacked"><span class="caption" data-i18n="edit.font"></span>
+                <select class="input" data-style="font">
+                  <option value="sans" data-i18n="font.sans"></option>
+                  <option value="serif" data-i18n="font.serif"></option>
+                  <option value="mono" data-i18n="font.mono"></option>
+                </select>
+              </label>
+              <label class="stacked"><span class="caption" data-i18n="edit.sizePt"></span>
+                <input class="input num" type="number" min="4" max="200" step="0.5" data-style="size" />
+              </label>
+            </div>
+            <span class="caption" data-i18n="edit.color"></span>
+            <div id="prop-swatches" class="swatches"></div>
+            <span class="caption" data-i18n="props.align"></span>
+            <div class="segmented">
+              <button class="btn ghost icon" data-style="align" data-value="left" data-i18n-label="props.left"><svg class="icon"><use href="#i-align-left" /></svg></button>
+              <button class="btn ghost icon" data-style="align" data-value="center" data-i18n-label="props.center"><svg class="icon"><use href="#i-align-center" /></svg></button>
+              <button class="btn ghost icon" data-style="align" data-value="right" data-i18n-label="props.right"><svg class="icon"><use href="#i-align-right" /></svg></button>
+            </div>
+          </div>
+          <div class="properties-group">
+            <span class="caption" data-i18n="props.position"></span>
+            <div class="row2">
+              <label class="inline"><span class="caption" aria-hidden="true">X</span><input id="prop-x" class="input num" inputmode="decimal" data-i18n-aria="props.x" /></label>
+              <label class="inline"><span class="caption" aria-hidden="true">Y</span><input id="prop-y" class="input num" inputmode="decimal" data-i18n-aria="props.y" /></label>
+              <label class="inline"><span class="caption" aria-hidden="true">L</span><input id="prop-width" class="input num" inputmode="decimal" data-i18n-aria="props.width" /></label>
+              <label class="inline"><span class="caption" aria-hidden="true">H</span><input id="prop-height" class="input num" readonly data-i18n-aria="props.height" /></label>
+            </div>
+          </div>
+          <div class="properties-group actions-row">
+            <button id="prop-duplicate" class="btn" data-i18n="props.duplicate"></button>
+            <button id="prop-delete" class="btn ghost danger" data-i18n="props.delete"></button>
+          </div>
+          </div>
+        </aside>
       </div>
 
       <footer id="statusbar" class="statusbar" hidden>
@@ -125,6 +209,7 @@
           <button id="fit-page" class="btn ghost icon small" data-i18n-label="zoom.fitPage" data-shortcut-hint="fit_page"><svg class="icon"><use href="#i-fit-page" /></svg></button>
         </span>
         <span class="spacer"></span>
+        <span id="save-state" class="save-state" role="status"></span>
       </footer>
     </div>
 
@@ -242,6 +327,18 @@
           <button class="btn primary" value="ok" data-i18n="password.submit"></button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="unsaved-dialog" aria-labelledby="unsaved-title">
+      <div class="dialog-body">
+        <h2 id="unsaved-title" class="dialog-title" data-i18n="unsaved.title"></h2>
+        <p id="unsaved-text"></p>
+      </div>
+      <div class="dialog-actions">
+        <button id="unsaved-cancel" class="btn" type="button" data-i18n="unsaved.cancel"></button>
+        <button id="unsaved-discard" class="btn" type="button" data-i18n="unsaved.discard"></button>
+        <button id="unsaved-save" class="btn primary" type="button" data-i18n="unsaved.save"></button>
+      </div>
     </dialog>
 
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

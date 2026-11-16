@@ -31,6 +31,11 @@ impl Viewer {
         f(open, doc)
     }
 
+    /// Un document ouvert a des modifications non enregistrées.
+    pub fn any_dirty(&self) -> bool {
+        lock(&self.documents).values().any(|d| d.edits.is_dirty())
+    }
+
     pub fn edit_view(&self, id: u64) -> Result<EditView, AppError> {
         self.with_document(id, |open, _| Ok(view(open)))
     }
@@ -302,6 +307,9 @@ mod tests {
         assert_eq!(view.elements.len(), 1);
         let view = s.viewer.remove_element(s.id, element_id).unwrap();
         assert!(view.elements.is_empty() && view.dirty);
+        assert!(s.viewer.any_dirty());
+        s.viewer.save(s.id, None).unwrap();
+        assert!(!s.viewer.any_dirty());
     }
 
     #[test]

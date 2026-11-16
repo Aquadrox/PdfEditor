@@ -30,6 +30,7 @@ export class Viewer {
    *   onPageChange?: (page: number) => void,
    *   onZoomChange?: (zoom: number) => void,
    *   loadText?: (page: number) => Promise<{ runs: object[] }>,
+   *   onPageShown?: (frame: HTMLElement, page: number) => void,
    * }} callbacks
    */
   constructor(desk, callbacks = {}) {
@@ -51,6 +52,8 @@ export class Viewer {
     this.texts = new Map();
     this.hits = [];
     this.currentHit = -1;
+    /** Version du contenu de chaque page (édition), mise dans l'adresse des images. */
+    this.revisions = [];
 
     this.desk.addEventListener("scroll", () => this.schedule(), { passive: true });
     new ResizeObserver(() => this.onResize()).observe(this.desk);
@@ -76,6 +79,7 @@ export class Viewer {
     this.texts.clear();
     this.hits = [];
     this.currentHit = -1;
+    this.revisions = [];
     this.container.replaceChildren();
     this.page = 0;
   }
@@ -113,6 +117,23 @@ export class Viewer {
       this.desk.scrollTop = scrollTopForRect(pageBox, this.doc.pages[hit.page], hit.rects[0], this.desk.clientHeight);
     }
     this.frames.forEach((frame) => frame.querySelector(".highlights")?.remove());
+    this.schedule();
+  }
+
+  /**
+   * Pages modifiées par l'édition : nouvelle image (l'ancienne reste
+   * affichée jusqu'à son arrivée) et texte relu.
+   */
+  setRevisions(revisions, changed) {
+    this.revisions = revisions;
+    for (const index of changed) {
+      this.texts.delete(index);
+      const frame = this.frames[index];
+      if (!frame) continue;
+      frame.querySelector(".text-layer")?.remove();
+      const image = frame.querySelector("img");
+      if (image) image.dataset.scale = "";
+    }
     this.schedule();
   }
 
@@ -184,6 +205,7 @@ export class Viewer {
     this.showImage(frame, index);
     this.showText(frame, index);
     this.showHighlights(frame, index);
+    this.callbacks.onPageShown?.(frame, index);
   }
 
   showImage(frame, index) {
@@ -201,7 +223,7 @@ export class Viewer {
       frame.classList.add("failed");
       frame.dataset.error = t("page.error");
     });
-    image.src = pageUrl(this.doc.id, index, scale);
+    image.src = pageUrl(this.doc.id, index, scale, this.revisions[index]);
     if (!current) frame.prepend(image);
   }
 
@@ -216,8 +238,9 @@ export class Viewer {
         // Document changé ou page vidée entre-temps : rien à poser.
         if (this.doc !== doc || !frame.isConnected || frame.querySelector(".text-layer")) return;
         const layer = textLayer(view, doc.pages[index]);
-        const highlights = frame.querySelector(".highlights");
-        if (highlights) highlights.before(layer);
+        // Sous les surlignages et la couche d'édition.
+        const above = frame.querySelector(".highlights, .edit-layer");
+        if (above) above.before(layer);
         else frame.append(layer);
       })
       .catch(() => this.texts.delete(index))
@@ -227,6 +250,10 @@ export class Viewer {
   showHighlights(frame, index) {
     if (frame.querySelector(".highlights")) return;
     const hits = this.hits.map((hit, i) => ({ hit, index: i })).filter(({ hit }) => hit.page === index);
-    if (hits.length > 0) frame.append(highlightLayer(hits, this.doc.pages[index], this.currentHit));
+    if (hits.length === 0) return;
+    const layer = highlightLayer(hits, this.doc.pages[index], this.currentHit);
+    const editLayer = frame.querySelector(".edit-layer");
+    if (editLayer) editLayer.before(layer);
+    else frame.append(layer);
   }
 }

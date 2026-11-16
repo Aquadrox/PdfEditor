@@ -22,7 +22,12 @@ function protocolBase() {
   return navigator.userAgent.includes("Windows") ? "http://pde.localhost/" : "pde://localhost/";
 }
 
-/** Image PNG d'une page (protocole pde://, servi par apps/desktop/src/protocol.rs). */
-export function pageUrl(doc, page, scale) {
-  return `${protocolBase()}page/${doc}/${page}?scale=${scale}`;
+/**
+ * Image PNG d'une page (protocole pde://, servi par apps/desktop/src/protocol.rs).
+ * `revision` : version du contenu de la page ; une page modifiée a une
+ * nouvelle adresse, le WebView ne ressert pas l'ancienne image.
+ */
+export function pageUrl(doc, page, scale, revision = 0) {
+  const rev = revision ? `&rev=${revision}` : "";
+  return `${protocolBase()}page/${doc}/${page}?scale=${scale}${rev}`;
 }

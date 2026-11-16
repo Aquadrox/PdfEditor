@@ -1,6 +1,13 @@
 {
-  "general": { "theme": "system", "recent_files": 10, "reopen_last": false },
-  "display": { "default_zoom": "fit_width", "page_cache_mb": 256 },
+  "general": {
+    "theme": "system",
+    "recent_files": 10,
+    "reopen_last": false
+  },
+  "display": {
+    "default_zoom": "fit_width",
+    "page_cache_mb": 256
+  },
   "shortcuts": {
     "open": "Ctrl+O",
     "close": "Ctrl+W",
@@ -10,8 +17,16 @@
     "zoom_reset": "Ctrl+0",
     "fit_page": "Ctrl+1",
     "fit_width": "Ctrl+2",
-    "settings": "Ctrl+Comma"
+    "settings": "Ctrl+Comma",
+    "undo": "Ctrl+Z",
+    "redo": "Ctrl+Y",
+    "save": "Ctrl+S",
+    "save_as": "Ctrl+Shift+S"
   },
-  "updates": { "check": true },
-  "diagnostic": { "log_level": "info" }
+  "updates": {
+    "check": true
+  },
+  "diagnostic": {
+    "log_level": "info"
+  }
 }

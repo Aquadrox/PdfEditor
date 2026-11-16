@@ -6,7 +6,21 @@ import { t } from "../../lib/i18n.js";
 import { eventToShortcut, isAcceptable, shortcutLabel } from "../../lib/shortcuts.js";
 
 /** Ordre d'affichage (celui de pde-core). */
-const ACTIONS = ["open", "close", "search", "zoom_in", "zoom_out", "zoom_reset", "fit_page", "fit_width", "settings"];
+const ACTIONS = [
+  "open",
+  "save",
+  "save_as",
+  "close",
+  "undo",
+  "redo",
+  "search",
+  "zoom_in",
+  "zoom_out",
+  "zoom_reset",
+  "fit_page",
+  "fit_width",
+  "settings",
+];
 
 /**
  * @param {HTMLTableSectionElement} body corps du tableau
