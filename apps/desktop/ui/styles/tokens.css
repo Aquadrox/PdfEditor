@@ -1,0 +1,77 @@
+/* Jetons de design (docs/DESIGN.md) : seul endroit où figurent des couleurs.
+   Bleu encre = ce que je fais ; bordeaux cire = ce qui engage (signature) ;
+   sarcelle = ce que propose l'IA. La page (--paper) reste blanche en sombre. */
+:root {
+  color-scheme: light dark;
+  --desk: #e3e6ea;
+  --surface: #f6f7f8;
+  --raised: #ffffff;
+  --paper: #ffffff;
+  --ink: #1c2430;
+  --muted: #566170;
+  --line: #d5dae0;
+  --accent: #2747b8;
+  --accent-soft: #e6ebfa;
+  --accent-fg: #ffffff;
+  --seal: #8a1c2b;
+  --seal-soft: #f6e7e9;
+  --seal-fg: #ffffff;
+  --ai: #0f6e67;
+  --ai-soft: #e2f2f0;
+  --ok: #1e7344;
+  --warn: #8a5700;
+  --danger: #b3261e;
+  --danger-soft: #fbe9e7;
+  --scrim: rgb(20 28 40 / 38%);
+  --shadow-page: 0 1px 2px rgb(20 28 40 / 12%), 0 10px 28px rgb(20 28 40 / 12%);
+  --shadow-float: 0 2px 6px rgb(20 28 40 / 14%), 0 12px 32px rgb(20 28 40 / 16%);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-control: 4px;
+  --radius-float: 6px;
+  --control-h: 28px;
+  --font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  --text-caption: 12px;
+  --text-body: 13px;
+  --text-panel: 15px;
+  --text-page: 18px;
+  --text-dialog: 22px;
+  --duration: 150ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --desk: #181b1f;
+    --surface: #22262b;
+    --raised: #2a2f35;
+    --ink: #e6e9ed;
+    --muted: #9aa4af;
+    --line: #343a41;
+    --accent: #8fa6ff;
+    --accent-soft: #283252;
+    --accent-fg: #141821;
+    --seal: #f0909c;
+    --seal-soft: #3a2328;
+    --seal-fg: #2a0f14;
+    --ai: #5ccfc3;
+    --ai-soft: #1d3533;
+    --ok: #5cc98d;
+    --warn: #e8b65a;
+    --danger: #f28b82;
+    --danger-soft: #3a2220;
+    --scrim: rgb(0 0 0 / 55%);
+    --shadow-page: 0 1px 2px rgb(0 0 0 / 50%), 0 10px 28px rgb(0 0 0 / 45%);
+    --shadow-float: 0 2px 6px rgb(0 0 0 / 50%), 0 12px 32px rgb(0 0 0 / 50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration: 0ms;
+  }
+}

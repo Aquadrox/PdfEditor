@@ -10,3 +10,6 @@
 *.pem
 *.pfx
 *.p12
+
+# Dépendances des tests d'interface (npm ci)
+node_modules/

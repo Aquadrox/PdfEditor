@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Feuille de papier, coin plié, lignes d'encre bleue, sceau de cire bordeaux. -->
+  <path d="M232 96h400l200 200v592a40 40 0 0 1-40 40H232a40 40 0 0 1-40-40V136a40 40 0 0 1 40-40z" fill="#FFFFFF" stroke="#1C2430" stroke-width="32" stroke-linejoin="round"/>
+  <path d="M632 96v160a40 40 0 0 0 40 40h160" fill="#E3E6EA" stroke="#1C2430" stroke-width="32" stroke-linejoin="round"/>
+  <g stroke="#2747B8" stroke-width="40" stroke-linecap="round">
+    <path d="M300 420h400"/>
+    <path d="M300 510h400"/>
+    <path d="M300 600h240"/>
+  </g>
+  <path d="M720 642c40-6 64 22 96 34s60 34 58 78-24 60-14 98-18 68-58 78-58 38-100 30-64-24-98-46-50-56-42-98 4-62 34-90 52-60 90-74 34-4 34-10z" fill="#8A1C2B"/>
+  <circle cx="722" cy="800" r="104" fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="14"/>
+  <path d="M662 812c22-28 38-58 52-58s-6 58 16 58 22-30 36-30" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

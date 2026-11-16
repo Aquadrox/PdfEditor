@@ -1,0 +1,158 @@
+/* Panneau des pages et du plan, table lumineuse et pages. */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 152px;
+  flex: none;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.sidebar-tabs {
+  display: flex;
+  gap: 2px;
+  padding: var(--space-2);
+}
+
+.sidebar-tabs .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+.sidebar-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.thumbs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) 0 var(--space-4);
+}
+
+.thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-float);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.thumb-image {
+  display: block;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.thumb[aria-current="page"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.thumb[aria-current="page"] .thumb-image {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.outline {
+  padding: var(--space-1) var(--space-2) var(--space-4);
+}
+
+.outline ul {
+  margin: 0;
+  padding: 0 0 0 var(--space-3);
+  list-style: none;
+}
+
+.outline > ul {
+  padding: 0;
+}
+
+.outline summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.outline summary::-webkit-details-marker {
+  display: none;
+}
+
+.outline-item {
+  display: block;
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  user-select: text;
+}
+
+.outline-item:hover {
+  background: var(--desk);
+}
+
+.outline-item:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.outline-empty {
+  padding: var(--space-3);
+  color: var(--muted);
+}
+
+.desk {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: var(--desk);
+}
+
+/* Focus clavier de la table : liseré intérieur, discret mais visible. */
+.desk:focus-visible {
+  outline-offset: -2px;
+}
+
+.desk:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.pages {
+  position: relative;
+  margin: 0 auto;
+}
+
+.page {
+  position: absolute;
+  left: 50%;
+  background: var(--paper);
+  box-shadow: var(--shadow-page);
+  transform: translateX(-50%);
+}
+
+.page img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.page.failed::after {
+  content: attr(data-error);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  color: var(--danger);
+  text-align: center;
+}

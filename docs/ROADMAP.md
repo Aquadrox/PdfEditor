@@ -20,7 +20,9 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 - ✅ `pde-pdf` : PDFium 8125 figé et vérifié (SHA-256, `scripts/fetch-pdfium.sh`) ; thread moteur dédié ; ouverture, mot de passe, rendu, texte avec positions, plan (V-01, V-02, V-03)
 - ✅ PDF de référence générés (`crates/pde-pdf/tests/fixtures/make_fixtures.py`) : pages tournées, plan, chiffrement AES-256, fichiers invalides
 - ⬜ Tests de rendu comparés à des images de référence (aujourd'hui : contrôles de pixels ciblés)
-- ⬜ `apps/desktop` : fenêtre principale selon `DESIGN.md`, protocole `pde://`, zoom, défilement, miniatures, plan (V-03, V-04)
+- ✅ `pde-app` : visionneuse testable sans interface (faux moteur), cache des pages limité en mémoire, PNG
+- ✅ `apps/desktop` : fenêtre principale selon la maquette, protocole `pde://`, zoom, défilement continu, miniatures, plan, aller à la page, mot de passe, glisser-déposer, ouverture en argument (V-01 à V-04)
+- ✅ Tests de l'interface : modules JS (`node --test`) et parcours dans Chromium avec Tauri simulé (Playwright)
 - ⬜ Couche texte : sélection, copie, recherche (V-05)
 - ⬜ `pde-core::settings` + page Réglages (Général, Affichage, Raccourcis) ; `pde-platform` (dossiers, trousseau repris de VoiceToText)
 - ⬜ Journaux, rapport de plantage

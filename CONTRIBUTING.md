@@ -25,6 +25,10 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
+```bash
+(cd apps/desktop/ui && node --test) && (cd apps/desktop/ui-tests && npm ci && npm test)
+```
+
 ## Protection de `main` (réglage GitHub, à faire une fois)
 
 Settings → Branches → *Add branch ruleset* (ou *Branch protection rule*) sur `main` :

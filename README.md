@@ -38,6 +38,23 @@ bibliothèque PDFium, téléchargée (version figée, empreinte vérifiée) dans
 cargo test --workspace
 ```
 
+Lancer l'application (sous Linux, paquets `libwebkit2gtk-4.1-dev` et
+`librsvg2-dev` nécessaires) :
+
+```bash
+cargo run -p pdfeditor -- chemin/vers/document.pdf
+```
+
+Tests de l'interface (Node 22) :
+
+```bash
+cd apps/desktop/ui && node --test
+```
+
+```bash
+cd apps/desktop/ui-tests && npm ci && npm test
+```
+
 ## Licence
 
 MIT. PDFium (moteur PDF) est distribué sous licence BSD-3 / Apache-2.0.

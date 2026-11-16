@@ -186,7 +186,8 @@ Code **copié puis adapté** (pas de dépendance entre les dépôts : chacun év
   des réponses scriptées (y compris malformées ou malveillantes) pour tester
   découpage, prompts, validation et désamorçage.
 - **Interface** : modules JS purs testés avec `node --test` (sans
-  dépendance) ; parcours principaux avec Playwright à partir de la v0.3.
+  dépendance) ; parcours dans Chromium avec Playwright et un faux Tauri
+  (`apps/desktop/ui-tests`).
 - **CI** (obligatoire pour merger) : `linux` (format, clippy `-D warnings`,
   tests), `windows` (clippy, tests, puis installeur), `secrets` (gitleaks sur
   tout l'historique). À venir : `cargo-deny` (licences, vulnérabilités), couverture.

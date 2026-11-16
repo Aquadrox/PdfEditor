@@ -54,6 +54,29 @@ pub trait PdfEngine: Send + Sync {
     fn close(&self, doc: DocumentId);
 }
 
+/// Un moteur partagé par référence (moteur unique du processus) reste un moteur.
+impl<T: PdfEngine + ?Sized> PdfEngine for &T {
+    fn open(
+        &self,
+        bytes: Vec<u8>,
+        password: Option<String>,
+    ) -> Result<OpenedDocument, EngineError> {
+        (**self).open(bytes, password)
+    }
+
+    fn render(&self, doc: DocumentId, request: RenderRequest) -> Result<Bitmap, EngineError> {
+        (**self).render(doc, request)
+    }
+
+    fn page_text(&self, doc: DocumentId, page: PageIndex) -> Result<PageText, EngineError> {
+        (**self).page_text(doc, page)
+    }
+
+    fn close(&self, doc: DocumentId) {
+        (**self).close(doc)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
