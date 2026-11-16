@@ -1,3 +1,5 @@
+<!-- Titre : type(portée): description en français (vX.Y.Z), voir CONTRIBUTING.md -->
+
 ## Objet
 
 <!-- Ce que change la PR et pourquoi, en quelques lignes. Référence roadmap / fonction (ex. E-03). -->

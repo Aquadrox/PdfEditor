@@ -14,12 +14,14 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 - ✅ Branche `main` créée et protégée (PR obligatoire, jobs `linux`, `windows`, `secrets` requis)
 - ✅ Maquette des écrans principaux validée (`docs/maquette/`, voir `DESIGN.md`)
 
-## v0.1 — Visionneuse 🚧
+## v0.1 — Visionneuse ✅
 
-- ⬜ `cargo-deny` dans la CI (licences compatibles, vulnérabilités connues)
+Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et mises à jour automatiques.
+
+- ✅ `cargo-deny` dans la CI (`deny.toml`) : aucune vulnérabilité connue, licences compatibles avec MIT, sources crates.io uniquement
 - ✅ `pde-pdf` : PDFium 8125 figé et vérifié (SHA-256, `scripts/fetch-pdfium.sh`) ; thread moteur dédié ; ouverture, mot de passe, rendu, texte avec positions, plan (V-01, V-02, V-03)
 - ✅ PDF de référence générés (`crates/pde-pdf/tests/fixtures/make_fixtures.py`) : pages tournées, plan, chiffrement AES-256, fichiers invalides
-- ⬜ Tests de rendu comparés à des images de référence (aujourd'hui : contrôles de pixels ciblés)
+- ➡️ Tests de rendu comparés à des images de référence : reportés en v0.2 (aujourd'hui : contrôles de pixels ciblés)
 - ✅ `pde-app` : visionneuse testable sans interface (faux moteur), cache des pages limité en mémoire, PNG
 - ✅ `apps/desktop` : fenêtre principale selon la maquette, protocole `pde://`, zoom, défilement continu, miniatures, plan, aller à la page, mot de passe, glisser-déposer, ouverture en argument (V-01 à V-04)
 - ✅ Tests de l'interface : modules JS (`node --test`) et parcours dans Chromium avec Tauri simulé (Playwright)
@@ -34,6 +36,8 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 
 ## v0.2 — Édition : ajouts
 
+- ⬜ Garde-fou Android dans la CI : `pde-core`, `pde-app` et `pde-pdf` compilent pour Android (aarch64), pour ne jamais fermer la porte à la v1.1
+- ⬜ Tests de rendu comparés à des images de référence (avant/après une modification de page)
 - ⬜ Modèle d'opérations et historique annuler / rétablir (`pde-core`), sauvegarde automatique et récupération (F-02)
 - ⬜ Zones de texte, polices embarquées (E-01)
 - ⬜ Images (E-02)
@@ -100,6 +104,18 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 ## v1.0 — Version stable
 
 - ⬜ Toutes les fonctions **M** livrées, testées, documentées
+
+## v1.1 — Android
+
+Même code Rust et même interface (Tauri 2 en version mobile), adaptée au
+tactile. Fonctions A-01 à A-05 de `FONCTIONS.md`.
+
+- ⬜ Application Android Tauri 2 (arm64), PDFium pour Android figé et vérifié (SHA-256)
+- ⬜ Interface tactile : panneaux en tiroirs, barre d'outils compacte, pincer pour zoomer, sélection au doigt (A-01)
+- ⬜ Fichiers : sélecteur de documents Android, « Ouvrir avec » et « Partager vers PdfEditor », enregistrement (A-02)
+- ⬜ Lecture, recherche, annotations, signature et IA ; secrets dans le Keystore Android (A-03)
+- ⬜ Mises à jour : APK signé (clé du propriétaire dans les secrets GitHub), manifeste `latest-android.json` avec taille et SHA-256, comme VoiceToText (A-04)
+- ⬜ CI : APK de test à chaque PR, APK signé sur un tag ; tests sur émulateur des parcours principaux (A-05)
 
 ## Plus tard
 

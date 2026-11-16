@@ -1,0 +1,46 @@
+# cargo-deny : vérifie les dépendances à chaque PR (job `linux` de la CI).
+# Lancer localement : cargo deny check
+#
+# - advisories : aucune vulnérabilité connue (base RustSec) ;
+# - licenses   : seulement des licences compatibles avec la licence MIT du
+#                projet et sa distribution (installeur) ;
+# - bans       : pas de dépendance interdite ;
+# - sources    : uniquement crates.io.
+
+[graph]
+# Seules les plateformes livrées comptent.
+targets = ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"]
+
+[advisories]
+# Une vulnérabilité connue fait toujours échouer la CI ; une exception se
+# justifie ici, avec l'identifiant RUSTSEC et la raison.
+ignore = []
+# Crate « plus maintenu » : signalé seulement pour nos dépendances directes.
+# Ceux tirés indirectement par Tauri (pile GTK de Linux, D-Bus) relèvent de
+# Tauri et n'ont pas de remplaçant de notre côté (novembre 2026 :
+# proc-macro-error, zvariant, zbus_names).
+unmaintained = "workspace"
+
+[licenses]
+# Licences permissives, compatibles avec une distribution sous MIT.
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-3-Clause",
+  "ISC",
+  "Zlib",
+  "Unicode-3.0",
+  "MPL-2.0",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+# Les crates du dépôt se référencent par chemin, sans version.
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

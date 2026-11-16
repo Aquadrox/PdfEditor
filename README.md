@@ -1,6 +1,6 @@
 # PdfEditor
 
-Éditeur de PDF open source pour Windows (puis Linux), écrit en Rust :
+Éditeur de PDF open source pour Windows, puis Linux et Android, écrit en Rust :
 
 - **éditer** : ajouter du texte, des images, des annotations ; modifier le
   texte existant ; caviarder ; organiser les pages ;
