@@ -23,7 +23,7 @@ une version n'est terminée que lorsque la CI est verte et que la fonction a
 - ✅ `pde-app` : visionneuse testable sans interface (faux moteur), cache des pages limité en mémoire, PNG
 - ✅ `apps/desktop` : fenêtre principale selon la maquette, protocole `pde://`, zoom, défilement continu, miniatures, plan, aller à la page, mot de passe, glisser-déposer, ouverture en argument (V-01 à V-04)
 - ✅ Tests de l'interface : modules JS (`node --test`) et parcours dans Chromium avec Tauri simulé (Playwright)
-- ⬜ Couche texte : sélection, copie, recherche (V-05)
+- ✅ Couche texte : sélection, copie, recherche insensible à la casse et aux accents, positions correctes sur les pages tournées (V-05)
 - ⬜ `pde-core::settings` + page Réglages (Général, Affichage, Raccourcis) ; `pde-platform` (dossiers, trousseau repris de VoiceToText)
 - ⬜ Journaux, rapport de plantage
 - ⬜ Installeur Windows construit par la CI ; version vérifiée contre le tag ; `CHANGELOG.md` contrôlé (`changelog.py`, repris de VoiceToText)

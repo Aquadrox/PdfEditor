@@ -5,6 +5,7 @@
 pub mod cache;
 pub mod error;
 pub mod image;
+pub mod text_view;
 pub mod unavailable;
 pub mod view;
 pub mod viewer;

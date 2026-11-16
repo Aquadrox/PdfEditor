@@ -4,6 +4,7 @@
 import { attachMenu } from "./components/menu.js";
 import { showHome, watchDrops } from "./features/home/home.js";
 import { openPath, pickPdf } from "./features/open/open.js";
+import { attachSearch } from "./features/search/search-bar.js";
 import { renderOutline } from "./features/viewer/outline.js";
 import { attachStatusbar } from "./features/viewer/statusbar.js";
 import { Thumbnails } from "./features/viewer/thumbnails.js";
@@ -23,8 +24,10 @@ const viewer = new Viewer(byId("desk"), {
     thumbnails.setCurrent(page);
   },
   onZoomChange: (zoom) => statusbar.setZoom(zoom),
+  loadText: (page) => invoke("page_text", { id: current.id, page }),
 });
 const statusbar = attachStatusbar(viewer);
+const search = attachSearch(viewer);
 const thumbnails = new Thumbnails(byId("thumbs"), byId("sidebar-body"), (page) => viewer.goToPage(page));
 
 function show(doc) {
@@ -45,6 +48,7 @@ function show(doc) {
     viewer.unload();
     thumbnails.clear();
   }
+  search.reset();
 }
 
 /** Ouvre un fichier ; le document précédent n'est fermé qu'en cas de succès. */
@@ -99,6 +103,7 @@ byId("desk").addEventListener(
 );
 
 const shortcuts = {
+  f: () => search.open(),
   o: chooseAndOpen,
   w: close,
   "+": () => viewer.setZoom(zoomIn(viewer.zoom)),

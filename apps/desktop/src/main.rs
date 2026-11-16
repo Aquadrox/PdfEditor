@@ -37,6 +37,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             commands::open_document,
             commands::close_document,
+            commands::page_text,
+            commands::search_document,
             commands::pick_pdf,
             commands::initial_files,
         ])

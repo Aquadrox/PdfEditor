@@ -1,12 +1,15 @@
-//! Visionneuse : documents ouverts et images de leurs pages.
+//! Visionneuse : documents ouverts, images et texte de leurs pages.
+
+mod text;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
-use pde_core::document::{DocumentId, DocumentInfo, PageIndex};
+use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
 use pde_core::engine::PdfEngine;
 use pde_core::render::RenderRequest;
+use pde_core::text::PageText;
 
 use crate::cache::{PageCache, PageKey};
 use crate::error::{AppError, ErrorKind};
@@ -28,6 +31,9 @@ pub struct Viewer {
     engine: Arc<dyn PdfEngine>,
     documents: Mutex<HashMap<DocumentId, OpenDocument>>,
     cache: Mutex<PageCache>,
+    /// Texte des pages déjà lues (couche de texte, recherche), oublié à la
+    /// fermeture du document.
+    texts: Mutex<HashMap<(DocumentId, PageIndex), Arc<PageText>>>,
 }
 
 /// Verrou même si un autre thread a paniqué en le tenant : les données
@@ -60,6 +66,7 @@ impl Viewer {
             engine,
             documents: Mutex::new(HashMap::new()),
             cache: Mutex::new(PageCache::new(cache_bytes)),
+            texts: Mutex::new(HashMap::new()),
         }
     }
 
@@ -92,6 +99,7 @@ impl Viewer {
         let id = DocumentId(id);
         if lock(&self.documents).remove(&id).is_some() {
             lock(&self.cache).remove_document(id);
+            lock(&self.texts).retain(|(doc, _), _| *doc != id);
             self.engine.close(id);
         }
     }
@@ -104,13 +112,7 @@ impl Viewer {
     /// Image PNG d'une page, depuis le cache si elle y est.
     pub fn page_png(&self, id: u64, page: PageIndex, scale: f64) -> Result<Arc<Vec<u8>>, AppError> {
         let doc = DocumentId(id);
-        lock(&self.documents)
-            .get(&doc)
-            .ok_or_else(|| {
-                AppError::new(ErrorKind::UnknownDocument, "ce document n'est plus ouvert")
-            })?
-            .info
-            .page_size(page)?;
+        self.page_size(doc, page)?;
         let (scale_centi, scale) = quantize_scale(scale)?;
         let key = PageKey {
             doc,
@@ -126,6 +128,26 @@ impl Viewer {
         lock(&self.cache).insert(key, png.clone());
         Ok(png)
     }
+}
+
+impl Viewer {
+    /// Taille affichée de chaque page du document ouvert `doc`.
+    fn page_sizes(&self, doc: DocumentId) -> Result<Vec<PageSize>, AppError> {
+        lock(&self.documents)
+            .get(&doc)
+            .map(|d| d.info.page_sizes.clone())
+            .ok_or_else(unknown_document)
+    }
+
+    fn page_size(&self, doc: DocumentId, page: PageIndex) -> Result<PageSize, AppError> {
+        let documents = lock(&self.documents);
+        let info = &documents.get(&doc).ok_or_else(unknown_document)?.info;
+        Ok(info.page_size(page)?)
+    }
+}
+
+fn unknown_document() -> AppError {
+    AppError::new(ErrorKind::UnknownDocument, "ce document n'est plus ouvert")
 }
 
 fn read_file(path: &Path) -> Result<Vec<u8>, AppError> {

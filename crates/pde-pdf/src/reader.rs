@@ -11,6 +11,7 @@ use pdfium_render::prelude::{
 };
 
 use crate::convert::{internal, rect};
+use crate::display::DisplayTransform;
 
 /// Profondeur maximale du plan : un PDF malveillant peut contenir un plan
 /// cyclique ou démesuré, qui ne doit ni boucler ni épuiser la mémoire.
@@ -101,6 +102,7 @@ pub(crate) fn render(doc: &PdfDocument, request: RenderRequest) -> Result<Bitmap
 
 pub(crate) fn page_text(doc: &PdfDocument, index: PageIndex) -> Result<PageText, EngineError> {
     let page = page(doc, index)?;
+    let display = DisplayTransform::for_page(&page)?;
     let text = page.text().map_err(internal)?;
     let chars = text
         .chars()
@@ -109,7 +111,10 @@ pub(crate) fn page_text(doc: &PdfDocument, index: PageIndex) -> Result<PageText,
             let ch = c.unicode_char()?;
             // Caractères générés par PDFium sans position (retours à la
             // ligne déduits) : gardés pour le texte, rectangle vide.
-            let bounds = c.loose_bounds().map(rect).unwrap_or_default();
+            let bounds = c
+                .loose_bounds()
+                .map(|r| display.rect(rect(r)))
+                .unwrap_or_default();
             Some(TextChar { ch, bounds })
         })
         .collect();

@@ -156,3 +156,74 @@
   color: var(--danger);
   text-align: center;
 }
+
+/* Couche de texte : transparente, alignée sur le texte de l'image, elle
+   permet de sélectionner et copier. */
+.text-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  line-height: 1;
+  user-select: text;
+}
+
+.text-layer span {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  transform-origin: 0 0;
+  cursor: text;
+}
+
+.text-layer ::selection {
+  background: var(--selection);
+}
+
+/* Résultats de recherche, au-dessus du texte, sans gêner la sélection. */
+.highlights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.highlight {
+  position: absolute;
+  background: var(--search-hit);
+  mix-blend-mode: multiply;
+}
+
+.highlight.current {
+  background: var(--search-current);
+  outline: 2px solid var(--search-current-line);
+}
+
+/* Barre de recherche, en haut à droite de la table. */
+.workspace {
+  position: relative;
+}
+
+.search-bar {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-4);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-float);
+  background: var(--raised);
+  box-shadow: var(--shadow-float);
+}
+
+.search-bar .input {
+  width: 220px;
+}
+
+.search-count {
+  min-width: 88px;
+  color: var(--muted);
+  font-size: var(--text-caption);
+  text-align: right;
+}

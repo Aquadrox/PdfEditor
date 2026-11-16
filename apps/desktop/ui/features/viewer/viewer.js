@@ -1,10 +1,12 @@
-// Visionneuse : pages sur la table lumineuse, défilement continu, zoom.
-// Seules les pages proches de la zone visible ont une image ; les calculs
-// de position sont dans layout.js (testés), ce module ne fait que le DOM.
+// Visionneuse : pages sur la table lumineuse, défilement continu, zoom,
+// couche de texte et surlignage de la recherche. Seules les pages proches de
+// la zone visible ont une image et une couche de texte ; les calculs de
+// position sont dans layout.js et text-geometry.js (testés), ce module ne
+// fait que le DOM.
 
-import { pageUrl } from "../../lib/ipc.js";
 import { el } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
+import { pageUrl } from "../../lib/ipc.js";
 import {
   anchorAt,
   computeLayout,
@@ -14,7 +16,9 @@ import {
   scrollTopForPage,
   visibleRange,
 } from "./layout.js";
-import { clampZoom, fitPage, fitWidth } from "./zoom.js";
+import { highlightLayer, textLayer } from "./page-layers.js";
+import { scrollTopForRect } from "./text-geometry.js";
+import { CSS_PX_PER_POINT, clampZoom, fitPage, fitWidth } from "./zoom.js";
 
 /** Délai avant de redemander les images après un changement de zoom (ms). */
 const RERENDER_DELAY = 150;
@@ -22,7 +26,11 @@ const RERENDER_DELAY = 150;
 export class Viewer {
   /**
    * @param {HTMLElement} desk zone qui défile
-   * @param {{ onPageChange?: (page: number) => void, onZoomChange?: (zoom: number) => void }} callbacks
+   * @param {{
+   *   onPageChange?: (page: number) => void,
+   *   onZoomChange?: (zoom: number) => void,
+   *   loadText?: (page: number) => Promise<{ runs: object[] }>,
+   * }} callbacks
    */
   constructor(desk, callbacks = {}) {
     this.desk = desk;
@@ -37,6 +45,10 @@ export class Viewer {
     this.layout = computeLayout([], 1);
     this.rerenderTimer = 0;
     this.scheduled = false;
+    /** Texte des pages déjà reçu (promesses), pour reconstruire les couches. */
+    this.texts = new Map();
+    this.hits = [];
+    this.currentHit = -1;
 
     this.desk.addEventListener("scroll", () => this.schedule(), { passive: true });
     new ResizeObserver(() => this.onResize()).observe(this.desk);
@@ -47,7 +59,7 @@ export class Viewer {
     this.unload();
     this.doc = doc;
     this.frames = doc.pages.map((_, index) =>
-      el("div", { class: "page", role: "img", "aria-label": t("thumb.label", { n: index + 1 }) }),
+      el("div", { class: "page", role: "group", "aria-label": t("thumb.label", { n: index + 1 }) }),
     );
     this.container.append(...this.frames);
     this.fitMode = "width";
@@ -58,6 +70,9 @@ export class Viewer {
   unload() {
     this.doc = null;
     this.frames = [];
+    this.texts.clear();
+    this.hits = [];
+    this.currentHit = -1;
     this.container.replaceChildren();
     this.page = 0;
   }
@@ -82,6 +97,22 @@ export class Viewer {
     this.schedule();
   }
 
+  /**
+   * Résultats de recherche à surligner (SearchHit de pde-app) ; `current` :
+   * occurrence active, amenée à l'écran.
+   */
+  setHighlights(hits, current = -1) {
+    this.hits = hits;
+    this.currentHit = current;
+    const hit = hits[current];
+    if (hit && this.doc) {
+      const pageBox = this.layout.boxes[hit.page];
+      this.desk.scrollTop = scrollTopForRect(pageBox, this.doc.pages[hit.page], hit.rects[0], this.desk.clientHeight);
+    }
+    this.frames.forEach((frame) => frame.querySelector(".highlights")?.remove());
+    this.schedule();
+  }
+
   fittedZoom() {
     if (!this.doc || this.doc.pages.length === 0) return null;
     const { clientWidth, clientHeight } = this.desk;
@@ -101,6 +132,8 @@ export class Viewer {
     if (!this.doc) return;
     this.zoom = zoom;
     this.layout = computeLayout(this.doc.pages, zoom);
+    // Échelle lue par la couche de texte pour le corps des caractères.
+    this.container.style.setProperty("--scale", String(zoom * CSS_PX_PER_POINT));
     this.container.style.height = `${this.layout.totalHeight}px`;
     this.container.style.width = `${this.layout.maxWidth + 48}px`;
     this.layout.boxes.forEach((box, index) => {
@@ -136,12 +169,18 @@ export class Viewer {
       this.callbacks.onPageChange?.(page);
     }
     const near = visibleRange(this.layout, scrollTop, clientHeight);
-    // Au-delà de trois écrans, l'image est libérée (mémoire du WebView).
+    // Au-delà de trois écrans, la page est vidée (mémoire du WebView).
     const keep = visibleRange(this.layout, scrollTop, clientHeight, 3 * clientHeight);
     this.frames.forEach((frame, index) => {
-      if (near && index >= near.first && index <= near.last) this.showImage(frame, index);
+      if (near && index >= near.first && index <= near.last) this.showPage(frame, index);
       else if (!keep || index < keep.first || index > keep.last) frame.replaceChildren();
     });
+  }
+
+  showPage(frame, index) {
+    this.showImage(frame, index);
+    this.showText(frame, index);
+    this.showHighlights(frame, index);
   }
 
   showImage(frame, index) {
@@ -152,13 +191,39 @@ export class Viewer {
     const image = el("img", { alt: "", decoding: "async", "data-scale": scale });
     image.addEventListener("load", () => {
       frame.classList.remove("failed");
-      frame.replaceChildren(image);
+      const previous = frame.querySelector("img");
+      if (previous && previous !== image) previous.replaceWith(image);
     });
     image.addEventListener("error", () => {
       frame.classList.add("failed");
       frame.dataset.error = t("page.error");
     });
     image.src = pageUrl(this.doc.id, index, scale);
-    if (!current) frame.replaceChildren(image);
+    if (!current) frame.prepend(image);
+  }
+
+  showText(frame, index) {
+    if (!this.callbacks.loadText || frame.querySelector(".text-layer") || frame.dataset.textPending) return;
+    if (!this.texts.has(index)) this.texts.set(index, this.callbacks.loadText(index));
+    const doc = this.doc;
+    frame.dataset.textPending = "1";
+    this.texts
+      .get(index)
+      .then((view) => {
+        // Document changé ou page vidée entre-temps : rien à poser.
+        if (this.doc !== doc || !frame.isConnected || frame.querySelector(".text-layer")) return;
+        const layer = textLayer(view, doc.pages[index]);
+        const highlights = frame.querySelector(".highlights");
+        if (highlights) highlights.before(layer);
+        else frame.append(layer);
+      })
+      .catch(() => this.texts.delete(index))
+      .finally(() => delete frame.dataset.textPending);
+  }
+
+  showHighlights(frame, index) {
+    if (frame.querySelector(".highlights")) return;
+    const hits = this.hits.map((hit, i) => ({ hit, index: i })).filter(({ hit }) => hit.page === index);
+    if (hits.length > 0) frame.append(highlightLayer(hits, this.doc.pages[index], this.currentHit));
   }
 }

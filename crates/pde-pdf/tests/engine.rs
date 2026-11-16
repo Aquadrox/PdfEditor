@@ -222,3 +222,31 @@ fn usable_from_several_threads() {
     }
     engine().close(id);
 }
+
+#[test]
+fn text_positions_follow_page_rotation() {
+    let doc = open_simple();
+    // Page 2 : texte en (72, 760) d'une A4 tournée de 90°, affichée en
+    // 842 × 595 : il se retrouve près du bord droit, en haut.
+    let text = engine().page_text(doc.id, 1).unwrap();
+    let p = text.chars.iter().find(|c| c.ch == 'P').unwrap();
+    assert!(
+        p.bounds.min().x > 740.0 && p.bounds.max().x < 790.0,
+        "{:?}",
+        p.bounds
+    );
+    assert!(
+        p.bounds.max().y <= 525.0 && p.bounds.min().y > 495.0,
+        "{:?}",
+        p.bounds
+    );
+    // Le texte avance vers le bas de la page affichée.
+    let e = text.chars.iter().find(|c| c.ch == 'e').unwrap();
+    assert!(
+        e.bounds.max().y < p.bounds.max().y,
+        "{:?} puis {:?}",
+        p.bounds,
+        e.bounds
+    );
+    engine().close(doc.id);
+}

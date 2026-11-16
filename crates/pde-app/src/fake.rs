@@ -6,8 +6,9 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
 use pde_core::engine::{EngineError, OpenedDocument, PdfEngine};
+use pde_core::geometry::{Point, Rect};
 use pde_core::render::{Bitmap, RenderRequest, pixel_size};
-use pde_core::text::PageText;
+use pde_core::text::{PageText, TextChar};
 
 /// Contenu reconnu comme un PDF de deux pages A4.
 pub const SIMPLE_PDF: &[u8] = b"%PDF-faux simple";
@@ -19,12 +20,17 @@ pub const PASSWORD: &str = "ouvre-toi";
 pub struct FakeEngine {
     next_id: AtomicU64,
     renders: AtomicUsize,
+    text_reads: AtomicUsize,
     closed: Mutex<Vec<u64>>,
 }
 
 impl FakeEngine {
     pub fn render_count(&self) -> usize {
         self.renders.load(Ordering::SeqCst)
+    }
+
+    pub fn text_reads(&self) -> usize {
+        self.text_reads.load(Ordering::SeqCst)
     }
 
     pub fn closed(&self) -> Vec<u64> {
@@ -68,8 +74,27 @@ impl PdfEngine for FakeEngine {
         Bitmap::new(w, h, vec![255; (w * h * 4) as usize])
     }
 
-    fn page_text(&self, _doc: DocumentId, _page: PageIndex) -> Result<PageText, EngineError> {
-        Ok(PageText::default())
+    /// Page 0 : « Bonjour monde » ; page 1 : « le monde entier » ; une
+    /// ligne posée à y = 800, caractères de 6 × 10 pt.
+    fn page_text(&self, _doc: DocumentId, page: PageIndex) -> Result<PageText, EngineError> {
+        self.text_reads.fetch_add(1, Ordering::SeqCst);
+        let line = match page {
+            0 => "Bonjour monde",
+            1 => "le monde entier",
+            _ => "",
+        };
+        let chars = line
+            .chars()
+            .enumerate()
+            .map(|(i, ch)| {
+                let x = 72.0 + 6.0 * i as f64;
+                TextChar {
+                    ch,
+                    bounds: Rect::from_corners(Point::new(x, 800.0), Point::new(x + 6.0, 810.0)),
+                }
+            })
+            .collect();
+        Ok(PageText { chars })
     }
 
     fn close(&self, doc: DocumentId) {
