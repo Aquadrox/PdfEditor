@@ -6,6 +6,7 @@
 
 pub mod changelog;
 pub mod document;
+pub mod edit;
 pub mod engine;
 pub mod geometry;
 pub mod render;

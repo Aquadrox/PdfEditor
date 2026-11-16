@@ -71,6 +71,28 @@ impl DisplayTransform {
         Point::new(down_x, self.height - down_y)
     }
 
+    /// Partie linéaire de la transformation (page → affichée, origine en bas).
+    fn linear(&self) -> [[f64; 2]; 2] {
+        [
+            [self.x_axis.0, self.y_axis.0],
+            [-self.x_axis.1, -self.y_axis.1],
+        ]
+    }
+
+    /// Vecteur de la page affichée → vecteur de la page PDF (inverse de la
+    /// partie linéaire ; la rotation d'une page est toujours inversible).
+    pub(crate) fn page_vector(&self, dx: f64, dy: f64) -> (f64, f64) {
+        let [[a, b], [c, d]] = self.linear();
+        let det = a * d - b * c;
+        ((d * dx - b * dy) / det, (-c * dx + a * dy) / det)
+    }
+
+    /// Point de la page affichée (origine en bas) → point de la page PDF.
+    pub(crate) fn page_point(&self, p: Point) -> (f64, f64) {
+        let (tx, ty) = (self.origin.0, self.height - self.origin.1);
+        self.page_vector(p.x - tx, p.y - ty)
+    }
+
     /// Rectangle de la page PDF → rectangle de la page affichée.
     pub(crate) fn rect(&self, r: Rect) -> Rect {
         Rect::from_corners(
@@ -96,6 +118,34 @@ mod tests {
             t.rect(rect(72.0, 760.0, 84.0, 780.0)),
             rect(72.0, 760.0, 84.0, 780.0)
         );
+    }
+
+    #[test]
+    fn inverse_brings_points_back_to_the_page() {
+        for t in [
+            DisplayTransform::new((0.0, 842.0), (1.0, 0.0), (0.0, -1.0), 842.0),
+            DisplayTransform::new((0.0, 0.0), (0.0, 1.0), (1.0, 0.0), 595.0),
+        ] {
+            let page = (72.0, 760.0);
+            let shown = t.point(page.0, page.1);
+            let back = t.page_point(shown);
+            assert!(
+                (back.0 - page.0).abs() < 1e-9 && (back.1 - page.1).abs() < 1e-9,
+                "{back:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn display_x_axis_follows_the_rotation() {
+        // Page tournée de 90° : avancer vers la droite à l'écran revient à
+        // monter dans la page PDF.
+        let t = DisplayTransform::new((0.0, 0.0), (0.0, 1.0), (1.0, 0.0), 595.0);
+        assert_eq!(t.page_vector(1.0, 0.0), (0.0, 1.0));
+        // Sans rotation : identique.
+        let t = DisplayTransform::new((0.0, 842.0), (1.0, 0.0), (0.0, -1.0), 842.0);
+        assert_eq!(t.page_vector(1.0, 0.0), (1.0, 0.0));
+        assert_eq!(t.page_vector(0.0, 1.0), (0.0, 1.0));
     }
 
     #[test]

@@ -68,6 +68,11 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Tests de non-régression
         run: cargo test --workspace
+      # Garde-fou Android (v1.1) : le cœur doit rester compilable pour Android.
+      - name: Compilation du cœur pour Android
+        run: |
+          rustup target add aarch64-linux-android
+          cargo check -p pde-core -p pde-pdf -p pde-platform -p pde-app --target aarch64-linux-android
       # Modules JS purs de l'interface (zoom, disposition, traductions).
       - name: Tests de l'interface (modules)
         working-directory: apps/desktop/ui

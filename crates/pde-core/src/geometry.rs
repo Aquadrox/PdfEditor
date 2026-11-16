@@ -4,8 +4,10 @@
 //! axe Y vers le haut (comme le PDF). L'interface, dont l'axe Y descend,
 //! convertit avec [`Rect::flip_y`] ; aucune autre conversion n'existe.
 
+use serde::{Deserialize, Serialize};
+
 /// Point en coordonnées de page (points PDF).
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
 pub struct Point {
     pub x: f64,
     pub y: f64,
