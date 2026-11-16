@@ -69,7 +69,9 @@ fn alpha(opacity: f64) -> u8 {
 /// RVBA → BVRA (ordre des octets de PDFium), transparence × opacité.
 fn to_bgra(rgba: &[u8], opacity: f64) -> Vec<u8> {
     let factor = opacity.clamp(0.0, 1.0);
-    rgba.chunks_exact(4)
+    rgba.as_chunks::<4>()
+        .0
+        .iter()
         .flat_map(|p| {
             let a = (f64::from(p[3]) * factor).round() as u8;
             [p[2], p[1], p[0], a]
