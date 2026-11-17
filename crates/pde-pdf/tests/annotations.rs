@@ -194,11 +194,14 @@ fn markup(mark: MarkKind, area: Area) -> Element {
     })
 }
 
-/// Pixels de la zone surlignée (bord d'un pixel exclu).
+/// Pixels de la zone surlignée, bords exclus. Marge de 2 points arrondie
+/// vers l'intérieur : la rangée sous un bord fractionnaire (750,94 avec les
+/// boîtes de caractères de Windows) n'est couverte qu'en partie.
 fn area_pixels(page: &Bitmap, area: Area) -> Vec<[u8; 3]> {
     let rect = area.rect();
-    let (x0, x1) = (rect.min().x as u32 + 1, rect.max().x as u32 - 1);
-    let (y0, y1) = (rect.min().y as u32 + 1, rect.max().y as u32 - 1);
+    let inner = |min: f64, max: f64| ((min + 2.0).ceil() as u32, (max - 2.0).floor() as u32);
+    let (x0, x1) = inner(rect.min().x, rect.max().x);
+    let (y0, y1) = inner(rect.min().y, rect.max().y);
     (x0..x1)
         .flat_map(|x| (y0..y1).map(move |y| (x, y)))
         .map(|(x, y)| color_at(page, x, y))
@@ -233,6 +236,17 @@ fn highlight_colours_the_background_and_keeps_text_dark() {
     let area = word_area(doc.id);
     place(doc.id, vec![markup(MarkKind::Highlight, area)]);
     assert_highlighted(&render(doc.id, 0), area, "avant enregistrement");
+
+    // Bords fractionnaires relevés sous Windows (boîtes de caractères de
+    // sa police de remplacement) : la rangée de bord ne compte pas.
+    let windows_area = Area {
+        top_left: Point::new(72.0, 783.72),
+        width: 83.04,
+        height: 32.78,
+    };
+    place(doc.id, vec![markup(MarkKind::Highlight, windows_area)]);
+    assert_highlighted(&render(doc.id, 0), windows_area, "bords fractionnaires");
+    place(doc.id, vec![markup(MarkKind::Highlight, area)]);
 
     // Toujours vrai après enregistrement (mode de fusion écrit dans le PDF).
     let bytes = engine().save(doc.id).expect("enregistrement");
