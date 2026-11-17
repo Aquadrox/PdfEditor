@@ -227,6 +227,7 @@ fn pages_of_another_pdf_are_inserted() {
         elements: vec![note(1, "Sur la page insérée")],
         images: Images::new(),
         imports: simple_import(),
+        ..Edition::default()
     };
     engine()
         .apply_edits(doc.id, edition)

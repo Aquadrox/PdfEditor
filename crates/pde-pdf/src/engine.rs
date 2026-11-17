@@ -4,6 +4,7 @@ use std::sync::OnceLock;
 use std::sync::mpsc::{Sender, SyncSender, channel, sync_channel};
 
 use pde_core::document::{DocumentId, PageIndex};
+use pde_core::edit::FormField;
 use pde_core::engine::{Edition, EngineError, OpenedDocument, PageImage, PdfEngine, Placed};
 use pde_core::render::{Bitmap, RenderRequest};
 use pde_core::text::PageText;
@@ -40,6 +41,11 @@ pub(crate) enum Command {
         doc: DocumentId,
         edition: Edition,
         reply: Reply<Vec<u8>>,
+    },
+    FormFields {
+        doc: DocumentId,
+        edition: Edition,
+        reply: Reply<Vec<FormField>>,
     },
     PageImages {
         doc: DocumentId,
@@ -145,6 +151,18 @@ impl PdfEngine for PdfiumEngine {
 
     fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError> {
         self.ask(|reply| Command::Export {
+            doc,
+            edition,
+            reply,
+        })
+    }
+
+    fn form_fields(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+    ) -> Result<Vec<FormField>, EngineError> {
+        self.ask(|reply| Command::FormFields {
             doc,
             edition,
             reply,

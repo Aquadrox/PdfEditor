@@ -8,7 +8,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use pde_core::edit::{Element, ImageData, ImageId, Images, PagePlan};
+use std::collections::BTreeMap;
+
+use pde_core::edit::{Element, FieldValue, ImageData, ImageId, Images, Metadata, PagePlan};
 use pde_core::render::Bitmap;
 use serde::{Deserialize, Serialize};
 
@@ -18,8 +20,9 @@ use crate::images::decode;
 use crate::page_png::encode_png;
 
 /// Version du format : une version inconnue n'est pas relue. Le format 2
-/// ajoute le plan des pages ; il n'est écrit que si ce plan a changé, pour
-/// qu'une version précédente de l'application ne l'ignore pas sans le dire.
+/// ajoute le plan des pages, le formulaire et les propriétés ; il n'est
+/// écrit que s'ils ont changé, pour qu'une version précédente de
+/// l'application ne les ignore pas sans le dire.
 const FORMAT: u32 = 1;
 const FORMAT_WITH_PAGES: u32 = 2;
 const MANIFEST: &str = "manifest.json";
@@ -37,6 +40,8 @@ pub struct Snapshot {
     pub pages: Option<PagePlan>,
     /// PDF insérés que le plan désigne (jamais copiés).
     pub imports: Vec<ImportRecord>,
+    /// Formulaire et propriétés changés.
+    pub form: FormState,
     /// Éléments, coordonnées de `pde-core` (origine en bas).
     pub elements: Vec<Element>,
     /// Images désignées par les éléments.
@@ -53,8 +58,24 @@ pub struct Recovered {
     pub saved_at: u64,
     pub pages: Option<PagePlan>,
     pub imports: Vec<ImportRecord>,
+    pub form: FormState,
     pub elements: Vec<Element>,
     pub images: Images,
+}
+
+/// Valeurs saisies, propriétés et aplatissement (E-08, E-11).
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct FormState {
+    pub fields: BTreeMap<String, FieldValue>,
+    pub metadata: Option<Metadata>,
+    pub flatten: bool,
+}
+
+impl FormState {
+    pub fn is_empty(&self) -> bool {
+        self.fields.is_empty() && self.metadata.is_none() && !self.flatten
+    }
 }
 
 /// PDF inséré : repris seulement si le fichier a le même contenu.
@@ -78,6 +99,8 @@ struct Manifest {
     pages: Option<PagePlan>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     imports: Vec<ImportRecord>,
+    #[serde(default, skip_serializing_if = "FormState::is_empty")]
+    form: FormState,
     elements: Vec<Element>,
     images: Vec<u64>,
 }
@@ -109,7 +132,7 @@ pub fn write(dir: &Path, snapshot: &Snapshot, saved_at: u64) -> Result<(), AppEr
         write_atomic(&file, &bytes)?;
     }
     let manifest = Manifest {
-        format: if snapshot.pages.is_some() {
+        format: if snapshot.pages.is_some() || !snapshot.form.is_empty() {
             FORMAT_WITH_PAGES
         } else {
             FORMAT
@@ -121,6 +144,7 @@ pub fn write(dir: &Path, snapshot: &Snapshot, saved_at: u64) -> Result<(), AppEr
         saved_at,
         pages: snapshot.pages.clone(),
         imports: snapshot.imports.clone(),
+        form: snapshot.form.clone(),
         elements: snapshot.elements.clone(),
         images: snapshot.images.keys().map(|id| id.0).collect(),
     };
@@ -185,6 +209,7 @@ pub fn read(dir: &Path) -> Result<Recovered, AppError> {
         saved_at: manifest.saved_at,
         pages: manifest.pages,
         imports: manifest.imports,
+        form: manifest.form,
         elements: manifest.elements,
         images,
     })
@@ -213,6 +238,14 @@ mod tests {
                 pde_core::edit::PlannedPage::original(2),
                 pde_core::edit::PlannedPage::imported(pde_core::edit::ImportId(4), 0),
             ])),
+            form: FormState {
+                fields: [("nom".to_string(), FieldValue::Text("Jean".into()))].into(),
+                metadata: Some(Metadata {
+                    title: "Contrat".into(),
+                    ..Metadata::default()
+                }),
+                flatten: false,
+            },
             imports: vec![ImportRecord {
                 id: 4,
                 path: PathBuf::from("/docs/annexe.pdf"),
@@ -261,6 +294,7 @@ mod tests {
         assert_eq!(r.elements, s.elements);
         assert_eq!(r.pages, s.pages);
         assert_eq!(r.imports, s.imports);
+        assert_eq!(r.form, s.form);
         // Pixels relus à l'identique (PNG sans perte).
         assert_eq!(r.images[&ImageId(2)], s.images[&ImageId(2)]);
         assert_eq!(
@@ -284,6 +318,7 @@ mod tests {
         assert!(text.contains("\"format\": 2"));
         s.pages = None;
         s.imports.clear();
+        s.form = FormState::default();
         write(&dir, &s, 1).unwrap();
         let text = fs::read_to_string(dir.join(MANIFEST)).unwrap();
         assert!(text.contains("\"format\": 1") && !text.contains("\"pages\""));

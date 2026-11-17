@@ -2,12 +2,14 @@
 
 mod edit;
 mod existing;
+mod form;
 mod group;
 mod images;
 mod import;
 mod pages;
 
 pub use existing::PageImageView;
+pub use form::{FieldView, WidgetView};
 pub use import::ImportFile;
 pub use pages::PagesView;
 mod recovery;
@@ -66,6 +68,8 @@ struct OpenDocument {
     import_files: BTreeMap<ImportId, ImportFile>,
     /// Images d'origine de chaque page déjà lue (oubliées si le plan change).
     page_images: HashMap<PageIndex, Vec<PageImage>>,
+    /// Champs du formulaire (lus une fois, oubliés si le plan change).
+    form_fields: Option<Vec<pde_core::edit::FormField>>,
     /// Place de chaque élément, telle que posée par le moteur.
     placed: HashMap<ElementId, Rect>,
     /// Version de chaque page, augmentée à chaque changement de son contenu
@@ -152,6 +156,7 @@ impl Viewer {
                 imports: Imports::new(),
                 import_files: BTreeMap::new(),
                 page_images: HashMap::new(),
+                form_fields: None,
                 placed: HashMap::new(),
             },
         );

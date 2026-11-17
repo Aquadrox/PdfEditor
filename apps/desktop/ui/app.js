@@ -11,6 +11,8 @@ import { offerRecoveries } from "./features/recovery/recovery.js";
 import { renderRecent } from "./features/home/recent.js";
 import { openPath, pickPdf } from "./features/open/open.js";
 import { PagesMode } from "./features/pages/pages-mode.js";
+import { FormLayer } from "./features/form/form-layer.js";
+import { attachProperties } from "./features/form/properties-dialog.js";
 import { attachSearch } from "./features/search/search-bar.js";
 import { attachSettings } from "./features/settings/settings-view.js";
 import { attachUpdates } from "./features/updates/updates.js";
@@ -41,7 +43,10 @@ const viewer = new Viewer(byId("desk"), {
   },
   onZoomChange: (zoom) => statusbar.setZoom(zoom),
   loadText: (page) => invoke("page_text", { id: current.id, page }),
-  onPageShown: (frame, page) => edit.layer.pageShown(frame, page),
+  onPageShown: (frame, page) => {
+    edit.layer.pageShown(frame, page);
+    form.pageShown(frame, page);
+  },
 });
 const statusbar = attachStatusbar(viewer);
 const search = attachSearch(viewer);
@@ -57,6 +62,13 @@ const pages = new PagesMode(edit.session, (page) => {
   viewer.goToPage(page);
 });
 edit.session.onLayout(relayout);
+// Formulaire en mode Lire, propriétés du document dans le menu.
+const form = new FormLayer(edit.session, viewer);
+attachProperties(
+  () => current,
+  edit.session,
+  (title) => setWindowTitle(`${title || current.file_name} – PdfEditor`).catch(() => {}),
+);
 
 /**
  * Pages changées (mode Pages, ou son annulation) : tout ce qui montre les
@@ -73,6 +85,7 @@ function relayout(doc) {
   statusbar.setDocument(current);
   statusbar.setPage(page);
   pages.load(current);
+  form.load(current);
   search.reset();
 }
 
@@ -97,6 +110,7 @@ function setMode(next) {
   if (mode !== "edit") edit.layer.commitText();
   edit.setActive(mode === "edit");
   pages.setActive(mode === "pages", viewer.page);
+  form.setActive(mode === "read");
   // En quittant la grille, la page choisie est affichée.
   if (previous === "pages" && mode !== "pages" && current) viewer.goToPage(pages.firstSelected);
 }
@@ -113,6 +127,7 @@ function show(doc) {
   byId("menu-save-as").disabled = !doc;
   byId("mode-edit").disabled = !doc;
   byId("mode-pages").disabled = !doc;
+  byId("menu-properties").disabled = !doc;
   statusbar.setDocument(doc);
   setWindowTitle(doc ? `${doc.title} – PdfEditor` : "PdfEditor").catch(() => {});
   if (doc) {
@@ -123,11 +138,12 @@ function show(doc) {
     statusbar.setPage(0);
     editLoading = edit
       .load(doc)
-      .then(() => pages.load(doc))
+      .then(() => Promise.all([pages.load(doc), form.load(doc)]))
       .catch((e) => toast(t("error.unexpected", { message: e?.message ?? String(e) }), "error"));
   } else {
     edit.load(null);
     pages.load(null);
+    form.load(null);
     viewer.unload();
     thumbnails.clear();
     refreshRecent();

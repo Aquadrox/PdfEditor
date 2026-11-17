@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
-use pde_core::edit::{Element, PageSources, leading};
+use pde_core::edit::{Element, FieldKind, FormField, PageSources, Widget, leading};
 use pde_core::engine::{Edition, EngineError, OpenedDocument, PageImage, PdfEngine, Placed};
 use pde_core::geometry::{Point, Rect};
 use pde_core::render::{Bitmap, RenderRequest, pixel_size};
@@ -69,10 +69,53 @@ impl FakeEngine {
             page_sizes: vec![PageSize::new(595.0, 842.0); count],
             title: None,
             outline: Vec::new(),
+            metadata: Default::default(),
         }
     }
 
     /// Tailles des pages selon le plan de `edition`, vérifié comme le ferait PDFium.
+    /// Formulaire du faux moteur, sur la première page d'origine : champ
+    /// texte « nom » (30 caractères au plus), case « accord », liste « ville ».
+    fn form(edition: &Edition) -> Vec<FormField> {
+        let Some(page) = edition.plan.position_of(0) else {
+            return Vec::new();
+        };
+        let widget = |y: f64| Widget {
+            page,
+            bounds: Rect::from_corners(Point::new(100.0, y), Point::new(300.0, y + 20.0)),
+            option: None,
+        };
+        vec![
+            FormField {
+                name: "nom".into(),
+                kind: FieldKind::Text {
+                    multiline: false,
+                    max_len: Some(30),
+                },
+                read_only: false,
+                value: None,
+                widgets: vec![widget(700.0)],
+            },
+            FormField {
+                name: "accord".into(),
+                kind: FieldKind::Checkbox,
+                read_only: false,
+                value: Some(pde_core::edit::FieldValue::Checked(false)),
+                widgets: vec![widget(650.0)],
+            },
+            FormField {
+                name: "ville".into(),
+                kind: FieldKind::Choice {
+                    options: vec!["Paris".into(), "Lyon".into()],
+                    editable: false,
+                },
+                read_only: false,
+                value: None,
+                widgets: vec![widget(600.0)],
+            },
+        ]
+    }
+
     fn arranged(&self, doc: DocumentId, edition: &Edition) -> Result<Vec<PageSize>, EngineError> {
         let pages = self.pages.lock().unwrap();
         let (originals, _) = pages.get(&doc).ok_or(EngineError::UnknownDocument)?;
@@ -161,6 +204,16 @@ impl PdfEngine for FakeEngine {
     /// ligne ; le texte UNWRITABLE échoue.
     fn apply_edits(&self, doc: DocumentId, edition: Edition) -> Result<Vec<Placed>, EngineError> {
         let sizes = self.arranged(doc, &edition)?;
+        let form = Self::form(&edition);
+        if let Some(name) = edition
+            .fields
+            .keys()
+            .find(|n| !form.iter().any(|f| &f.name == *n))
+        {
+            return Err(EngineError::Internal(format!(
+                "champ « {name} » introuvable"
+            )));
+        }
         if let Some((_, current)) = self.pages.lock().unwrap().get_mut(&doc) {
             *current = sizes;
         }
@@ -216,6 +269,15 @@ impl PdfEngine for FakeEngine {
     /// PDF de ce faux moteur, avec les pages du plan ; l'affichage ne change pas.
     fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError> {
         Ok(pdf_with_pages(self.arranged(doc, &edition)?.len()))
+    }
+
+    fn form_fields(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+    ) -> Result<Vec<FormField>, EngineError> {
+        self.arranged(doc, &edition)?;
+        Ok(Self::form(&edition))
     }
 
     /// Une image d'origine sur la première page d'origine, de (100, 600) à

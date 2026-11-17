@@ -10,7 +10,7 @@ use super::import::{ReadPdf, register_as};
 use super::{Viewer, lock};
 use crate::edit_view::EditView;
 use crate::error::AppError;
-use crate::recovery::{ImportRecord, Recovered, Snapshot};
+use crate::recovery::{FormState, ImportRecord, Recovered, Snapshot};
 
 /// Document à sauvegarder, et la version de ses éléments à ce moment.
 #[derive(Debug, Clone)]
@@ -76,6 +76,11 @@ impl Viewer {
                     digest: open.digest.clone(),
                     page_count: open.original.page_count(),
                     pages: changed_plan.clone(),
+                    form: FormState {
+                        fields: open.edits.fields().clone(),
+                        metadata: open.edits.metadata().cloned(),
+                        flatten: open.edits.flatten(),
+                    },
                     imports: changed_plan
                         .iter()
                         .flat_map(|plan| plan.pages())
@@ -144,6 +149,34 @@ impl Viewer {
                 layout = change.layout;
                 added += usize::from(layout);
             }
+            // Formulaire et propriétés : une opération chacun.
+            let mut all_pages = false;
+            let original_metadata = open.original.metadata.clone();
+            let mut form_changes = Vec::new();
+            for (name, value) in &recovered.form.fields {
+                form_changes.push(open.edits.set_field(name, Some(value.clone())));
+            }
+            if let Some(metadata) = &recovered.form.metadata {
+                form_changes.push(open.edits.set_metadata(metadata.clone(), &original_metadata));
+            }
+            if recovered.form.flatten {
+                form_changes.push(Ok(open.edits.set_flatten(true)));
+            }
+            for change in form_changes {
+                match change {
+                    Ok(change) if !change.is_empty() => {
+                        all_pages = true;
+                        added += 1;
+                    }
+                    Ok(_) => {}
+                    Err(e) => {
+                        (0..added).for_each(|_| {
+                            open.edits.rollback();
+                        });
+                        return Err(invalid(e));
+                    }
+                }
+            }
             let page_count = open.edits.plan().len();
             let mut pages = Vec::new();
             for element in &recovered.elements {
@@ -162,7 +195,11 @@ impl Viewer {
             }
             pages.sort_unstable();
             pages.dedup();
-            if let Err(e) = self.redraw(open, doc, Change { pages, layout }) {
+            if let Err(e) = self.redraw(open, doc, Change {
+                pages,
+                layout,
+                all_pages,
+            }) {
                 (0..added).for_each(|_| {
                     open.edits.rollback();
                 });
@@ -326,6 +363,34 @@ mod tests {
     }
 
     #[test]
+    fn filled_fields_and_properties_are_saved_and_restored() {
+        let s = Session::new("reprise-formulaire");
+        s.viewer
+            .set_field(
+                s.id,
+                "nom",
+                Some(pde_core::edit::FieldValue::Text("Jean".into())),
+            )
+            .unwrap();
+        let metadata = pde_core::edit::Metadata {
+            title: "Contrat".into(),
+            ..Default::default()
+        };
+        s.viewer.set_metadata(s.id, metadata.clone()).unwrap();
+        let snapshot = s.viewer.autosave_work().pending.remove(0).snapshot;
+        assert_eq!(snapshot.form.fields.len(), 1);
+
+        let path = s.dir.join("contrat.pdf");
+        let reopened = s.viewer.open_file(&path, None).unwrap().id;
+        let view = s.viewer.restore(reopened, &recovered(snapshot)).unwrap();
+        assert_eq!(view.fields.len(), 1);
+        assert_eq!(view.metadata, Some(metadata));
+        // Deux opérations annulables.
+        s.viewer.undo(reopened).unwrap();
+        assert!(s.viewer.undo(reopened).unwrap().fields.is_empty());
+    }
+
+    #[test]
     fn a_changed_file_is_refused() {
         let s = Session::new("reprise-refusee");
         s.viewer.add_element(s.id, text("a")).unwrap();
@@ -355,6 +420,7 @@ mod tests {
             saved_at: 1,
             pages: snapshot.pages,
             imports: snapshot.imports,
+            form: snapshot.form,
             elements: snapshot.elements,
             images: snapshot.images,
         }

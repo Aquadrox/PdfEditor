@@ -45,6 +45,8 @@ pub struct DocumentInfo {
     /// Titre des métadonnées, s'il est renseigné.
     pub title: Option<String>,
     pub outline: Vec<OutlineItem>,
+    /// Propriétés du document (titre, auteur, sujet, mots-clés).
+    pub metadata: crate::edit::Metadata,
 }
 
 impl DocumentInfo {
@@ -73,6 +75,7 @@ mod tests {
             page_sizes: vec![PageSize::new(595.0, 842.0), PageSize::new(842.0, 595.0)],
             title: None,
             outline: Vec::new(),
+            metadata: Default::default(),
         }
     }
 

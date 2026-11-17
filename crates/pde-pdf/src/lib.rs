@@ -9,6 +9,7 @@ mod arrange;
 mod convert;
 mod display;
 mod engine;
+mod form;
 mod library;
 mod reader;
 mod worker;

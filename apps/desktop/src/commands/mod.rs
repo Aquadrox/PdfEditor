@@ -6,6 +6,7 @@
 
 pub mod document;
 pub mod edit;
+pub mod form;
 pub mod image;
 pub mod pages;
 pub mod recovery;

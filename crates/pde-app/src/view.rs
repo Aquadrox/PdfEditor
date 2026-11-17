@@ -75,6 +75,7 @@ mod tests {
                     children: Vec::new(),
                 }],
             }],
+            metadata: Default::default(),
         };
         let view = DocumentView::new(7, "devis.pdf".into(), &info);
         assert_eq!(view.title, "devis.pdf");
@@ -94,6 +95,7 @@ mod tests {
             page_sizes: vec![PageSize::new(10.0, 20.0)],
             title: Some("T".into()),
             outline: Vec::new(),
+            metadata: Default::default(),
         };
         let json = serde_json::to_string(&DocumentView::new(1, "a.pdf".into(), &info)).unwrap();
         assert_eq!(

@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="styles/settings.css" />
     <link rel="stylesheet" href="styles/edit.css" />
     <link rel="stylesheet" href="styles/pages.css" />
+    <link rel="stylesheet" href="styles/form.css" />
     <script type="module" src="app.js"></script>
   </head>
   <body>
@@ -79,6 +80,8 @@
           <button id="menu-save" role="menuitem" disabled><span data-i18n="menu.save"></span><kbd data-shortcut="save"></kbd></button>
           <button id="menu-save-as" role="menuitem" disabled><span data-i18n="menu.saveAs"></span><kbd data-shortcut="save_as"></kbd></button>
           <button id="menu-close" role="menuitem" disabled><span data-i18n="menu.close"></span><kbd data-shortcut="close"></kbd></button>
+          <button id="menu-properties" role="menuitem" disabled><span data-i18n="menu.properties"></span></button>
+          <button id="menu-flatten" role="menuitem" disabled><span data-i18n="menu.flatten"></span></button>
           <button id="menu-settings" role="menuitem"><span data-i18n="menu.settings"></span><kbd data-shortcut="settings"></kbd></button>
         </div>
         <span class="doc-title">
@@ -550,6 +553,23 @@
         <button id="redact-cancel" class="btn" type="button" data-i18n="redact.cancel"></button>
         <button id="redact-confirm" class="btn destructive" type="button" data-i18n="redact.confirm"></button>
       </div>
+    </dialog>
+
+    <dialog id="props-dialog" aria-labelledby="props-title">
+      <form id="props-form">
+        <div class="dialog-body">
+          <h2 id="props-title" class="dialog-title" data-i18n="props.docTitle"></h2>
+          <label><span data-i18n="meta.title"></span><input id="meta-title" class="input" maxlength="2000" /></label>
+          <label><span data-i18n="meta.author"></span><input id="meta-author" class="input" maxlength="2000" /></label>
+          <label><span data-i18n="meta.subject"></span><input id="meta-subject" class="input" maxlength="2000" /></label>
+          <label><span data-i18n="meta.keywords"></span><input id="meta-keywords" class="input" maxlength="2000" /></label>
+          <p class="caption" data-i18n="meta.hint"></p>
+        </div>
+        <div class="dialog-actions">
+          <button id="props-cancel" class="btn" type="button" data-i18n="meta.cancel"></button>
+          <button class="btn primary" type="submit" data-i18n="meta.apply"></button>
+        </div>
+      </form>
     </dialog>
 
     <dialog id="unsaved-dialog" aria-labelledby="unsaved-title">

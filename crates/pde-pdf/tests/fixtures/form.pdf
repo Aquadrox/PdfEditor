@@ -1,0 +1,91 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [6 0 R 7 0 R 9 0 R 12 0 R] /DR << /Font << /Helv 5 0 R >> >> /DA (/Helv 0 Tf 0 g) >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R /Annots [6 0 R 7 0 R 10 0 R 11 0 R 12 0 R] >>
+endobj
+4 0 obj
+<< /Length 87 >>
+stream
+BT /F1 18 Tf 72 760 Td (Formulaire de test) Tj ET
+BT /F1 11 Tf 72 705 Td (Nom :) Tj ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (nom) /V (Ancien) /Rect [120 700 320 722] /P 3 0 R /DA (/Helv 12 Tf 0 g) /F 4 /AP << /N 8 0 R >> >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (accord) /Rect [120 650 135 665] /P 3 0 R /V /Off /AS /Off /F 4 /MK << /BC [0 0 0] >> /AP << /N << /Oui 13 0 R /Off 15 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 22] /Resources << /Font << /Helv 5 0 R >> >> /Length 56 >>
+stream
+/Tx BMC q BT /Helv 12 Tf 0 g 2 6 Td (Ancien) Tj ET Q EMC
+endstream
+endobj
+9 0 obj
+<< /FT /Btn /Ff 49152 /T (civilite) /V /Off /Kids [10 0 R 11 0 R] >>
+endobj
+10 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 9 0 R /Rect [120 600 135 615] /P 3 0 R /F 4 /AS /Off /MK << /BC [0 0 0] >> /AP << /N << /M 14 0 R /Off 15 0 R >> >> >>
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 9 0 R /Rect [160 600 175 615] /P 3 0 R /F 4 /AS /Off /MK << /BC [0 0 0] >> /AP << /N << /Mme 14 0 R /Off 15 0 R >> >> >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /Ff 131072 /T (ville) /Opt [(Paris) (Lyon)] /V (Paris) /Rect [120 550 260 568] /P 3 0 R /DA (/Helv 11 Tf 0 g) /F 4 >>
+endobj
+13 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 15 15] /Length 20 >>
+stream
+q 0 g 3 3 9 9 re f Q
+endstream
+endobj
+14 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 15 15] /Length 20 >>
+stream
+q 0 g 4 4 7 7 re f Q
+endstream
+endobj
+15 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 15 15] /Length 0 >>
+stream
+
+endstream
+endobj
+16 0 obj
+<< /Title <FEFF0046006F0072006D0075006C006100690072006500200064006500200074006500730074> /Author (Test) >>
+endobj
+xref
+0 17
+0000000000 65535 f 
+0000000015 00000 n 
+0000000170 00000 n 
+0000000227 00000 n 
+0000000396 00000 n 
+0000000533 00000 n 
+0000000630 00000 n 
+0000000789 00000 n 
+0000000981 00000 n 
+0000001177 00000 n 
+0000001261 00000 n 
+0000001437 00000 n 
+0000001615 00000 n 
+0000001790 00000 n 
+0000001909 00000 n 
+0000002028 00000 n 
+0000002126 00000 n 
+trailer
+<< /Size 17 /Root 1 0 R /Info 16 0 R >>
+startxref
+2249
+%%EOF

@@ -4,7 +4,9 @@
 use thiserror::Error;
 
 use crate::document::{DocumentId, DocumentInfo, PageIndex};
-use crate::edit::{Element, ElementId, Images, Imports, PagePlan};
+use std::collections::BTreeMap;
+
+use crate::edit::{Element, ElementId, FieldValue, FormField, Images, Imports, Metadata, PagePlan};
 use crate::geometry::Rect;
 use crate::render::{Bitmap, RenderRequest};
 use crate::text::PageText;
@@ -61,6 +63,12 @@ pub struct Edition {
     pub elements: Vec<(ElementId, Element)>,
     pub images: Images,
     pub imports: Imports,
+    /// Valeurs saisies dans les champs du formulaire, par nom complet.
+    pub fields: BTreeMap<String, FieldValue>,
+    /// Propriétés du document, si elles ont été changées.
+    pub metadata: Option<Metadata>,
+    /// Formulaire aplati.
+    pub flatten: bool,
 }
 
 impl Edition {
@@ -70,7 +78,7 @@ impl Edition {
             plan,
             elements,
             images,
-            imports: Imports::new(),
+            ..Self::default()
         }
     }
 }
@@ -98,6 +106,11 @@ pub trait PdfEngine: Send + Sync {
     /// Contenu d'un autre document tiré de l'original (extraire des pages) :
     /// le document affiché ne change pas.
     fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError>;
+
+    /// Champs du formulaire du document arrangé selon le plan de `edition`
+    /// (valeurs et éléments non appliqués) ; vide s'il n'y en a pas.
+    fn form_fields(&self, doc: DocumentId, edition: Edition)
+    -> Result<Vec<FormField>, EngineError>;
 
     /// Images d'origine de la page `page` du document arrangé selon le plan
     /// de `edition` (ses éléments ne sont pas posés).
@@ -148,6 +161,14 @@ impl<T: PdfEngine + ?Sized> PdfEngine for &T {
         page: PageIndex,
     ) -> Result<Vec<PageImage>, EngineError> {
         (**self).page_images(doc, edition, page)
+    }
+
+    fn form_fields(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+    ) -> Result<Vec<FormField>, EngineError> {
+        (**self).form_fields(doc, edition)
     }
 
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError> {
