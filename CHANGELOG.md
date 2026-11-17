@@ -4,6 +4,11 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.13 — 2026-11-17
+
+- « Enregistrer sous » propose une copie à côté de l'original, nommée avec un suffixe réglable : « contrat (modifié).pdf ».
+- Réglages Fichiers : dossier proposé par les dialogues Ouvrir et Ajouter une image, choisi avec le bouton « Choisir… » ; suffixe des copies.
+
 ## 0.0.12 — 2026-11-17
 
 - Sélection de plusieurs éléments : Maj+clic, Ctrl+A pour toute la page, Tab pour passer d'un élément au suivant.

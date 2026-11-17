@@ -113,3 +113,43 @@ test("avertissements de lecture de config.toml affichés", async () => {
     await app.close();
   }
 });
+
+test("Fichiers : dossier par défaut choisi dans le dialogue, suffixe des copies", async () => {
+  const saved = withSettings((s) => {
+    s.files.default_dir = "/home/moi/Documents";
+    s.files.copy_suffix = " - relu";
+  });
+  const app = await launch({ pick_folder: [{ ok: "/home/moi/Documents" }], save_settings: [{ ok: saved }] });
+  try {
+    await openSettings(app);
+    await app.page.click(".settings-nav [data-section=files]");
+    assert.equal(await app.page.inputValue("#set-copy-suffix"), " (modifié)");
+    assert.equal(await app.page.getAttribute("#set-default-dir", "placeholder"), "Celui du système");
+    await app.page.click("#pick-default-dir");
+    await app.page.waitForFunction(() => document.getElementById("set-default-dir").value === "/home/moi/Documents");
+    await app.page.fill("#set-copy-suffix", " - relu");
+    await app.page.press("#set-copy-suffix", "Tab");
+    assert.equal(await app.page.textContent("#settings-dirty"), "2 réglage(s) modifié(s)");
+    await app.page.click("#settings-save");
+    await app.page.waitForFunction(() => window.__calls.some((c) => c.command === "save_settings"));
+    const save = (await app.calls()).find((c) => c.command === "save_settings");
+    assert.equal(save.args.settings.files.default_dir, "/home/moi/Documents");
+    assert.equal(save.args.settings.files.copy_suffix, " - relu");
+  } finally {
+    await app.close();
+  }
+});
+
+test("Fichiers : dialogue du dossier annulé, rien ne change", async () => {
+  const app = await launch({ pick_folder: [{ ok: null }] });
+  try {
+    await openSettings(app);
+    await app.page.click(".settings-nav [data-section=files]");
+    await app.page.click("#pick-default-dir");
+    await app.page.waitForFunction(() => window.__calls.some((c) => c.command === "pick_folder"));
+    assert.equal(await app.page.inputValue("#set-default-dir"), "");
+    assert.equal(await app.page.isDisabled("#settings-save"), true);
+  } finally {
+    await app.close();
+  }
+});

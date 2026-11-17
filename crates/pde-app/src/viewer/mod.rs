@@ -132,6 +132,14 @@ impl Viewer {
         Ok(view)
     }
 
+    /// Fichier du document ouvert (celui qu'« Enregistrer » remplace).
+    pub fn document_path(&self, id: u64) -> Result<PathBuf, AppError> {
+        lock(&self.documents)
+            .get(&DocumentId(id))
+            .map(|open| open.path.clone())
+            .ok_or_else(unknown_document)
+    }
+
     /// Ferme le document ; sans effet s'il ne l'est déjà plus.
     pub fn close(&self, id: u64) {
         let id = DocumentId(id);

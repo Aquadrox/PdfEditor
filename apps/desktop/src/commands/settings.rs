@@ -5,10 +5,27 @@ use pde_app::settings_store::SettingsView;
 use pde_core::settings::Settings;
 use pde_platform::dirs::AppDirs;
 use serde::Serialize;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
+use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
 use super::AppState;
+
+/// Choix d'un dossier (réglage Fichiers : dossier par défaut) ; `None` si annulé.
+#[tauri::command(async)]
+pub fn pick_folder(handle: AppHandle) -> Result<Option<String>, AppError> {
+    let mut dialog = handle.dialog().file().set_title("Dossier par défaut");
+    if let Some(window) = handle.get_webview_window("main") {
+        dialog = dialog.set_parent(&window);
+    }
+    let Some(folder) = dialog.blocking_pick_folder() else {
+        return Ok(None);
+    };
+    folder
+        .into_path()
+        .map(|p| Some(p.display().to_string()))
+        .map_err(|e| AppError::new(ErrorKind::Io, e.to_string()))
+}
 use crate::logging;
 use crate::updates::UpdatesState;
 

@@ -29,6 +29,9 @@ pub fn pick_image(
         .file()
         .set_title("Ajouter une image")
         .add_filter("Images", &["png", "jpg", "jpeg", "webp"]);
+    if let Some(dir) = app.dialog_dir() {
+        dialog = dialog.set_directory(dir);
+    }
     if let Some(window) = handle.get_webview_window("main") {
         dialog = dialog.set_parent(&window);
     }

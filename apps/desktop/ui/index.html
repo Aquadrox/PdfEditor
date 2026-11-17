@@ -438,6 +438,17 @@
                 <option value="600" data-i18n="settings.autosave.600"></option>
               </select>
             </div>
+            <div class="field">
+              <label for="set-default-dir"><span data-i18n="settings.defaultDir"></span><span class="hint" data-i18n="settings.defaultDir.hint"></span></label>
+              <span class="actions">
+                <input id="set-default-dir" class="input" type="text" data-setting="files.default_dir" data-i18n-placeholder="settings.defaultDir.none" />
+                <button id="pick-default-dir" class="btn" type="button" data-i18n="settings.defaultDir.pick"></button>
+              </span>
+            </div>
+            <div class="field">
+              <label for="set-copy-suffix"><span data-i18n="settings.copySuffix"></span><span class="hint" data-i18n="settings.copySuffix.hint"></span></label>
+              <input id="set-copy-suffix" class="input" type="text" maxlength="40" data-setting="files.copy_suffix" />
+            </div>
           </section>
 
           <section class="settings-section" data-section="diagnostic" hidden>

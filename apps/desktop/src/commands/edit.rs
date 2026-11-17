@@ -110,20 +110,24 @@ pub fn save_document(app: AppState<'_>, id: u64) -> Result<SavedView, AppError> 
     app.save_document(id, None)
 }
 
-/// « Enregistrer sous » : dialogue, puis enregistrement ; `None` si annulé.
+/// « Enregistrer sous » : dialogue (dossier du document, nom de copie
+/// proposé par `pde-app`), puis enregistrement ; `None` si annulé.
 #[tauri::command(async)]
 pub fn save_document_as(
     handle: AppHandle,
     app: AppState<'_>,
     id: u64,
-    suggested_name: String,
 ) -> Result<Option<SavedView>, AppError> {
+    let (dir, name) = app.save_as_proposal(id)?;
     let mut dialog = handle
         .dialog()
         .file()
         .set_title("Enregistrer sous")
         .add_filter("Documents PDF", &["pdf"])
-        .set_file_name(suggested_name);
+        .set_file_name(name);
+    if let Some(dir) = dir {
+        dialog = dialog.set_directory(dir);
+    }
     if let Some(window) = handle.get_webview_window("main") {
         dialog = dialog.set_parent(&window);
     }

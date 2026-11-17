@@ -27,7 +27,8 @@ export async function saveDocument(session) {
 /** Demande le fichier puis enregistre ; `null` si annulé ou en échec. */
 export async function saveDocumentAs(session) {
   try {
-    const saved = await invoke("save_document_as", { id: session.doc.id, suggestedName: session.doc.file_name });
+    // Dossier et nom de copie proposés par Rust (réglage Fichiers).
+    const saved = await invoke("save_document_as", { id: session.doc.id });
     if (!saved) return null;
     await session.reload();
     toast(t("save.done", { name: saved.file_name }));
