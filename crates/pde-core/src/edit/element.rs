@@ -19,7 +19,7 @@ pub struct ElementId(pub u64);
 
 /// Polices standard du PDF : présentes dans tous les lecteurs, rien à
 /// embarquer (alphabet latin, € et œ compris).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum StandardFont {
     /// Sans empattement (Helvetica, équivalent d'Arial).

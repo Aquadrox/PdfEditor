@@ -21,9 +21,10 @@ pub(crate) fn apply(
     images: &Images,
 ) -> Result<Vec<Placed>, EngineError> {
     let mut placed = Vec::with_capacity(elements.len());
+    let mut fonts = text::Fonts::default();
     for (id, element) in elements {
         let bounds = match element {
-            Element::Text(box_) => text::write_text(doc, box_)?,
+            Element::Text(box_) => text::write_text(doc, box_, &mut fonts)?,
             Element::Image(box_) => {
                 let asset = images.get(&box_.image).ok_or_else(|| {
                     EngineError::Internal(format!("image {} absente", box_.image.0))

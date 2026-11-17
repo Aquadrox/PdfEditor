@@ -4,7 +4,8 @@
     "resources": {
       "../../vendor/pdfium/pdfium.dll": "pdfium.dll",
       "../../vendor/pdfium/LICENSE-pdfium-binaries": "licenses/pdfium/LICENSE",
-      "../../vendor/pdfium/licenses/": "licenses/pdfium/"
+      "../../vendor/pdfium/licenses/": "licenses/pdfium/",
+      "../../crates/pde-fonts/fonts/OFL.txt": "licenses/noto/OFL.txt"
     }
   }
 }

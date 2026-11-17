@@ -3,6 +3,12 @@
 //! Les positions viennent de la page affichée : elles sont ramenées à la
 //! page PDF par l'inverse de [`DisplayTransform`], et chaque ligne reçoit la
 //! même rotation que la page, pour rester droite à l'écran.
+//!
+//! Police : standard du PDF si tout le texte de la zone s'y écrit (rien à
+//! embarquer), sinon la police Noto équivalente, embarquée une fois par
+//! variante et par pose (`pde-fonts`).
+
+use std::collections::HashMap;
 
 use pde_core::edit::{Align, StandardFont, TextBox, leading, wrap};
 use pde_core::engine::EngineError;
@@ -24,7 +30,40 @@ fn ascent(font: StandardFont) -> f64 {
     }
 }
 
-fn font_token(doc: &mut PdfDocument, text: &TextBox) -> PdfFontToken {
+/// Polices Noto déjà chargées dans le document en cours de pose.
+#[derive(Default)]
+pub(super) struct Fonts {
+    embedded: HashMap<(StandardFont, bool, bool), PdfFontToken>,
+}
+
+impl Fonts {
+    /// Police et hauteur au-dessus de la ligne de base pour la zone `text`.
+    fn choose(
+        &mut self,
+        doc: &mut PdfDocument,
+        text: &TextBox,
+    ) -> Result<(PdfFontToken, f64), EngineError> {
+        let (font, bold, italic) = (text.style.font, text.style.bold, text.style.italic);
+        if pde_fonts::fits_standard_fonts(&text.text) {
+            return Ok((standard_token(doc, text), ascent(font)));
+        }
+        let embedded = pde_fonts::embedded(font, bold, italic);
+        let token = match self.embedded.get(&(font, bold, italic)) {
+            Some(token) => *token,
+            None => {
+                let token = doc
+                    .fonts_mut()
+                    .load_true_type_from_bytes(embedded.bytes, true)
+                    .map_err(internal)?;
+                self.embedded.insert((font, bold, italic), token);
+                token
+            }
+        };
+        Ok((token, embedded.ascent()))
+    }
+}
+
+fn standard_token(doc: &mut PdfDocument, text: &TextBox) -> PdfFontToken {
     let fonts = doc.fonts_mut();
     let (bold, italic) = (text.style.bold, text.style.italic);
     match (text.style.font, bold, italic) {
@@ -43,8 +82,12 @@ fn font_token(doc: &mut PdfDocument, text: &TextBox) -> PdfFontToken {
     }
 }
 
-pub(super) fn write_text(doc: &mut PdfDocument, text: &TextBox) -> Result<Rect, EngineError> {
-    let font = font_token(doc, text);
+pub(super) fn write_text(
+    doc: &mut PdfDocument,
+    text: &TextBox,
+    fonts: &mut Fonts,
+) -> Result<Rect, EngineError> {
+    let (font, top_to_baseline) = fonts.choose(doc, text)?;
     let size = PdfPoints::new(text.style.size as f32);
     let measure = |s: &str| -> f64 {
         if s.is_empty() {
@@ -80,7 +123,7 @@ pub(super) fn write_text(doc: &mut PdfDocument, text: &TextBox) -> Result<Rect, 
         };
         let baseline = Point::new(
             text.top_left.x + offset,
-            text.top_left.y - ascent(text.style.font) * text.style.size - step * i as f64,
+            text.top_left.y - top_to_baseline * text.style.size - step * i as f64,
         );
         let (px, py) = display.page_point(baseline);
         let mut object = PdfPageTextObject::new(doc, line, font, size).map_err(internal)?;

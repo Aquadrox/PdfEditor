@@ -56,14 +56,29 @@ pub struct ElementView {
     pub element: Element,
     /// Place occupée (hauteur du texte comprise), origine en haut.
     pub bounds: BoxView,
+    /// Caractères d'une zone de texte qu'aucune police ne sait écrire
+    /// (chinois, arabe… : signalés, prévus plus tard) ; vide sinon.
+    pub missing_chars: String,
 }
 
 impl ElementView {
     pub fn new(id: ElementId, element: &Element, bounds: &Rect, page: PageSize) -> Self {
+        let missing_chars = match element {
+            Element::Text(text) => pde_fonts::missing_chars(
+                &text.text,
+                text.style.font,
+                text.style.bold,
+                text.style.italic,
+            )
+            .into_iter()
+            .collect(),
+            _ => String::new(),
+        };
         Self {
             id: id.0,
             element: flip(element, page),
             bounds: BoxView::new(bounds, page),
+            missing_chars,
         }
     }
 }
@@ -174,5 +189,24 @@ mod tests {
             (shape.start, shape.end),
             (Point::new(10.0, 822.0), Point::new(30.0, 802.0))
         );
+    }
+
+    #[test]
+    fn unsupported_characters_are_reported() {
+        let page = PageSize::new(595.0, 842.0);
+        let rect = Rect::from_corners(Point::new(0.0, 0.0), Point::new(10.0, 10.0));
+        let text = |content: &str| {
+            Element::Text(TextBox {
+                page: 0,
+                top_left: Point::new(72.0, 700.0),
+                width: 200.0,
+                text: content.into(),
+                style: TextStyle::default(),
+            })
+        };
+        let view = ElementView::new(ElementId(1), &text("Contrat 契約, Договор"), &rect, page);
+        assert_eq!(view.missing_chars, "契約");
+        let view = ElementView::new(ElementId(1), &text("Σύμβαση, œuvre à 18 €"), &rect, page);
+        assert_eq!(view.missing_chars, "");
     }
 }

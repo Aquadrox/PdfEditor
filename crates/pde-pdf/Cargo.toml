@@ -8,6 +8,7 @@ license.workspace = true
 
 [dependencies]
 pde-core = { path = "../pde-core" }
+pde-fonts = { path = "../pde-fonts" }
 # Fonctions de PDFium 8125 : la bibliothèque téléchargée par
 # scripts/fetch-pdfium.sh doit être de la même version.
 pdfium-render = { version = "0.9.5", default-features = false, features = ["pdfium_8125", "thread_safe"] }

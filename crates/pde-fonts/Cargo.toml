@@ -1,0 +1,19 @@
+[package]
+name = "pde-fonts"
+description = "Polices Noto embarquées pour le texte ajouté (latin étendu, grec, cyrillique)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+pde-core = { path = "../pde-core" }
+# Lecture des tables des polices (caractères couverts, métriques), Rust pur
+# (projet « fontations » de Google Fonts).
+skrifa = "0.50"
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+sha2 = "0.10"
