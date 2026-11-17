@@ -7,6 +7,7 @@ use std::collections::BTreeMap;
 use crate::document::{PageIndex, PageSize};
 
 use super::element::{Element, ElementId};
+use super::import::{ImportId, PageSources};
 use super::pages::PagePlan;
 
 /// Opération sur les éléments ; chacune connaît son inverse.
@@ -103,8 +104,8 @@ impl Change {
 pub struct Edits {
     pub(super) elements: BTreeMap<ElementId, Element>,
     pub(super) next_id: u64,
-    /// Taille affichée des pages du document d'origine.
-    pub(super) originals: Vec<PageSize>,
+    /// Taille affichée des pages de l'original et des PDF insérés.
+    pub(super) sources: PageSources,
     pub(super) plan: PagePlan,
     /// Opérations faites, chacune avec son numéro (pour l'état enregistré).
     done: Vec<(u64, Operation)>,
@@ -124,9 +125,20 @@ impl Edits {
     pub fn with_pages(originals: Vec<PageSize>) -> Self {
         Self {
             plan: PagePlan::identity(originals.len()),
-            originals,
+            sources: PageSources::new(originals),
             ..Self::default()
         }
+    }
+
+    /// PDF inséré : ses pages peuvent entrer dans le plan. Il reste connu
+    /// toute la session (annuler, rétablir), comme les images.
+    pub fn register_import(&mut self, id: ImportId, page_sizes: Vec<PageSize>) {
+        self.sources.imported.insert(id, page_sizes);
+    }
+
+    /// Pages que le plan peut désigner.
+    pub fn sources(&self) -> &PageSources {
+        &self.sources
     }
 
     pub fn plan(&self) -> &PagePlan {
@@ -135,12 +147,12 @@ impl Edits {
 
     /// Taille affichée de chaque page du document arrangé.
     pub fn page_sizes(&self) -> Vec<PageSize> {
-        self.plan.sizes(&self.originals)
+        self.plan.sizes(&self.sources)
     }
 
     /// Taille d'origine de chaque page de l'original.
     pub fn original_sizes(&self) -> &[PageSize] {
-        &self.originals
+        &self.sources.originals
     }
 
     pub fn elements(&self) -> impl Iterator<Item = (ElementId, &Element)> {

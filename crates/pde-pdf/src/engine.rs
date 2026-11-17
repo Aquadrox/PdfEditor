@@ -4,8 +4,7 @@ use std::sync::OnceLock;
 use std::sync::mpsc::{Sender, SyncSender, channel, sync_channel};
 
 use pde_core::document::{DocumentId, PageIndex};
-use pde_core::edit::{Element, ElementId, Images, PagePlan};
-use pde_core::engine::{EngineError, OpenedDocument, PdfEngine, Placed};
+use pde_core::engine::{Edition, EngineError, OpenedDocument, PdfEngine, Placed};
 use pde_core::render::{Bitmap, RenderRequest};
 use pde_core::text::PageText;
 use pdfium_render::prelude::Pdfium;
@@ -34,10 +33,13 @@ pub(crate) enum Command {
     },
     ApplyEdits {
         doc: DocumentId,
-        plan: PagePlan,
-        elements: Vec<(ElementId, Element)>,
-        images: Images,
+        edition: Edition,
         reply: Reply<Vec<Placed>>,
+    },
+    Export {
+        doc: DocumentId,
+        edition: Edition,
+        reply: Reply<Vec<u8>>,
     },
     Save {
         doc: DocumentId,
@@ -127,18 +129,18 @@ impl PdfEngine for PdfiumEngine {
         self.ask(|reply| Command::Text { doc, page, reply })
     }
 
-    fn apply_edits(
-        &self,
-        doc: DocumentId,
-        plan: PagePlan,
-        elements: Vec<(ElementId, Element)>,
-        images: Images,
-    ) -> Result<Vec<Placed>, EngineError> {
+    fn apply_edits(&self, doc: DocumentId, edition: Edition) -> Result<Vec<Placed>, EngineError> {
         self.ask(|reply| Command::ApplyEdits {
             doc,
-            plan,
-            elements,
-            images,
+            edition,
+            reply,
+        })
+    }
+
+    fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError> {
+        self.ask(|reply| Command::Export {
+            doc,
+            edition,
             reply,
         })
     }

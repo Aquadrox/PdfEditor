@@ -122,6 +122,12 @@ export class PageGrid {
     this.render();
   }
 
+  /** Place de dépôt sous un point de la fenêtre (fichier déposé). */
+  indexAt(point) {
+    const boxes = this.cards.map((card) => card.getBoundingClientRect());
+    return dropIndex(boxes, point.x, point.y);
+  }
+
   /** Nombre de colonnes de la grille (flèches haut et bas). */
   get columns() {
     const tops = this.cards.map((card) => card.offsetTop);

@@ -205,3 +205,64 @@ test("Pages : clavier — Ctrl+A, flèches, Suppr", async () => {
     await app.close();
   }
 });
+
+test("Pages : insérer un PDF après la sélection ; dialogue annulé sans effet", async () => {
+  const app = await openInPagesMode({ insert_pdf: [{ ok: null }, { ok: pagesView(5, [1, 2]) }] });
+  try {
+    await app.page.click("#pages-insert-pdf");
+    await app.page.locator("#pages-insert-pdf:enabled").waitFor();
+    assert.equal(await app.page.locator(".page-card").count(), 3);
+    await app.page.click("#pages-insert-pdf");
+    await app.page.locator(".page-card").nth(4).waitFor();
+    assert.deepEqual(await app.callsTo("insert_pdf"), [
+      { id: 1, at: 1 },
+      { id: 1, at: 1 },
+    ]);
+    assert.deepEqual(await selected(app), [1, 2]);
+    assert.equal(await app.page.locator("#thumbs .thumb").count(), 5);
+  } finally {
+    await app.close();
+  }
+});
+
+test("Pages : un PDF déposé sur la grille est inséré là où il tombe", async () => {
+  const app = await openInPagesMode({ insert_pdf_files: [{ ok: pagesView(5, [2, 3]) }] });
+  try {
+    // Moitié gauche de la troisième carte : devant la page 3.
+    const box = await card(app, 2).boundingBox();
+    const ratio = await app.page.evaluate(() => window.devicePixelRatio);
+    const position = { x: (box.x + box.width / 4) * ratio, y: (box.y + box.height / 2) * ratio };
+    await app.emit("tauri://drag-drop", { paths: ["/docs/annexe.pdf", "/docs/devis.pdf"], position });
+    await app.page.locator(".page-card").nth(4).waitFor();
+    assert.deepEqual(await app.callsTo("insert_pdf_files"), [
+      { id: 1, paths: ["/docs/annexe.pdf", "/docs/devis.pdf"], at: 2 },
+    ]);
+    // Rien n'a été ouvert à la place du document.
+    assert.equal((await app.callsTo("open_document")).length, 1);
+  } finally {
+    await app.close();
+  }
+});
+
+test("Pages : extraire les pages choisies, message ; annulé, rien", async () => {
+  const saved = { path: "/docs/contrat (pages 1, 3).pdf", file_name: "contrat (pages 1, 3).pdf" };
+  const app = await openInPagesMode({ extract_pages: [{ ok: null }, { ok: saved }] });
+  try {
+    await card(app, 2).click({ modifiers: ["Control"] });
+    await app.page.click("#pages-extract");
+    await app.page.locator("#pages-extract:enabled").waitFor();
+    assert.equal(await app.page.locator("#toast").isVisible(), false);
+    await app.page.click("#pages-extract");
+    await app.page.locator("#toast:not(.error)").waitFor();
+    assert.match(await app.page.textContent("#toast"), /Pages extraites dans « contrat \(pages 1, 3\)\.pdf »/);
+    assert.deepEqual(await app.callsTo("extract_pages"), [
+      { id: 1, pages: [0, 2] },
+      { id: 1, pages: [0, 2] },
+    ]);
+    // Le document ne change pas.
+    assert.equal(await app.page.locator(".page-card").count(), 3);
+    assert.equal(await app.page.locator("#doc-dirty").isVisible(), false);
+  } finally {
+    await app.close();
+  }
+});

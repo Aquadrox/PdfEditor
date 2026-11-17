@@ -5,7 +5,7 @@ mod common;
 
 use common::{SIMPLE, engine, open_simple};
 use pde_core::edit::{Align, Color, Element, ElementId, Images, PagePlan, TextBox, TextStyle};
-use pde_core::engine::PdfEngine;
+use pde_core::engine::{Edition, PdfEngine};
 use pde_core::geometry::Point;
 use pde_core::render::RenderRequest;
 
@@ -28,12 +28,14 @@ fn added_text_is_drawn_and_readable() {
     let placed = engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            vec![(
-                ElementId(1),
-                text_box(0, 100.0, 500.0, 300.0, "Annexe B jointe"),
-            )],
-            Images::new(),
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                vec![(
+                    ElementId(1),
+                    text_box(0, 100.0, 500.0, 300.0, "Annexe B jointe"),
+                )],
+                Images::new(),
+            ),
         )
         .unwrap();
     // Une ligne : hauteur = corps × interligne (20 × 1,25).
@@ -60,9 +62,11 @@ fn long_text_wraps_inside_its_box() {
     let placed = engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            vec![(ElementId(1), text_box(0, 72.0, 400.0, 120.0, words))],
-            Images::new(),
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                vec![(ElementId(1), text_box(0, 72.0, 400.0, 120.0, words))],
+                Images::new(),
+            ),
         )
         .unwrap();
     let lines = (placed[0].bounds.height() / 25.0).round() as usize;
@@ -86,9 +90,11 @@ fn text_stays_upright_on_a_rotated_page() {
     engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            vec![(ElementId(1), text_box(1, 50.0, 560.0, 400.0, "Droit"))],
-            Images::new(),
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                vec![(ElementId(1), text_box(1, 50.0, 560.0, 400.0, "Droit"))],
+                Images::new(),
+            ),
         )
         .unwrap();
     let text = engine().page_text(doc.id, 1).unwrap();
@@ -121,9 +127,11 @@ fn accents_euro_and_ligatures_survive() {
     engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            vec![(ElementId(1), text_box(0, 72.0, 300.0, 450.0, sample))],
-            Images::new(),
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                vec![(ElementId(1), text_box(0, 72.0, 300.0, 450.0, sample))],
+                Images::new(),
+            ),
         )
         .unwrap();
     let text = engine().page_text(doc.id, 0).unwrap().text();
@@ -137,17 +145,21 @@ fn removing_every_element_returns_to_the_original() {
     engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            vec![(ElementId(1), text_box(0, 72.0, 300.0, 300.0, "Temporaire"))],
-            Images::new(),
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                vec![(ElementId(1), text_box(0, 72.0, 300.0, 300.0, "Temporaire"))],
+                Images::new(),
+            ),
         )
         .unwrap();
     engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            Vec::new(),
-            Images::new(),
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                Vec::new(),
+                Images::new(),
+            ),
         )
         .unwrap();
     let text = engine().page_text(doc.id, 0).unwrap().text();
@@ -162,12 +174,14 @@ fn saved_document_reopens_with_the_added_text() {
     engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            vec![(
-                ElementId(1),
-                text_box(0, 72.0, 300.0, 300.0, "Signé à Lyon"),
-            )],
-            Images::new(),
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                vec![(
+                    ElementId(1),
+                    text_box(0, 72.0, 300.0, 300.0, "Signé à Lyon"),
+                )],
+                Images::new(),
+            ),
         )
         .unwrap();
     let bytes = engine().save(doc.id).unwrap();
@@ -219,40 +233,42 @@ fn rendering_matches_the_reference_image() {
     engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            vec![
-                (
-                    ElementId(1),
-                    styled(Align::Left, Color::INK, "À gauche", 520.0),
-                ),
-                (
-                    ElementId(2),
-                    styled(
-                        Align::Center,
-                        Color {
-                            r: 0x27,
-                            g: 0x47,
-                            b: 0xb8,
-                        },
-                        "Au centre",
-                        480.0,
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                vec![
+                    (
+                        ElementId(1),
+                        styled(Align::Left, Color::INK, "À gauche", 520.0),
                     ),
-                ),
-                (
-                    ElementId(3),
-                    styled(
-                        Align::Right,
-                        Color {
-                            r: 0x8a,
-                            g: 0x1c,
-                            b: 0x2b,
-                        },
-                        "À droite",
-                        440.0,
+                    (
+                        ElementId(2),
+                        styled(
+                            Align::Center,
+                            Color {
+                                r: 0x27,
+                                g: 0x47,
+                                b: 0xb8,
+                            },
+                            "Au centre",
+                            480.0,
+                        ),
                     ),
-                ),
-            ],
-            Images::new(),
+                    (
+                        ElementId(3),
+                        styled(
+                            Align::Right,
+                            Color {
+                                r: 0x8a,
+                                g: 0x1c,
+                                b: 0x2b,
+                            },
+                            "À droite",
+                            440.0,
+                        ),
+                    ),
+                ],
+                Images::new(),
+            ),
         )
         .unwrap();
     let bitmap = engine()
@@ -281,12 +297,14 @@ fn saved_protected_document_keeps_its_password() {
     engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            vec![(
-                ElementId(1),
-                text_box(0, 72.0, 300.0, 300.0, "Confidentiel"),
-            )],
-            Images::new(),
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                vec![(
+                    ElementId(1),
+                    text_box(0, 72.0, 300.0, 300.0, "Confidentiel"),
+                )],
+                Images::new(),
+            ),
         )
         .unwrap();
     let bytes = engine().save(doc.id).unwrap();

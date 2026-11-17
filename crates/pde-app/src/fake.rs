@@ -6,8 +6,8 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
-use pde_core::edit::{Element, ElementId, Images, PagePlan, leading};
-use pde_core::engine::{EngineError, OpenedDocument, PdfEngine, Placed};
+use pde_core::edit::{Element, PageSources, leading};
+use pde_core::engine::{Edition, EngineError, OpenedDocument, PdfEngine, Placed};
 use pde_core::geometry::{Point, Rect};
 use pde_core::render::{Bitmap, RenderRequest, pixel_size};
 use pde_core::text::{PageText, TextChar};
@@ -65,6 +65,18 @@ impl FakeEngine {
             title: None,
             outline: Vec::new(),
         }
+    }
+
+    /// Tailles des pages selon le plan de `edition`, vérifié comme le ferait PDFium.
+    fn arranged(&self, doc: DocumentId, edition: &Edition) -> Result<Vec<PageSize>, EngineError> {
+        let pages = self.pages.lock().unwrap();
+        let (originals, _) = pages.get(&doc).ok_or(EngineError::UnknownDocument)?;
+        let sources = PageSources::with_imports(originals.clone(), &edition.imports);
+        edition
+            .plan
+            .validate(&sources)
+            .map_err(EngineError::Internal)?;
+        Ok(edition.plan.sizes(&sources))
     }
 
     fn current_sizes(&self, doc: DocumentId) -> Vec<PageSize> {
@@ -142,20 +154,13 @@ impl PdfEngine for FakeEngine {
 
     /// Pages rangées selon le plan ; chaque zone de texte occupe une
     /// ligne ; le texte UNWRITABLE échoue.
-    fn apply_edits(
-        &self,
-        doc: DocumentId,
-        plan: PagePlan,
-        elements: Vec<(ElementId, Element)>,
-        _images: Images,
-    ) -> Result<Vec<Placed>, EngineError> {
-        let mut pages = self.pages.lock().unwrap();
-        let (originals, current) = pages.get_mut(&doc).ok_or(EngineError::UnknownDocument)?;
-        plan.validate(originals.len())
-            .map_err(EngineError::Internal)?;
-        *current = plan.sizes(originals);
-        drop(pages);
-        elements
+    fn apply_edits(&self, doc: DocumentId, edition: Edition) -> Result<Vec<Placed>, EngineError> {
+        let sizes = self.arranged(doc, &edition)?;
+        if let Some((_, current)) = self.pages.lock().unwrap().get_mut(&doc) {
+            *current = sizes;
+        }
+        edition
+            .elements
             .into_iter()
             .map(|(id, element)| match element {
                 Element::Text(text) if text.text == UNWRITABLE => {
@@ -181,6 +186,10 @@ impl PdfEngine for FakeEngine {
                     id,
                     bounds: note.bounds(),
                 }),
+                Element::Redact(redact) => Ok(Placed {
+                    id,
+                    bounds: redact.bounds(),
+                }),
                 Element::Text(text) => {
                     let height = leading(&text.style);
                     Ok(Placed {
@@ -193,6 +202,11 @@ impl PdfEngine for FakeEngine {
                 }
             })
             .collect()
+    }
+
+    /// PDF de ce faux moteur, avec les pages du plan ; l'affichage ne change pas.
+    fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError> {
+        Ok(pdf_with_pages(self.arranged(doc, &edition)?.len()))
     }
 
     /// Enregistre un PDF reconnu par ce faux moteur, avec le bon nombre de pages.

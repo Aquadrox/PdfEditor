@@ -16,13 +16,14 @@ import { duplicated, nudged, pagePoint, withStyle } from "./edit-state.js";
 import { newImageBox } from "./image-state.js";
 import { aligned, distributed, nextInOrder, samePage } from "./selection-state.js";
 import { attachMarkupTool } from "./markup-tool.js";
+import { attachRedactTool } from "./redact-tool.js";
 import { attachProperties, renderSwatches } from "./properties.js";
 import { attachStyleControls } from "./style-controls.js";
 
 const fail = (error) => toast(t("edit.failed", { message: error?.message ?? String(error) }), "error");
 
 /** Outils qui se choisissent (l'image est une action) ; annotations : style par outil. */
-const TOOLS = ["text", "markup", "ink", "shape", "note"];
+const TOOLS = ["text", "markup", "ink", "shape", "note", "redact"];
 
 export class EditMode {
   /**
@@ -84,6 +85,12 @@ export class EditMode {
       () => this.active && this.tool === "markup",
       () => this.toolStyles.markup,
       (markup) => this.session.add(markup).catch(fail),
+    );
+    // Outil Caviarder : texte sélectionné ou zone tracée.
+    attachRedactTool(
+      viewer,
+      () => this.active && this.tool === "redact",
+      (redaction) => this.session.add(redaction).catch(fail),
     );
     byId("tool-image").addEventListener("click", () => this.pickImage());
     this.session.subscribe((view, changed) => {
@@ -158,9 +165,10 @@ export class EditMode {
     this.toolControls.refresh();
   }
 
+  /** Annotation sélectionnée qui a un style (une zone caviardée n'en a pas). */
   selectedAnnotation() {
     const item = this.session.element(this.session.selected);
-    return item && isAnnotation(item.element) ? item : null;
+    return item && isAnnotation(item.element) && item.element.kind !== "redact" ? item : null;
   }
 
   /** Option de l'outil en cours ; s'applique aussi à l'annotation sélectionnée du même genre. */

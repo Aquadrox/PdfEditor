@@ -10,7 +10,7 @@ use pde_core::edit::{
     Area, Color, Element, ElementId, Images, InkBox, MarkKind, MarkupBox, NoteBox, PagePlan,
     ShapeBox, ShapeKind,
 };
-use pde_core::engine::{OpenedDocument, PdfEngine};
+use pde_core::engine::{Edition, OpenedDocument, PdfEngine};
 use pde_core::geometry::Point;
 use pde_core::render::{Bitmap, RenderRequest};
 
@@ -47,9 +47,11 @@ fn place(doc: &OpenedDocument, elements: Vec<Element>) {
     engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            elements,
-            Images::new(),
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                elements,
+                Images::new(),
+            ),
         )
         .expect("annotations posées");
 }

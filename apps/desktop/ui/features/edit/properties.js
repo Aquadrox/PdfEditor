@@ -125,9 +125,18 @@ export function attachProperties(session, pages, actions) {
       if (document.activeElement !== noteText) noteText.value = item.element.text;
       byId("prop-note-author").textContent = item.element.author ? t("props.noteAuthor", { author: item.element.author }) : t("props.noteNoAuthor");
     }
-    byId("prop-annot-fields").hidden = many || !isAnnotation(item?.element);
+    // Une zone caviardée n'a pas de style : seulement sa place.
+    byId("prop-annot-fields").hidden = many || !isAnnotation(item?.element) || kind === "redact";
+    byId("prop-redact-hint").hidden = many || kind !== "redact";
     if (!many && isAnnotation(item?.element)) showAnnotationFields(item.element);
-    const titles = { image: "props.imageTitle", shape: "props.shapeTitle", ink: "props.inkTitle", markup: "props.markupTitle", note: "props.noteTitle" };
+    const titles = {
+      image: "props.imageTitle",
+      shape: "props.shapeTitle",
+      ink: "props.inkTitle",
+      markup: "props.markupTitle",
+      note: "props.noteTitle",
+      redact: "props.redactTitle",
+    };
     byId("properties-title").textContent = many ? t("props.manyTitle", { count }) : t(!item ? "props.panel" : (titles[kind] ?? "props.title"));
     if (!visible || !item || many) return;
     const values = geometryInMm(item.element, item.bounds);
@@ -138,8 +147,9 @@ export function attachProperties(session, pages, actions) {
     missing.textContent = item.missing_chars ? t("props.missingChars", { chars: [...item.missing_chars].join(" ") }) : "";
     // Hauteur d'un texte : donnée par ses lignes ; taille d'un marquage :
     // celle du texte marqué. Ni l'une ni l'autre ne se saisit.
-    geometry.height.readOnly = kind === "text" || kind === "markup" || kind === "note";
-    geometry.width.readOnly = kind === "markup" || kind === "note";
+    const textRedaction = kind === "redact" && item.element.areas.length > 1;
+    geometry.height.readOnly = kind === "text" || kind === "markup" || kind === "note" || textRedaction;
+    geometry.width.readOnly = kind === "markup" || kind === "note" || textRedaction;
     for (const [field, input] of Object.entries(geometry)) {
       if (document.activeElement !== input) input.value = String(values[field]).replace(".", ",");
     }

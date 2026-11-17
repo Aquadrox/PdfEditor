@@ -40,7 +40,14 @@ function resizedBy(element, edge, dx, dy, page) {
 /** Libellé lu par les lecteurs d'écran pour un élément. */
 function labelOf(element) {
   if (element.kind === "shape") return `edit.shape.${element.shape}`;
-  return { text: "edit.textBox", image: "edit.imageBox", ink: "edit.inkBox", note: "edit.noteBox", markup: `edit.mark.${element.mark}` }[element.kind];
+  return {
+    text: "edit.textBox",
+    image: "edit.imageBox",
+    ink: "edit.inkBox",
+    note: "edit.noteBox",
+    redact: "edit.redactBox",
+    markup: `edit.mark.${element.mark}`,
+  }[element.kind];
 }
 
 /** Le moteur arrive en premier dans un cadre vidé : couche au-dessus de tout. */

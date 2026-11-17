@@ -279,9 +279,15 @@ byId("recent-clear").addEventListener("click", async () => {
   refreshRecent();
 });
 attachMenu(byId("menu-button"), byId("main-menu"));
-/** Fichier déposé : une image s'ajoute au document ouvert, un PDF s'ouvre. */
-function dropped(path, point) {
-  if (!isImagePath(path)) return open(path);
+/**
+ * Fichier déposé : une image s'ajoute au document ouvert ; un PDF s'ouvre,
+ * sauf en mode Pages où ses pages sont insérées là où il tombe.
+ */
+function dropped(path, point, paths = [path]) {
+  if (!isImagePath(path)) {
+    if (current && mode === "pages") return pages.insertFiles(paths.filter((p) => !isImagePath(p)), point);
+    return open(path);
+  }
   if (!current) return toast(t("edit.openFirst"), "error");
   if (mode !== "edit") setMode("edit");
   return edit.dropImage(path, point);

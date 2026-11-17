@@ -17,11 +17,12 @@ export function watchDrops(onDrop) {
   listen("tauri://drag-leave", () => sheet.classList.remove("dragging"));
   listen("tauri://drag-drop", (event) => {
     sheet.classList.remove("dragging");
-    const [path] = event.payload?.paths ?? [];
+    const paths = event.payload?.paths ?? [];
+    const [path] = paths;
     const position = event.payload?.position;
     // Tauri donne des pixels physiques.
     const ratio = window.devicePixelRatio || 1;
     const point = position ? { x: position.x / ratio, y: position.y / ratio } : null;
-    if (path) onDrop(path, point);
+    if (path) onDrop(path, point, paths);
   });
 }

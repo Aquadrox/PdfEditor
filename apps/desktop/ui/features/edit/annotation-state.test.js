@@ -119,3 +119,28 @@ test("note : centrée sur le clic, gardée dans la page, ni poignée ni taille",
   assert.deepEqual(translated(n, 10, 10, A4).top_left, { x: 300, y: 10 });
   assert.deepEqual(withAnnotationStyle(n, { color: { r: 1, g: 2, b: 3 }, width: 9 }).width, undefined);
 });
+
+test("caviardage : zone tracée dans la page, texte réuni par ligne, poignées", async () => {
+  const { newRedactArea, newRedaction, handlesOf, annotationWithGeometry, withAnnotationStyle } = await import("./annotation-state.js");
+  const page = { width: 595, height: 842 };
+  const area = newRedactArea(2, { x: 300, y: 50 }, { x: 100, y: 10 }, page);
+  assert.deepEqual(area, { kind: "redact", page: 2, areas: [{ top_left: { x: 100, y: 10 }, width: 200, height: 40 }] });
+  assert.equal(newRedactArea(0, { x: 10, y: 10 }, { x: 11, y: 40 }, page), null, "trop étroite");
+  // Tracée hors de la page : ramenée dedans.
+  assert.equal(newRedactArea(0, { x: 500, y: 800 }, { x: 900, y: 900 }, page).areas[0].width, 95);
+  assert.deepEqual(handlesOf(area), ["nw", "ne", "sw", "se"]);
+  assert.equal(annotationWithGeometry(area, "width", 50, page).areas[0].width, 50);
+  // Deux morceaux sur une ligne, un autre en dessous : deux zones.
+  const text = newRedaction(0, [
+    { x: 72, y: 100, width: 40, height: 12 },
+    { x: 112, y: 100, width: 30, height: 12 },
+    { x: 72, y: 120, width: 50, height: 12 },
+  ]);
+  assert.equal(text.kind, "redact");
+  assert.equal(text.areas.length, 2);
+  assert.equal(text.areas[0].width, 70);
+  assert.deepEqual(handlesOf(text), []);
+  assert.equal(annotationWithGeometry(text, "height", 50, page), null);
+  assert.equal(newRedaction(0, []), null);
+  assert.deepEqual(withAnnotationStyle(area, { color: { r: 1, g: 2, b: 3 } }), area, "pas de style");
+});

@@ -108,6 +108,30 @@ function showSelection(from, to) {
 }
 
 /**
+ * Suit un glisser sur la couche de texte `layer` d'une page ;
+ * `done(rectangles)` au relâchement (points de la page). Faux si le
+ * glisser ne part d'aucun texte.
+ */
+export function trackTextSelection(event, layer, page, done) {
+  const from = caretAt(layer, event.clientX, event.clientY);
+  if (!from) return false;
+  let to = from;
+  const move = (e) => {
+    to = caretAt(layer, e.clientX, e.clientY) ?? to;
+    showSelection(from, to);
+  };
+  const up = () => {
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", up);
+    window.getSelection()?.removeAllRanges();
+    done(selectedRects(layer, from, to, page));
+  };
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", up);
+  return true;
+}
+
+/**
  * Surveille la table : un glisser sur le texte d'une page, outil Surligner
  * actif (`enabled()`), donne `onMarkup(élément)` au relâchement.
  */
@@ -118,21 +142,10 @@ export function attachMarkupTool(viewer, enabled, style, onMarkup) {
     event.preventDefault();
     const index = viewer.frames.indexOf(layer.parentElement);
     const page = viewer.doc?.pages[index];
-    const from = page && caretAt(layer, event.clientX, event.clientY);
-    if (!from) return;
-    let to = from;
-    const move = (e) => {
-      to = caretAt(layer, e.clientX, e.clientY) ?? to;
-      showSelection(from, to);
-    };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      window.getSelection()?.removeAllRanges();
-      const markup = newMarkup(index, selectedRects(layer, from, to, page), style());
+    if (!page) return;
+    trackTextSelection(event, layer, page, (rects) => {
+      const markup = newMarkup(index, rects, style());
       if (markup) onMarkup(markup);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
+    });
   });
 }

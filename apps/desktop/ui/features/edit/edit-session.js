@@ -28,6 +28,8 @@ export class EditSession {
     this.style = { ...DEFAULT_STYLE };
     this.listeners = [];
     this.layoutListeners = [];
+    /** Zones caviardées dont l'écriture a été confirmée (saving.js). */
+    this.confirmedRedactions = new Set();
   }
 
   /** `listener(document)` quand le nombre, l'ordre ou la taille des pages change. */
@@ -46,6 +48,7 @@ export class EditSession {
 
   async load(doc) {
     this.doc = doc;
+    this.confirmedRedactions.clear();
     this.selected = null;
     this.extra.clear();
     this.update(doc ? await invoke("edit_view", { id: doc.id }) : { elements: [], revisions: [] });

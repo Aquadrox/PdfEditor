@@ -1,14 +1,20 @@
 //! Écriture des éléments ajoutés dans un document PDFium : zones de texte
 //! (`text.rs`), images (`image.rs`), annotations dessinées (`annotation.rs`),
-//! notes (`note.rs`, vraies annotations PDF).
+//! notes (`note.rs`, vraies annotations PDF), et caviardage (`redact.rs`),
+//! appliqué en dernier pour effacer aussi ce qui a été ajouté dessous.
 
 mod annotation;
 mod image;
 mod note;
+mod redact;
 mod text;
 
+use std::collections::BTreeMap;
+
+use pde_core::document::PageIndex;
 use pde_core::edit::{Element, ElementId, Images};
 use pde_core::engine::{EngineError, Placed};
+use pde_core::geometry::Rect;
 use pdfium_render::prelude::{PdfDocument, PdfPage};
 
 use crate::convert::internal;
@@ -22,6 +28,7 @@ pub(crate) fn apply(
 ) -> Result<Vec<Placed>, EngineError> {
     let mut placed = Vec::with_capacity(elements.len());
     let mut fonts = text::Fonts::default();
+    let mut redactions: BTreeMap<PageIndex, Vec<Rect>> = BTreeMap::new();
     for (id, element) in elements {
         let bounds = match element {
             Element::Text(box_) => text::write_text(doc, box_, &mut fonts)?,
@@ -35,8 +42,16 @@ pub(crate) fn apply(
             Element::Ink(ink) => annotation::write_ink(doc, ink)?,
             Element::Markup(markup) => annotation::write_markup(doc, markup)?,
             Element::Note(note) => note::write_note(doc, note)?,
+            Element::Redact(redact) => {
+                let areas = redactions.entry(redact.page).or_default();
+                areas.extend(redact.areas.iter().map(|a| a.rect()));
+                redact.bounds()
+            }
         };
         placed.push(Placed { id: *id, bounds });
+    }
+    for (page, areas) in &redactions {
+        redact::redact_page(doc, *page, areas)?;
     }
     Ok(placed)
 }

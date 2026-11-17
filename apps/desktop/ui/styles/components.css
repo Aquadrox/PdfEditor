@@ -33,6 +33,18 @@
   font-weight: 600;
 }
 
+/* Action qui détruit des données (caviarder) : rouge plein. */
+.btn.destructive {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.btn.destructive:hover {
+  filter: brightness(1.08);
+}
+
 .btn.primary:hover {
   filter: brightness(1.08);
 }

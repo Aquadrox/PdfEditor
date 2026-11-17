@@ -247,6 +247,7 @@ mod tests {
             digest: "00".repeat(32),
             page_count: 1,
             pages: None,
+            imports: Vec::new(),
             elements: vec![Element::Text(TextBox {
                 page: 0,
                 top_left: Point::new(72.0, 700.0),

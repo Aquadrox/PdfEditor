@@ -11,7 +11,7 @@ use image::ExtendedColorType;
 use image::codecs::jpeg::JpegEncoder;
 use pde_core::document::DocumentId;
 use pde_core::edit::{Element, ElementId, ImageAsset, ImageBox, ImageId, Images, PagePlan};
-use pde_core::engine::{OpenedDocument, PdfEngine};
+use pde_core::engine::{Edition, OpenedDocument, PdfEngine};
 use pde_core::geometry::Point;
 use pde_core::render::{Bitmap, RenderRequest};
 
@@ -72,9 +72,7 @@ fn place(doc: &OpenedDocument, frames: Vec<ImageBox>, images: Images) {
     engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            elements,
-            images,
+            Edition::new(PagePlan::identity(doc.info.page_count()), elements, images),
         )
         .expect("images posées");
 }
@@ -245,9 +243,11 @@ fn missing_image_is_refused_and_display_unchanged() {
         engine()
             .apply_edits(
                 doc.id,
-                PagePlan::identity(doc.info.page_count()),
-                elements,
-                Images::new()
+                Edition::new(
+                    PagePlan::identity(doc.info.page_count()),
+                    elements,
+                    Images::new()
+                )
             )
             .is_err()
     );

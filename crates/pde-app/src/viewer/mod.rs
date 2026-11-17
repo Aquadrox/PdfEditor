@@ -3,8 +3,10 @@
 mod edit;
 mod group;
 mod images;
+mod import;
 mod pages;
 
+pub use import::ImportFile;
 pub use pages::PagesView;
 mod recovery;
 #[cfg(test)]
@@ -16,7 +18,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
-use pde_core::edit::{Edits, ElementId, Images};
+use std::collections::BTreeMap;
+
+use pde_core::edit::{Edits, ElementId, Images, ImportId, Imports};
 use pde_core::engine::PdfEngine;
 use pde_core::geometry::Rect;
 use pde_core::render::RenderRequest;
@@ -54,6 +58,10 @@ struct OpenDocument {
     /// Images importées (partagées par leurs copies et avec le moteur),
     /// gardées pendant toute la session pour annuler / rétablir.
     images: Images,
+    /// PDF insérés (P-03), gardés comme les images ; et leur fichier, pour
+    /// la sauvegarde automatique.
+    imports: Imports,
+    import_files: BTreeMap<ImportId, ImportFile>,
     /// Place de chaque élément, telle que posée par le moteur.
     placed: HashMap<ElementId, Rect>,
     /// Version de chaque page, augmentée à chaque changement de son contenu
@@ -137,6 +145,8 @@ impl Viewer {
                 digest,
                 autosaved: None,
                 images: Images::new(),
+                imports: Imports::new(),
+                import_files: BTreeMap::new(),
                 placed: HashMap::new(),
             },
         );

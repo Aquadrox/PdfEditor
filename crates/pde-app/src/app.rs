@@ -11,7 +11,7 @@ use pde_core::settings::Settings;
 
 use crate::edit_view::SavedView;
 use crate::error::AppError;
-use crate::files::copy_name;
+use crate::files::{copy_name, extract_name};
 use crate::recent::{RecentFiles, RecentView};
 use crate::recovery::RecoveryStore;
 use crate::settings_store::{SettingsStore, SettingsView};
@@ -120,6 +120,23 @@ impl App {
             .unwrap_or_default();
         let name = copy_name(&file_name, &self.settings.get().files.copy_suffix);
         Ok((path.parent().map(Path::to_path_buf), name))
+    }
+
+    /// Extraire des pages : dossier du document et nom proposé.
+    pub fn extract_proposal(
+        &self,
+        id: u64,
+        pages: &[usize],
+    ) -> Result<(Option<PathBuf>, String), AppError> {
+        let path = self.viewer.document_path(id)?;
+        let file_name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        Ok((
+            path.parent().map(Path::to_path_buf),
+            extract_name(&file_name, pages),
+        ))
     }
 
     pub fn recent_files(&self) -> Vec<RecentView> {

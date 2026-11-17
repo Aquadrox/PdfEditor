@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 
 use pde_core::document::DocumentId;
 use pde_core::edit::{Change, Element, ElementId};
+use pde_core::engine::Edition;
 
 use super::{OpenDocument, Viewer, lock, unknown_document};
 use crate::edit_view::{EditView, ElementView, SavedView, flip};
@@ -155,12 +156,13 @@ impl Viewer {
             .elements()
             .map(|(id, e)| (id, e.clone()))
             .collect();
-        let placed = self.engine.apply_edits(
-            doc,
-            open.edits.plan().clone(),
+        let edition = Edition {
+            plan: open.edits.plan().clone(),
             elements,
-            open.images.clone(),
-        )?;
+            images: open.images.clone(),
+            imports: open.imports.clone(),
+        };
+        let placed = self.engine.apply_edits(doc, edition)?;
         open.placed = placed.into_iter().map(|p| (p.id, p.bounds)).collect();
         if change.layout {
             self.relayout(open, doc);

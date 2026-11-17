@@ -19,7 +19,11 @@ pub fn can_rotate(element: &Element) -> bool {
     match element {
         Element::Text(_) => false,
         Element::Markup(markup) => markup.mark == MarkKind::Highlight,
-        Element::Image(_) | Element::Shape(_) | Element::Ink(_) | Element::Note(_) => true,
+        Element::Image(_)
+        | Element::Shape(_)
+        | Element::Ink(_)
+        | Element::Note(_)
+        | Element::Redact(_) => true,
     }
 }
 
@@ -48,6 +52,17 @@ fn top_left(top_left: Point, height: f64, size: PageSize) -> Point {
     point(Point::new(top_left.x, top_left.y - height), size)
 }
 
+fn turned_areas(areas: &[Area], size: PageSize) -> Vec<Area> {
+    areas
+        .iter()
+        .map(|a| Area {
+            top_left: top_left(a.top_left, a.height, size),
+            width: a.height,
+            height: a.width,
+        })
+        .collect()
+}
+
 fn quarter_turn(element: Element, size: PageSize) -> Element {
     match element {
         Element::Image(mut image) => {
@@ -66,16 +81,12 @@ fn quarter_turn(element: Element, size: PageSize) -> Element {
             Element::Ink(ink)
         }
         Element::Markup(mut markup) => {
-            markup.areas = markup
-                .areas
-                .iter()
-                .map(|a| Area {
-                    top_left: top_left(a.top_left, a.height, size),
-                    width: a.height,
-                    height: a.width,
-                })
-                .collect();
+            markup.areas = turned_areas(&markup.areas, size);
             Element::Markup(markup)
+        }
+        Element::Redact(mut redact) => {
+            redact.areas = turned_areas(&redact.areas, size);
+            Element::Redact(redact)
         }
         // L'icône reste droite : seul son carré change de coin.
         Element::Note(mut note) => {

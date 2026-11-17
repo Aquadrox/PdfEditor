@@ -6,7 +6,7 @@ mod common;
 
 use common::{assert_matches_reference, engine, open_simple};
 use pde_core::edit::{Element, ElementId, Images, PagePlan, StandardFont, TextBox, TextStyle};
-use pde_core::engine::{OpenedDocument, PdfEngine};
+use pde_core::engine::{Edition, OpenedDocument, PdfEngine};
 use pde_core::geometry::Point;
 use pde_core::render::RenderRequest;
 
@@ -34,9 +34,11 @@ fn place(doc: &OpenedDocument, elements: Vec<Element>) {
     engine()
         .apply_edits(
             doc.id,
-            PagePlan::identity(doc.info.page_count()),
-            elements,
-            Images::new(),
+            Edition::new(
+                PagePlan::identity(doc.info.page_count()),
+                elements,
+                Images::new(),
+            ),
         )
         .expect("texte posé");
 }

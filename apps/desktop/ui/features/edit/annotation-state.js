@@ -1,5 +1,6 @@
-// Calculs des annotations dessinées (E-04), sans DOM : création d'une
-// forme, d'un trait à main levée ou d'un marquage de texte, cadre englobant,
+// Calculs des annotations dessinées (E-04) et du caviardage (E-07), sans
+// DOM : création d'une forme, d'un trait à main levée, d'un marquage de
+// texte ou d'une zone caviardée, cadre englobant,
 // déplacement, redimensionnement, extrémités d'un trait. Module pur, testé
 // par annotation-state.test.js. Coordonnées : points de la page affichée,
 // origine en haut à gauche.
@@ -21,7 +22,9 @@ export const TOOL_DEFAULTS = {
   note: { color: { r: 0xff, g: 0xd5, b: 0x4a } },
 };
 
-export const ANNOTATION_KINDS = ["shape", "ink", "markup", "note"];
+export const ANNOTATION_KINDS = ["shape", "ink", "markup", "note", "redact"];
+/** Côté minimal d'une zone caviardée (pde-core : MIN_REDACT_SIDE). */
+export const MIN_REDACT_SIDE = 1;
 /** Côté de l'icône d'une note (pde-core : NOTE_SIZE). */
 export const NOTE_SIZE = 20;
 /** En dessous (points), un glisser est un clic : pas de forme. */
@@ -109,6 +112,24 @@ export function newMarkup(pageIndex, rects, style) {
   };
 }
 
+/** Zone caviardée tracée de `start` à `end` ; null si elle est trop petite. */
+export function newRedactArea(pageIndex, start, end, page) {
+  const a = clampPoint(start, page);
+  const b = clampPoint(end, page);
+  const width = Math.abs(b.x - a.x);
+  const height = Math.abs(b.y - a.y);
+  if (width < MIN_SHAPE_SIZE || height < MIN_SHAPE_SIZE) return null;
+  return { kind: "redact", page: pageIndex, areas: [{ top_left: { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y) }, width, height }] };
+}
+
+/** Texte sélectionné à caviarder (rectangles réunis par ligne) ; null si rien. */
+export function newRedaction(pageIndex, rects) {
+  const markup = newMarkup(pageIndex, rects, TOOL_DEFAULTS.markup);
+  if (!markup) return null;
+  const areas = markup.areas.filter((a) => a.width >= MIN_REDACT_SIDE && a.height >= MIN_REDACT_SIDE);
+  return areas.length > 0 ? { kind: "redact", page: pageIndex, areas } : null;
+}
+
 /** Note posée au point cliqué (icône centrée dessus), gardée dans la page. */
 export function newNote(pageIndex, point, page, style, author) {
   const half = NOTE_SIZE / 2;
@@ -159,12 +180,22 @@ export function translated(element, dx, dy, page) {
 export function reframed(element, from, to) {
   const sx = from.width > 0 ? to.width / from.width : 1;
   const sy = from.height > 0 ? to.height / from.height : 1;
-  return mapPoints(element, (p) => ({ x: to.x + (p.x - from.x) * sx, y: to.y + (p.y - from.y) * sy }));
+  const map = (p) => ({ x: to.x + (p.x - from.x) * sx, y: to.y + (p.y - from.y) * sy });
+  // Zones caviardées : leur taille suit le cadre.
+  if (element.kind === "redact") {
+    return { ...element, areas: element.areas.map((a) => ({ top_left: map(a.top_left), width: a.width * sx, height: a.height * sy })) };
+  }
+  return mapPoints(element, map);
+}
+
+/** Le cadre d'un marquage, d'une note ou d'un caviardage de texte (plusieurs zones) suit le texte : pas de taille à saisir. */
+function fixedSize(element) {
+  return element.kind === "markup" || element.kind === "note" || (element.kind === "redact" && element.areas.length > 1);
 }
 
 /** Poignées d'une annotation : extrémités d'un trait, coins sinon, aucune pour un marquage. */
 export function handlesOf(element) {
-  if (element.kind === "markup" || element.kind === "note") return [];
+  if (fixedSize(element)) return [];
   if (element.kind === "shape" && (element.shape === "line" || element.shape === "arrow")) return ["start", "end"];
   return ["nw", "ne", "sw", "se"];
 }
@@ -190,7 +221,7 @@ export function annotationResized(element, edge, dx, dy, page) {
 
 /** Position (x, y) ou taille (width, height) saisie, en points ; null si impossible. */
 export function annotationWithGeometry(element, field, value, page) {
-  if ((element.kind === "markup" || element.kind === "note") && (field === "width" || field === "height")) return null;
+  if (fixedSize(element) && (field === "width" || field === "height")) return null;
   const box = bboxOf(element);
   if (field === "x") return translated(element, value - box.x, 0, page);
   if (field === "y") return translated(element, 0, value - box.y, page);
@@ -200,7 +231,7 @@ export function annotationWithGeometry(element, field, value, page) {
 
 /** Style changé : couleur, épaisseur, remplissage, forme ou marquage. */
 export function withAnnotationStyle(element, changes) {
-  const allowed = { shape: ["color", "width", "filled", "shape"], ink: ["color", "width"], markup: ["color", "mark"], note: ["color"] }[element.kind];
+  const allowed = { shape: ["color", "width", "filled", "shape"], ink: ["color", "width"], markup: ["color", "mark"], note: ["color"], redact: [] }[element.kind];
   const kept = Object.fromEntries(Object.entries(changes).filter(([key]) => allowed.includes(key)));
   return { ...element, ...kept };
 }
