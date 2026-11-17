@@ -50,6 +50,7 @@ export function attachProperties(session, pages, actions) {
     width: byId("prop-width"),
     height: byId("prop-height"),
   };
+  const noteText = byId("prop-note");
   const opacity = byId("prop-opacity");
   const opacityValue = byId("prop-opacity-value");
   const keepRatio = byId("prop-keep-ratio");
@@ -68,6 +69,12 @@ export function attachProperties(session, pages, actions) {
     if (!item || text.value === item.element.text) return;
     if (text.value.trim()) actions.change(item.id, withText(item.element, text.value));
     else actions.remove(item.id);
+  });
+  noteText.addEventListener("change", () => {
+    const item = selected();
+    if (item?.element.kind === "note" && noteText.value !== item.element.text) {
+      actions.change(item.id, { ...item.element, text: noteText.value });
+    }
   });
   for (const [field, input] of Object.entries(geometry)) {
     input.addEventListener("change", () => changeSelected((element, page) => withGeometryMm(element, field, input.value, page)));
@@ -96,17 +103,22 @@ export function attachProperties(session, pages, actions) {
     byId("prop-close").hidden = !item;
     byId("prop-text-fields").hidden = kind !== "text";
     byId("prop-image-fields").hidden = kind !== "image";
+    byId("prop-note-fields").hidden = kind !== "note";
+    if (kind === "note") {
+      if (document.activeElement !== noteText) noteText.value = item.element.text;
+      byId("prop-note-author").textContent = item.element.author ? t("props.noteAuthor", { author: item.element.author }) : t("props.noteNoAuthor");
+    }
     byId("prop-annot-fields").hidden = !isAnnotation(item?.element);
     if (isAnnotation(item?.element)) showAnnotationFields(item.element);
-    const titles = { image: "props.imageTitle", shape: "props.shapeTitle", ink: "props.inkTitle", markup: "props.markupTitle" };
+    const titles = { image: "props.imageTitle", shape: "props.shapeTitle", ink: "props.inkTitle", markup: "props.markupTitle", note: "props.noteTitle" };
     byId("properties-title").textContent = t(!item ? "props.panel" : (titles[kind] ?? "props.title"));
     if (!visible || !item) return;
     const values = geometryInMm(item.element, item.bounds);
     if (kind === "text" && document.activeElement !== text) text.value = item.element.text;
     // Hauteur d'un texte : donnée par ses lignes ; taille d'un marquage :
     // celle du texte marqué. Ni l'une ni l'autre ne se saisit.
-    geometry.height.readOnly = kind === "text" || kind === "markup";
-    geometry.width.readOnly = kind === "markup";
+    geometry.height.readOnly = kind === "text" || kind === "markup" || kind === "note";
+    geometry.width.readOnly = kind === "markup" || kind === "note";
     for (const [field, input] of Object.entries(geometry)) {
       if (document.activeElement !== input) input.value = String(values[field]).replace(".", ",");
     }

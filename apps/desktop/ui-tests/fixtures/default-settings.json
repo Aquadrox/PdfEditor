@@ -8,6 +8,13 @@
     "default_zoom": "fit_width",
     "page_cache_mb": 256
   },
+  "edit": {
+    "author": "",
+    "font": "sans",
+    "font_size": 11.0,
+    "text_color": "#1c2430",
+    "highlight_color": "#ffd54a"
+  },
   "files": {
     "autosave_seconds": 60
   },

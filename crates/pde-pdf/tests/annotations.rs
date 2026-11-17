@@ -7,7 +7,8 @@ mod common;
 use common::{assert_matches_reference, engine, open_simple};
 use pde_core::document::DocumentId;
 use pde_core::edit::{
-    Area, Color, Element, ElementId, Images, InkBox, MarkKind, MarkupBox, ShapeBox, ShapeKind,
+    Area, Color, Element, ElementId, Images, InkBox, MarkKind, MarkupBox, NoteBox, ShapeBox,
+    ShapeKind,
 };
 use pde_core::engine::PdfEngine;
 use pde_core::geometry::Point;
@@ -345,5 +346,69 @@ fn annotations_match_the_reference_rendering() {
         ],
     );
     assert_matches_reference(&render(doc.id, 0), "annotations.png");
+    engine().close(doc.id);
+}
+
+fn note(page: usize, x: f64, top: f64) -> Element {
+    Element::Note(NoteBox {
+        page,
+        top_left: Point::new(x, top),
+        text: "A verifier avant signature".into(),
+        author: "Camille".into(),
+        color: YELLOW,
+    })
+}
+
+#[test]
+fn note_is_a_real_pdf_annotation_with_its_comment_and_author() {
+    let doc = open_simple();
+    place(doc.id, vec![note(0, 300.0, 600.0)]);
+    // Icône dessinée à sa place, rien autour.
+    let page = render(doc.id, 0);
+    let icon: Vec<[u8; 3]> = (302..318)
+        .flat_map(|x| (582..598).map(move |y| (x, y)))
+        .map(|(x, y)| color_at(&page, x, y))
+        .collect();
+    assert!(icon.iter().any(|p| *p != WHITE), "icône de note absente");
+    assert_near(color_at(&page, 340, 590), WHITE, 4);
+    // Le texte de la page ne change pas : le commentaire est dans la note.
+    let text = engine().page_text(doc.id, 0).expect("texte").text();
+    assert!(!text.contains("verifier"), "{text}");
+
+    let bytes = engine().save(doc.id).expect("enregistrement");
+    engine().close(doc.id);
+    let saved = String::from_utf8_lossy(&bytes);
+    assert!(
+        saved.contains("/Subtype/Text") || saved.contains("/Subtype /Text"),
+        "annotation Texte absente"
+    );
+    assert!(
+        saved.contains("A verifier avant signature"),
+        "commentaire absent"
+    );
+    assert!(saved.contains("(Camille)"), "auteur absent");
+}
+
+#[test]
+fn removing_a_note_removes_its_annotation() {
+    let doc = open_simple();
+    place(doc.id, vec![note(0, 300.0, 600.0)]);
+    place(doc.id, Vec::new());
+    let bytes = engine().save(doc.id).expect("enregistrement");
+    assert!(!String::from_utf8_lossy(&bytes).contains("A verifier"));
+    engine().close(doc.id);
+}
+
+#[test]
+fn note_icon_stays_where_placed_on_a_rotated_page() {
+    let doc = open_simple();
+    // Page 2 affichée en 842 × 595.
+    place(doc.id, vec![note(1, 700.0, 100.0)]);
+    let page = render(doc.id, 1);
+    let icon: Vec<[u8; 3]> = (702..718)
+        .flat_map(|x| (82..98).map(move |y| (x, y)))
+        .map(|(x, y)| color_at(&page, x, y))
+        .collect();
+    assert!(icon.iter().any(|p| *p != WHITE), "icône absente à sa place");
     engine().close(doc.id);
 }

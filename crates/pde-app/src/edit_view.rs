@@ -32,6 +32,10 @@ pub fn flip(element: &Element, page: PageSize) -> Element {
                 .for_each(|p| *p = flip_point(*p, page));
             Element::Ink(ink)
         }
+        Element::Note(mut note) => {
+            note.top_left = flip_point(note.top_left, page);
+            Element::Note(note)
+        }
         Element::Markup(mut markup) => {
             for area in &mut markup.areas {
                 area.top_left = flip_point(area.top_left, page);

@@ -8,7 +8,9 @@ import {
   bboxOf,
   constrained,
   handlesOf,
+  NOTE_SIZE,
   isAnnotation,
+  newNote,
   newInk,
   newMarkup,
   newShape,
@@ -105,4 +107,15 @@ test("style : seules les propriétés de l'annotation changent", () => {
   assert.deepEqual([shape.color, shape.width, shape.filled, shape.mark, shape.size], [red, 6, true, undefined, undefined]);
   const m = withAnnotationStyle(newMarkup(0, [{ x: 0, y: 0, width: 5, height: 5 }], TOOL_DEFAULTS.markup), { mark: "strike_out", width: 4 });
   assert.deepEqual([m.mark, m.width], ["strike_out", undefined]);
+});
+
+test("note : centrée sur le clic, gardée dans la page, ni poignée ni taille", () => {
+  const n = newNote(1, { x: 300, y: 5 }, A4, TOOL_DEFAULTS.note, "Camille");
+  assert.deepEqual([n.kind, n.page, n.text, n.author], ["note", 1, "", "Camille"]);
+  assert.deepEqual(n.top_left, { x: 290, y: 0 });
+  assert.deepEqual(bboxOf(n), { x: 290, y: 0, width: NOTE_SIZE, height: NOTE_SIZE });
+  assert.deepEqual(handlesOf(n), []);
+  assert.equal(annotationWithGeometry(n, "width", 50, A4), null);
+  assert.deepEqual(translated(n, 10, 10, A4).top_left, { x: 300, y: 10 });
+  assert.deepEqual(withAnnotationStyle(n, { color: { r: 1, g: 2, b: 3 }, width: 9 }).width, undefined);
 });
