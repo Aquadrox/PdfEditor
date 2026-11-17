@@ -4,6 +4,7 @@
 //! appliqué en dernier pour effacer aussi ce qui a été ajouté dessous.
 
 mod annotation;
+mod existing;
 mod image;
 mod note;
 mod redact;
@@ -20,6 +21,8 @@ use pdfium_render::prelude::{PdfDocument, PdfPage};
 use crate::convert::internal;
 use crate::display::DisplayTransform;
 
+pub(crate) use existing::page_images;
+
 /// Pose les éléments, page par page ; renvoie leur place sur la page affichée.
 pub(crate) fn apply(
     doc: &mut PdfDocument,
@@ -29,6 +32,15 @@ pub(crate) fn apply(
     let mut placed = Vec::with_capacity(elements.len());
     let mut fonts = text::Fonts::default();
     let mut redactions: BTreeMap<PageIndex, Vec<Rect>> = BTreeMap::new();
+    // Images d'origine d'abord : leur rang est celui de la page arrangée.
+    let existing: Vec<_> = elements
+        .iter()
+        .filter_map(|(_, e)| match e {
+            Element::ExistingImage(image) => Some(image),
+            _ => None,
+        })
+        .collect();
+    existing::apply(doc, &existing)?;
     for (id, element) in elements {
         let bounds = match element {
             Element::Text(box_) => text::write_text(doc, box_, &mut fonts)?,
@@ -42,6 +54,7 @@ pub(crate) fn apply(
             Element::Ink(ink) => annotation::write_ink(doc, ink)?,
             Element::Markup(markup) => annotation::write_markup(doc, markup)?,
             Element::Note(note) => note::write_note(doc, note)?,
+            Element::ExistingImage(image) => image.bounds(),
             Element::Redact(redact) => {
                 let areas = redactions.entry(redact.page).or_default();
                 areas.extend(redact.areas.iter().map(|a| a.rect()));

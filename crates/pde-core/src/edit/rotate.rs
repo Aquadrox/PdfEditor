@@ -23,7 +23,8 @@ pub fn can_rotate(element: &Element) -> bool {
         | Element::Shape(_)
         | Element::Ink(_)
         | Element::Note(_)
-        | Element::Redact(_) => true,
+        | Element::Redact(_)
+        | Element::ExistingImage(_) => true,
     }
 }
 
@@ -87,6 +88,11 @@ fn quarter_turn(element: Element, size: PageSize) -> Element {
         Element::Redact(mut redact) => {
             redact.areas = turned_areas(&redact.areas, size);
             Element::Redact(redact)
+        }
+        Element::ExistingImage(mut image) => {
+            image.original = turned_areas(&[image.original], size)[0];
+            image.frame = image.frame.map(|f| turned_areas(&[f], size)[0]);
+            Element::ExistingImage(image)
         }
         // L'icône reste droite : seul son carré change de coin.
         Element::Note(mut note) => {

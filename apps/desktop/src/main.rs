@@ -104,6 +104,8 @@ fn main() {
             commands::edit::add_elements,
             commands::edit::update_elements,
             commands::edit::remove_elements,
+            commands::edit::edit_elements,
+            commands::edit::page_images,
             commands::edit::undo_edit,
             commands::edit::redo_edit,
             commands::edit::save_document,

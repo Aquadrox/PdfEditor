@@ -5,6 +5,7 @@
 // avant que les abonnés ne reçoivent le nouvel état.
 
 import { invoke } from "../../lib/ipc.js";
+import { isExisting, isSynthetic, syntheticItems, withoutImage } from "./existing-image.js";
 
 const DEFAULT_STYLE = {
   font: "sans",
@@ -30,6 +31,40 @@ export class EditSession {
     this.layoutListeners = [];
     /** Zones caviardées dont l'écriture a été confirmée (saving.js). */
     this.confirmedRedactions = new Set();
+    /** Images d'origine de chaque page déjà lue : [{ object, bounds }]. */
+    this.pageImages = new Map();
+    this.pageImagesLoading = new Map();
+  }
+
+  /**
+   * Images d'origine d'une page, demandées une seule fois ; `true` quand
+   * elles viennent d'arriver (la couche de la page est à redessiner).
+   */
+  async loadPageImages(page) {
+    if (!this.doc || this.pageImages.has(page)) return false;
+    if (!this.pageImagesLoading.has(page)) {
+      const doc = this.doc;
+      const loading = invoke("page_images", { id: doc.id, page })
+        .then((images) => {
+          if (this.doc === doc) this.pageImages.set(page, images ?? []);
+        })
+        .finally(() => this.pageImagesLoading.delete(page));
+      this.pageImagesLoading.set(page, loading);
+      await loading;
+      return this.pageImages.has(page);
+    }
+    await this.pageImagesLoading.get(page);
+    return false;
+  }
+
+  /**
+   * Éléments d'une page à montrer : les ajouts (sauf les images d'origine
+   * supprimées) et les images d'origine encore intactes.
+   */
+  itemsOn(page) {
+    const items = this.view.elements.filter((e) => e.element.page === page);
+    const shown = items.filter((e) => !(isExisting(e.element) && e.element.frame === null));
+    return [...shown, ...syntheticItems(page, this.pageImages.get(page) ?? [], items)];
   }
 
   /** `listener(document)` quand le nombre, l'ordre ou la taille des pages change. */
@@ -49,6 +84,7 @@ export class EditSession {
   async load(doc) {
     this.doc = doc;
     this.confirmedRedactions.clear();
+    this.pageImages.clear();
     this.selected = null;
     this.extra.clear();
     this.update(doc ? await invoke("edit_view", { id: doc.id }) : { elements: [], revisions: [] });
@@ -60,6 +96,10 @@ export class EditSession {
   }
 
   element(id) {
+    if (isSynthetic(id)) {
+      const page = Number(id.split(":")[1]);
+      return this.itemsOn(page).find((e) => e.id === id) ?? null;
+    }
     return this.view.elements.find((e) => e.id === id) ?? null;
   }
 
@@ -111,16 +151,50 @@ export class EditSession {
     return added.ids;
   }
 
+  /**
+   * Ajouts, changements et retraits en une seule opération ; renvoie les
+   * identifiants des éléments ajoutés.
+   */
+  async editBatch({ added = [], changes = [], removed = [] }) {
+    const payload = changes.map(({ id, element }) => ({ elementId: id, element }));
+    const result = await invoke("edit_elements", { id: this.doc.id, added, changes: payload, removed });
+    this.update(result.view);
+    return result.ids;
+  }
+
   /** Plusieurs éléments changés en une opération : [{ id, element }]. */
   async changeMany(changes) {
     if (changes.length === 0) return;
     if (changes.length === 1) return this.change(changes[0].id, changes[0].element);
+    // Images d'origine pas encore modifiées : leur élément est créé.
+    if (changes.some((c) => isSynthetic(c.id))) {
+      const fresh = changes.filter((c) => isSynthetic(c.id));
+      const ids = await this.editBatch({
+        added: fresh.map((c) => c.element),
+        changes: changes.filter((c) => !isSynthetic(c.id)),
+      });
+      const renamed = new Map(fresh.map((c, i) => [c.id, ids[i]]));
+      this.selectMany(this.selection.map((id) => renamed.get(id) ?? id));
+      return;
+    }
     const payload = changes.map(({ id, element }) => ({ elementId: id, element }));
     this.update(await invoke("update_elements", { id: this.doc.id, changes: payload }));
   }
 
   async removeMany(ids) {
     if (ids.length === 1) return this.remove(ids[0]);
+    // Images d'origine : supprimées par leur élément (annulable), pas retirées.
+    const items = ids.map((id) => this.element(id)).filter(Boolean);
+    if (items.some((i) => isExisting(i.element))) {
+      this.selected = null;
+      this.extra.clear();
+      await this.editBatch({
+        added: items.filter((i) => i.synthetic).map((i) => withoutImage(i.element)),
+        changes: items.filter((i) => !i.synthetic && isExisting(i.element)).map((i) => ({ id: i.id, element: withoutImage(i.element) })),
+        removed: items.filter((i) => !isExisting(i.element)).map((i) => i.id),
+      });
+      return;
+    }
     this.selected = null;
     this.extra.clear();
     this.update(await invoke("remove_elements", { id: this.doc.id, elementIds: ids }));
@@ -136,12 +210,22 @@ export class EditSession {
   }
 
   async change(id, element) {
+    // Première modification d'une image d'origine : son élément est créé.
+    if (isSynthetic(id)) return this.add(element);
     if (element.style) this.style = { ...element.style };
     this.update(await invoke("update_element", { id: this.doc.id, elementId: id, element }));
   }
 
   async remove(id) {
+    const item = this.element(id);
     if (this.selected === id) this.selected = null;
+    if (item && isExisting(item.element)) {
+      const element = withoutImage(item.element);
+      const view = item.synthetic
+        ? (await invoke("add_element", { id: this.doc.id, element })).view
+        : await invoke("update_element", { id: this.doc.id, elementId: id, element });
+      return this.update(view);
+    }
     this.update(await invoke("remove_element", { id: this.doc.id, elementId: id }));
   }
 
@@ -160,6 +244,7 @@ export class EditSession {
    */
   async apply(view, document = null) {
     if (this.doc && view.layout !== this.view.layout) {
+      this.pageImages.clear();
       const described = document ?? (await invoke("document_view", { id: this.doc.id }));
       for (const listener of this.layoutListeners) listener(described);
     }

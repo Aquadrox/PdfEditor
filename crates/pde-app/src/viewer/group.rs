@@ -27,6 +27,34 @@ impl Viewer {
         })
     }
 
+    /// Ajoute, remplace et retire des éléments en une opération (remplacer
+    /// une image d'origine) ; renvoie les identifiants des éléments ajoutés.
+    pub fn add_and_update_elements(
+        &self,
+        id: u64,
+        added: Vec<Element>,
+        updated: Vec<(u64, Element)>,
+        removed: &[u64],
+    ) -> Result<(Vec<u64>, EditView), AppError> {
+        self.with_document(id, |open, doc| {
+            let added = added
+                .iter()
+                .map(|e| self.checked(open, e))
+                .collect::<Result<Vec<_>, _>>()?;
+            let updated = updated
+                .iter()
+                .map(|(element_id, e)| Ok((ElementId(*element_id), self.checked(open, e)?)))
+                .collect::<Result<Vec<_>, AppError>>()?;
+            let removed: Vec<ElementId> = removed.iter().map(|&r| ElementId(r)).collect();
+            let (ids, change) = open
+                .edits
+                .add_and_update(added, updated, &removed)
+                .map_err(invalid)?;
+            self.commit(open, doc, change)?;
+            Ok((ids.into_iter().map(|i| i.0).collect(), view(open)))
+        })
+    }
+
     pub fn update_elements(
         &self,
         id: u64,
@@ -70,6 +98,54 @@ mod tests {
             text: content.into(),
             style: TextStyle::default(),
         })
+    }
+
+    /// Image d'origine du faux moteur (origine en haut : y de 142 à 242).
+    fn existing(frame: Option<pde_core::edit::Area>) -> Element {
+        Element::ExistingImage(pde_core::edit::ExistingImage {
+            page: 0,
+            object: 2,
+            original: pde_core::edit::Area {
+                top_left: Point::new(100.0, 142.0),
+                width: 200.0,
+                height: 100.0,
+            },
+            frame,
+        })
+    }
+
+    #[test]
+    fn an_original_image_is_moved_then_removed_and_replaced_in_one_step() {
+        let s = Session::new("image-origine");
+        let moved = pde_core::edit::Area {
+            top_left: Point::new(50.0, 300.0),
+            width: 100.0,
+            height: 50.0,
+        };
+        let (edit_id, view) = s.viewer.add_element(s.id, existing(Some(moved))).unwrap();
+        // Coordonnées de l'interface gardées, place = nouveau cadre.
+        assert_eq!(view.elements[0].element, existing(Some(moved)));
+        assert_eq!(view.elements[0].bounds.y, 300.0);
+        // Remplacer : l'image d'origine supprimée et une zone posée, ensemble.
+        let (ids, view) = s
+            .viewer
+            .add_and_update_elements(
+                s.id,
+                vec![text(300.0, "à la place")],
+                vec![(edit_id, existing(None))],
+                &[],
+            )
+            .unwrap();
+        assert_eq!(ids.len(), 1);
+        assert_eq!(view.elements.len(), 2);
+        let view = s.viewer.undo(s.id).unwrap();
+        assert_eq!(view.elements.len(), 1);
+        assert_eq!(view.elements[0].element, existing(Some(moved)));
+        assert!(
+            s.viewer
+                .add_and_update_elements(s.id, Vec::new(), vec![(99, existing(None))], &[])
+                .is_err()
+        );
     }
 
     #[test]

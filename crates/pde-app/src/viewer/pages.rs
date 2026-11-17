@@ -105,6 +105,7 @@ impl Viewer {
     pub(super) fn relayout(&self, open: &mut OpenDocument, doc: DocumentId) {
         open.info = arranged(&open.original, open.edits.plan(), open.edits.sources());
         open.layout += 1;
+        open.page_images.clear();
         let next = open.revisions.iter().max().map_or(1, |r| r + 1);
         open.revisions = vec![next; open.info.page_count()];
         lock(&self.cache).remove_document(doc);

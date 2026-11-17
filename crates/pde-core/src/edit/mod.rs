@@ -8,6 +8,7 @@
 
 mod annotation;
 mod element;
+mod existing;
 mod history;
 mod image;
 mod import;
@@ -25,6 +26,7 @@ pub use annotation::{
 pub use element::{
     Align, Color, Element, ElementId, FONT_SIZE_RANGE, StandardFont, TextBox, TextStyle,
 };
+pub use existing::{ExistingImage, MIN_EXISTING_SIDE};
 pub use history::{Change, Edits, Operation};
 pub use image::{
     ImageAsset, ImageBox, ImageData, ImageId, Images, MIN_IMAGE_SIDE, OPACITY_RANGE, Placement,

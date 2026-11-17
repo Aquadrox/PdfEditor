@@ -14,6 +14,7 @@ import { EditLayer } from "./edit-layer.js";
 import { EditSession } from "./edit-session.js";
 import { duplicated, nudged, pagePoint, withStyle } from "./edit-state.js";
 import { newImageBox } from "./image-state.js";
+import { fittedImageBox, isExisting, withoutImage } from "./existing-image.js";
 import { aligned, distributed, nextInOrder, samePage } from "./selection-state.js";
 import { attachMarkupTool } from "./markup-tool.js";
 import { attachRedactTool } from "./redact-tool.js";
@@ -70,11 +71,16 @@ export class EditMode {
       remove: (id) => this.session.remove(id).catch(fail),
       // Dupliquer : toute la sélection, en une opération.
       duplicate: () => {
-        const copies = this.selectedItems().map((i) => duplicated(i.element, pages()[i.element.page]));
+        // Une image d'origine ne se duplique pas (son contenu reste dans le PDF).
+        const copies = this.selectedItems()
+          .filter((i) => !isExisting(i.element))
+          .map((i) => duplicated(i.element, pages()[i.element.page]));
+        if (copies.length === 0) return;
         const done = copies.length === 1 ? this.session.add(copies[0]) : this.session.addMany(copies);
         done.catch(fail);
       },
       removeSelection: () => this.session.removeMany(this.session.selection).catch(fail),
+      replace: () => this.replaceSelected(),
       arrange: (action) => this.arrange(action),
       close: () => this.session.select(null),
     });
@@ -237,6 +243,27 @@ export class EditMode {
   pickImage() {
     this.layer.commitText();
     return this.insertImage(invoke("pick_image", { id: this.session.doc.id }));
+  }
+
+  /**
+   * Remplacer l'image d'origine sélectionnée : elle est supprimée et la
+   * nouvelle image posée dans son cadre, en une opération.
+   */
+  async replaceSelected() {
+    const item = this.session.element(this.session.selected);
+    if (!item || !isExisting(item.element)) return;
+    try {
+      const imported = await invoke("pick_image", { id: this.session.doc.id });
+      if (!imported) return;
+      const box = fittedImageBox(item.element, imported);
+      const gone = withoutImage(item.element);
+      const ids = item.synthetic
+        ? await this.session.editBatch({ added: [box, gone] })
+        : await this.session.editBatch({ added: [box], changes: [{ id: item.id, element: gone }] });
+      this.session.select(ids[0] ?? null);
+    } catch (error) {
+      fail(error);
+    }
   }
 
   /** Image du presse-papiers (fichier du navigateur). */

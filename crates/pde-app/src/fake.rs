@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
 use pde_core::edit::{Element, PageSources, leading};
-use pde_core::engine::{Edition, EngineError, OpenedDocument, PdfEngine, Placed};
+use pde_core::engine::{Edition, EngineError, OpenedDocument, PageImage, PdfEngine, Placed};
 use pde_core::geometry::{Point, Rect};
 use pde_core::render::{Bitmap, RenderRequest, pixel_size};
 use pde_core::text::{PageText, TextChar};
@@ -37,6 +37,7 @@ pub struct FakeEngine {
     next_id: AtomicU64,
     renders: AtomicUsize,
     text_reads: AtomicUsize,
+    page_image_reads: AtomicUsize,
     closed: Mutex<Vec<u64>>,
     /// Taille des pages de chaque document : à l'ouverture, puis selon le
     /// dernier plan appliqué.
@@ -49,6 +50,10 @@ type Pages = (Vec<PageSize>, Vec<PageSize>);
 impl FakeEngine {
     pub fn render_count(&self) -> usize {
         self.renders.load(Ordering::SeqCst)
+    }
+
+    pub fn page_image_reads(&self) -> usize {
+        self.page_image_reads.load(Ordering::SeqCst)
     }
 
     pub fn text_reads(&self) -> usize {
@@ -190,6 +195,10 @@ impl PdfEngine for FakeEngine {
                     id,
                     bounds: redact.bounds(),
                 }),
+                Element::ExistingImage(image) => Ok(Placed {
+                    id,
+                    bounds: image.bounds(),
+                }),
                 Element::Text(text) => {
                     let height = leading(&text.style);
                     Ok(Placed {
@@ -207,6 +216,30 @@ impl PdfEngine for FakeEngine {
     /// PDF de ce faux moteur, avec les pages du plan ; l'affichage ne change pas.
     fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError> {
         Ok(pdf_with_pages(self.arranged(doc, &edition)?.len()))
+    }
+
+    /// Une image d'origine sur la première page d'origine, de (100, 600) à
+    /// (300, 700) (rang 2) ; aucune ailleurs.
+    fn page_images(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+    ) -> Result<Vec<PageImage>, EngineError> {
+        self.page_image_reads.fetch_add(1, Ordering::SeqCst);
+        self.arranged(doc, &edition)?;
+        let first = matches!(
+            edition.plan.pages().get(page).map(|p| p.source),
+            Some(pde_core::edit::PageSource::Original { index: 0 })
+        );
+        Ok(if first {
+            vec![PageImage {
+                object: 2,
+                bounds: Rect::from_corners(Point::new(100.0, 600.0), Point::new(300.0, 700.0)),
+            }]
+        } else {
+            Vec::new()
+        })
     }
 
     /// Enregistre un PDF reconnu par ce faux moteur, avec le bon nombre de pages.

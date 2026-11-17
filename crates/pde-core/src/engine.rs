@@ -45,6 +45,14 @@ pub struct Placed {
     pub bounds: Rect,
 }
 
+/// Image d'origine d'une page (E-06) : son rang parmi les objets de la
+/// page arrangée, avant tout ajout, et sa place sur la page affichée.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PageImage {
+    pub object: u32,
+    pub bounds: Rect,
+}
+
 /// Ce que le moteur applique au document d'origine : plan des pages,
 /// éléments posés, contenu des images et des PDF insérés qu'ils désignent.
 #[derive(Debug, Clone, Default)]
@@ -91,6 +99,15 @@ pub trait PdfEngine: Send + Sync {
     /// le document affiché ne change pas.
     fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError>;
 
+    /// Images d'origine de la page `page` du document arrangé selon le plan
+    /// de `edition` (ses éléments ne sont pas posés).
+    fn page_images(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+    ) -> Result<Vec<PageImage>, EngineError>;
+
     /// Contenu du document dans son état actuel, prêt à écrire.
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError>;
 
@@ -122,6 +139,15 @@ impl<T: PdfEngine + ?Sized> PdfEngine for &T {
 
     fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError> {
         (**self).export(doc, edition)
+    }
+
+    fn page_images(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+    ) -> Result<Vec<PageImage>, EngineError> {
+        (**self).page_images(doc, edition, page)
     }
 
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError> {

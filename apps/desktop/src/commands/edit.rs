@@ -139,3 +139,39 @@ pub fn save_document_as(
         .map_err(|e| AppError::new(ErrorKind::Io, e.to_string()))?;
     app.save_document(id, Some(path)).map(Some)
 }
+
+#[derive(Serialize)]
+pub struct Edited {
+    ids: Vec<u64>,
+    view: EditView,
+}
+
+/// Ajouts, remplacements et retraits en une seule opération (remplacer une
+/// image d'origine : la supprimer et poser la nouvelle dans son cadre).
+#[tauri::command(async)]
+pub fn edit_elements(
+    app: AppState<'_>,
+    id: u64,
+    added: Vec<Element>,
+    changes: Vec<ElementChange>,
+    removed: Vec<u64>,
+) -> Result<Edited, AppError> {
+    let changes = changes
+        .into_iter()
+        .map(|c| (c.element_id, c.element))
+        .collect();
+    let (ids, view) = app
+        .viewer
+        .add_and_update_elements(id, added, changes, &removed)?;
+    Ok(Edited { ids, view })
+}
+
+/// Images d'origine d'une page (rang et place), pour les sélectionner.
+#[tauri::command(async)]
+pub fn page_images(
+    app: AppState<'_>,
+    id: u64,
+    page: usize,
+) -> Result<Vec<pde_app::viewer::PageImageView>, AppError> {
+    app.viewer.page_images(id, page)
+}
