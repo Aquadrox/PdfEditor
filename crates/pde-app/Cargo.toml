@@ -11,6 +11,8 @@ license.workspace = true
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 log = "0.4"
 pde-core = { path = "../pde-core" }
+# Caractères qu'aucune police ne couvre (signalés dans l'interface).
+pde-fonts = { path = "../pde-fonts" }
 png = "0.18"
 serde.workspace = true
 # Empreinte du PDF d'origine : une sauvegarde automatique ne se réapplique

@@ -115,6 +115,10 @@ export function attachProperties(session, pages, actions) {
     if (!visible || !item) return;
     const values = geometryInMm(item.element, item.bounds);
     if (kind === "text" && document.activeElement !== text) text.value = item.element.text;
+    // Caractères qu'aucune police embarquée ne couvre (pde-fonts).
+    const missing = byId("prop-missing");
+    missing.hidden = !item.missing_chars;
+    missing.textContent = item.missing_chars ? t("props.missingChars", { chars: [...item.missing_chars].join(" ") }) : "";
     // Hauteur d'un texte : donnée par ses lignes ; taille d'un marquage :
     // celle du texte marqué. Ni l'une ni l'autre ne se saisit.
     geometry.height.readOnly = kind === "text" || kind === "markup" || kind === "note";

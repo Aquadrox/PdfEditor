@@ -85,6 +85,7 @@ export default {
   "props.shapeTitle": "Forme",
   "props.inkTitle": "Dessin",
   "props.markupTitle": "Marquage du texte",
+  "props.missingChars": "Ces caractères ne s'afficheront pas : {chars}. Alphabets pris en charge : latin, grec, cyrillique.",
   "props.noteTitle": "Note",
   "props.noteText": "Commentaire",
   "props.notePlaceholder": "Écrivez votre commentaire…",

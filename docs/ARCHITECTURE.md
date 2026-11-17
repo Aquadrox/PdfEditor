@@ -42,6 +42,7 @@ adaptateur (il passe par un trait de `pde-core`) ; seul `apps/desktop` connaît 
 |---|---|---|---|
 | `pde-core` | Géométrie, unités, modèle du document (pages, blocs de texte, éléments), opérations d'édition, historique annuler / rétablir, réglages (TOML + validation), traits `PdfEngine`, `ChatModel`, `SecretStore`, `Clock` | `serde`, `toml`, `thiserror` | v0.0 |
 | `pde-pdf` | Moteur PDF : ouverture, rendu, extraction du texte avec positions, application des opérations, enregistrement complet ou incrémental | `pdfium-render` (PDFium) | v0.1 |
+| `pde-fonts` | Polices Noto embarquées (Sans, Serif, Sans Mono : latin étendu, grec, cyrillique ; OFL), caractères couverts, métriques | `skrifa` | v0.2 |
 | `pde-sign` | Signature PAdES, vérification, certificats (PKCS#12, auto-signé), DocMDP / FieldMDP, horodatage RFC 3161, écriture incrémentale | `lopdf`, RustCrypto (`cms`, `x509-cert`, `rsa`, `p256`, `sha2`, `p12-keystore`) | v0.4 |
 | `pde-workflow` | Cycle de signature : plan, machine à états, manifeste embarqué, journal d'audit chaîné | `pde-core`, `serde_json`, `sha2` | v0.8 |
 | `pde-ai` | Client LLM compatible OpenAI (repris de VoiceToText), profils, prompts, découpage du document, tâches analyse / traduction / modification, coûts | `ureq`, `serde_json` | v0.5 |

@@ -306,3 +306,27 @@ test("mode Lire : la couche d'édition disparaît, le texte redevient sélection
     await app.close();
   }
 });
+
+test("caractères qu'aucune police ne couvre : signalés dans le panneau", async () => {
+  const element = { ...BOX, text: "Contrat 契約" };
+  const withMissing = view({ element, dirty: false });
+  withMissing.elements[0].missing_chars = "契約";
+  const app = await openInEditMode({ edit_view: [{ ok: withMissing }] });
+  try {
+    await selectBox(app);
+    await app.page.locator("#prop-missing:visible").waitFor();
+    assert.match(await app.page.textContent("#prop-missing"), /契 約.*latin, grec, cyrillique/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("zone de texte entièrement couverte : aucun avertissement", async () => {
+  const app = await openInEditMode({ edit_view: [{ ok: view({ element: { ...BOX, text: "Σύμβαση" }, dirty: false }) }] });
+  try {
+    await selectBox(app);
+    assert.equal(await app.page.locator("#prop-missing").isVisible(), false);
+  } finally {
+    await app.close();
+  }
+});

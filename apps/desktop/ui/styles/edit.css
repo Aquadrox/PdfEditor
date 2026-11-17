@@ -422,3 +422,7 @@
 .properties [data-annot-only][hidden] {
   display: none;
 }
+
+.properties .notice[hidden] {
+  display: none;
+}
