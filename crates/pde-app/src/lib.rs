@@ -3,6 +3,7 @@
 //! [`pde_core::engine::PdfEngine`] : les tests utilisent un faux moteur.
 
 pub mod app;
+pub mod autosave;
 pub mod cache;
 pub mod edit_view;
 pub mod error;
@@ -11,6 +12,7 @@ pub mod images;
 pub mod news;
 pub mod page_png;
 pub mod recent;
+pub mod recovery;
 pub mod settings_store;
 pub mod text_view;
 pub mod unavailable;

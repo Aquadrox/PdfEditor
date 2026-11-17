@@ -98,7 +98,19 @@ décoder (64 Mo, 60 mégapixels) et applique l'orientation EXIF. Un JPEG est
 inclus tel quel dans le PDF (aucune recompression) ; les autres images sont
 écrites en pixels avec leur transparence (masque). Le contenu est importé
 une fois par document (`ImageId`) et partagé par toutes les copies du cadre
-(`ImageBox` : position, taille, quarts de tour, opacité). À
+(`ImageBox` : position, taille, quarts de tour, opacité).
+
+Sauvegarde automatique (F-02, `pde-app::recovery`) : chaque lancement écrit
+dans `recovery/<session>/doc-<n>/` (dossier de données) un `manifest.json`
+(chemin, empreinte SHA-256 du PDF d'origine, éléments) et ses images ; le
+PDF n'est jamais copié, un document protégé par mot de passe n'est jamais
+sauvegardé. La session est verrouillée (`session.lock`, `File::try_lock`)
+tant que le lancement tourne : au démarrage, une session qu'on peut
+verrouiller vient d'un lancement interrompu et ses documents sont proposés.
+La reprise n'a lieu que sur un fichier de même empreinte ; chaque élément
+redevient une opération annulable. Enregistrer, fermer le document ou
+quitter en confirmant efface la sauvegarde ; une sortie sans confirmation
+(redémarrage de mise à jour) écrit une dernière sauvegarde. À
 l'enregistrement, le contenu produit est relu par PDFium (même mot de passe,
 même nombre de pages), écrit dans un fichier temporaire puis renommé à la
 place du fichier cible. Un document protégé par mot de passe le reste. Si le document contient des

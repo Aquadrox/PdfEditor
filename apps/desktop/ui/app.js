@@ -7,6 +7,7 @@ import { EditMode } from "./features/edit/edit-mode.js";
 import { isImagePath } from "./features/edit/image-state.js";
 import { confirmDiscard, saveDocument, saveDocumentAs } from "./features/edit/saving.js";
 import { showHome, watchDrops } from "./features/home/home.js";
+import { offerRecoveries } from "./features/recovery/recovery.js";
 import { renderRecent } from "./features/home/recent.js";
 import { openPath, pickPdf } from "./features/open/open.js";
 import { attachSearch } from "./features/search/search-bar.js";
@@ -29,6 +30,8 @@ let current = null;
 let settings = null;
 let shortcuts = new Map();
 let mode = "read";
+/** Heure de la dernière copie de secours du document affiché (F-02). */
+let backedUpAt = null;
 
 const viewer = new Viewer(byId("desk"), {
   onPageChange: (page) => {
@@ -50,10 +53,13 @@ const edit = new EditMode(viewer, (view, changed) => {
 
 /** Pastille et barre d'état « modifié » ; Enregistrer actif s'il y a à faire. */
 function showSaveState(dirty) {
+  if (!dirty) backedUpAt = null;
   byId("doc-dirty").hidden = !dirty;
   byId("save-button").disabled = !dirty;
   byId("menu-save").disabled = !dirty;
-  byId("save-state").textContent = current ? t(dirty ? "status.unsaved" : "status.saved") : "";
+  const time = backedUpAt?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const state = !dirty ? "status.saved" : time ? "status.unsavedBackup" : "status.unsaved";
+  byId("save-state").textContent = current ? t(state, { time }) : "";
 }
 
 /** Lire ou Éditer ; les autres modes arrivent avec leurs versions. */
@@ -66,8 +72,11 @@ function setMode(next) {
   edit.setActive(mode === "edit");
 }
 
+/** Affiche `doc` (ou l'accueil) ; la promesse suit le chargement de son édition. */
 function show(doc) {
   current = doc;
+  backedUpAt = null;
+  let editLoading = Promise.resolve();
   showHome(!doc);
   byId("sidebar").hidden = !doc;
   byId("doc-name").textContent = doc ? doc.file_name : "";
@@ -82,7 +91,7 @@ function show(doc) {
     const hasOutline = renderOutline(byId("outline"), doc.outline, (page) => viewer.goToPage(page));
     showSidebarTab(hasOutline && doc.pages.length > 1 ? "outline" : "pages");
     statusbar.setPage(0);
-    edit.load(doc).catch((e) => toast(t("error.unexpected", { message: e?.message ?? String(e) }), "error"));
+    editLoading = edit.load(doc).catch((e) => toast(t("error.unexpected", { message: e?.message ?? String(e) }), "error"));
   } else {
     edit.load(null);
     viewer.unload();
@@ -92,6 +101,7 @@ function show(doc) {
   search.reset();
   setMode(mode);
   showSaveState(false);
+  return editLoading;
 }
 
 /** Avant de quitter le document : enregistrer, abandonner ou rester. */
@@ -119,14 +129,19 @@ async function saveAs() {
   renamed(await saveDocumentAs(edit.session));
 }
 
-/** Ouvre un fichier ; le document précédent n'est fermé qu'en cas de succès. */
+/**
+ * Ouvre un fichier ; le document précédent n'est fermé qu'en cas de succès.
+ * Renvoie le document, édition chargée, ou null.
+ */
 async function open(path) {
-  if (!(await canLeave())) return;
+  if (!(await canLeave())) return null;
   const doc = await openPath(path);
-  if (!doc) return;
+  if (!doc) return null;
   const previous = current;
-  show(doc);
+  const loading = show(doc);
   if (previous) invoke("close_document", { id: previous.id });
+  await loading;
+  return doc;
 }
 
 async function close() {
@@ -294,6 +309,23 @@ async function start() {
   listen("close-requested", async () => {
     if (await canLeave()) invoke("quit_app");
   }).catch(() => {});
+  // Copie de secours écrite par Rust : heure dans la barre d'état.
+  listen("autosaved", (event) => {
+    if (!current || !event.payload?.documents?.includes(current.id)) return;
+    backedUpAt = new Date();
+    showSaveState(edit.session.dirty);
+  }).catch(() => {});
+  // Lancement précédent interrompu : ses modifications d'abord.
+  const recovered = await offerRecoveries({
+    open,
+    restored: (view) => {
+      setMode("edit");
+      // Rust a écrit la copie de secours de ce lancement en reprenant.
+      backedUpAt = new Date();
+      edit.session.update(view);
+    },
+  });
+  if (recovered) return;
   // Fichier passé en argument (« Ouvrir avec PdfEditor »), sinon le dernier
   // document si le réglage le demande.
   const files = await invoke("initial_files").catch(() => []);

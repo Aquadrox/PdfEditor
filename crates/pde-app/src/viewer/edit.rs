@@ -139,7 +139,7 @@ impl Viewer {
     }
 
     /// Pose tous les éléments et marque les pages touchées comme changées.
-    fn redraw(
+    pub(super) fn redraw(
         &self,
         open: &mut OpenDocument,
         doc: DocumentId,
@@ -179,7 +179,7 @@ impl Viewer {
     }
 }
 
-fn view(open: &OpenDocument) -> EditView {
+pub(super) fn view(open: &OpenDocument) -> EditView {
     let elements = open
         .edits
         .elements()

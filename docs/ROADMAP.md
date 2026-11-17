@@ -39,14 +39,14 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ✅ Garde-fou Android dans la CI : `pde-core`, `pde-app`, `pde-pdf` et `pde-platform` compilent pour Android (aarch64), pour ne jamais fermer la porte à la v1.1
 - ✅ Tests de rendu comparés à des images de référence (`crates/pde-pdf/tests/fixtures/expected/`, `PDE_UPDATE_EXPECTED=1` pour les régénérer)
 - ✅ Modèle d'édition (`pde-core::edit`) : éléments ajoutés, historique annuler / rétablir, suivi « modifié », coupure des lignes ; le moteur repart du PDF d'origine et repose les éléments à chaque changement
-- ⬜ Sauvegarde automatique et récupération après plantage (F-02)
+- ✅ Sauvegarde automatique et récupération après plantage (F-02) : ajouts (textes, images) mis en lieu sûr à l'intervalle réglé, jamais le PDF ni un document protégé par mot de passe ; au lancement suivant, Récupérer / Plus tard / Ignorer ; reprise refusée si le fichier a changé (empreinte SHA-256)
 - ✅ Mode Éditer : barre d'outils, couche d'édition sur les pages, panneau Propriétés (maquette `Main.dc.html`), annuler / rétablir (Ctrl+Z / Ctrl+Y), pastille « modifié », raccourcis réglables ; tests de parcours Playwright
 - 🚧 Zones de texte (E-01) : création par un clic et saisie directe sur la page, police standard, taille, gras, italique, couleur, alignement, déplacement et largeur à la souris ou en mm, dupliquer, supprimer ; reste les polices embarquées pour les autres alphabets (Noto)
 - ✅ Images (E-02) : PNG, JPEG, WebP par le bouton Image, le presse-papiers (Ctrl+V) ou un glisser-déposer ; JPEG inclus sans recompression, transparence gardée, orientation EXIF appliquée ; coins avec proportions verrouillables, rotation par quarts de tour, opacité ; tests de rendu (image de référence `images.png`)
 - 🚧 Sélection, déplacement, alignement, magnétisme (E-03) : sélection, déplacement (souris, flèches), dupliquer, supprimer faits ; reste sélection au clavier (Tab), alignement, magnétisme
 - ⬜ Annotations et formes (E-04)
 - ✅ Enregistrer / Enregistrer sous (F-01) : contenu relu avant d'écrire, remplacement atomique, mot de passe conservé ; question avant de fermer le document ou la fenêtre, ou d'en ouvrir un autre, avec des modifications
-- ⬜ Réglages Édition et Fichiers (R-03, R-04)
+- 🚧 Réglages Édition et Fichiers (R-03, R-04) : intervalle de la sauvegarde automatique fait ; restent police, taille et couleur par défaut, dossier par défaut, suffixe des copies
 
 ## v0.3 — Contenu existant et pages
 

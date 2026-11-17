@@ -66,6 +66,11 @@ impl AppDirs {
         self.data.join("recent.json")
     }
 
+    /// Sauvegarde automatique des modifications (F-02).
+    pub fn recovery_dir(&self) -> PathBuf {
+        self.data.join("recovery")
+    }
+
     /// Versions lancées (nouveautés après une mise à jour).
     pub fn version_file(&self) -> PathBuf {
         self.data.join("version.json")

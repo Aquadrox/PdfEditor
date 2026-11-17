@@ -22,7 +22,7 @@ pub fn open_document(
 
 #[tauri::command(async)]
 pub fn close_document(app: AppState<'_>, id: u64) {
-    app.viewer.close(id);
+    app.close_document(id);
 }
 
 /// Texte d'une page, en segments positionnés (couche sélectionnable).

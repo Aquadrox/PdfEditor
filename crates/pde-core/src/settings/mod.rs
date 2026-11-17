@@ -82,6 +82,27 @@ impl Default for Display {
     }
 }
 
+/// Rubrique Fichiers (R-04).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Files {
+    /// Intervalle de la sauvegarde automatique des modifications (F-02),
+    /// en secondes ; 0 : désactivée.
+    pub autosave_seconds: u32,
+}
+
+pub const AUTOSAVE_SECONDS_RANGE: std::ops::RangeInclusive<u32> = 0..=3600;
+/// En dessous, une sauvegarde automatique écrirait sans cesse.
+pub const MIN_AUTOSAVE_SECONDS: u32 = 10;
+
+impl Default for Files {
+    fn default() -> Self {
+        Self {
+            autosave_seconds: 60,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Updates {
@@ -107,6 +128,7 @@ pub struct Diagnostic {
 pub struct Settings {
     pub general: General,
     pub display: Display,
+    pub files: Files,
     pub shortcuts: Shortcuts,
     pub updates: Updates,
     pub diagnostic: Diagnostic,
@@ -174,6 +196,19 @@ impl Settings {
             "display.page_cache_mb",
             warnings,
         );
+        clamp(
+            &mut s.files.autosave_seconds,
+            AUTOSAVE_SECONDS_RANGE,
+            "files.autosave_seconds",
+            warnings,
+        );
+        if (1..MIN_AUTOSAVE_SECONDS).contains(&s.files.autosave_seconds) {
+            warnings.push(format!(
+                "files.autosave_seconds = {} : au moins {MIN_AUTOSAVE_SECONDS} (0 pour désactiver)",
+                s.files.autosave_seconds
+            ));
+            s.files.autosave_seconds = MIN_AUTOSAVE_SECONDS;
+        }
         s.shortcuts = self.shortcuts.validated(warnings)?;
         Ok(s)
     }
@@ -231,6 +266,22 @@ mod tests {
         assert!(!loaded.settings.general.reopen_last);
         assert_eq!(loaded.settings.shortcuts.0[&Action::Search], "F3");
         assert_eq!(loaded.settings.shortcuts.0[&Action::Open], "Ctrl+O");
+    }
+
+    #[test]
+    fn autosave_interval_is_bounded_and_can_be_off() {
+        let off = Settings::from_toml("[files]\nautosave_seconds = 0\n");
+        assert_eq!(off.settings.files.autosave_seconds, 0);
+        assert!(off.warnings.is_empty());
+        let too_fast = Settings::from_toml("[files]\nautosave_seconds = 2\n");
+        assert_eq!(too_fast.settings.files.autosave_seconds, 10);
+        assert_eq!(too_fast.warnings.len(), 1);
+        let too_slow = Settings::from_toml("[files]\nautosave_seconds = 99999\n");
+        assert_eq!(too_slow.settings.files.autosave_seconds, 3600);
+        assert_eq!(Settings::default().files.autosave_seconds, 60);
+        let mut ui = Settings::default();
+        ui.files.autosave_seconds = 5;
+        assert!(ui.validated().is_err());
     }
 
     #[test]

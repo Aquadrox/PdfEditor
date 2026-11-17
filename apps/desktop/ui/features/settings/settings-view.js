@@ -27,7 +27,13 @@ export function attachSettings(hooks) {
     for (const field of fields) {
       const value = getPath(draft, field.dataset.setting);
       if (field.type === "checkbox") field.checked = Boolean(value);
-      else field.value = String(value);
+      else {
+        // Valeur écrite à la main dans config.toml, absente de la liste.
+        if (field.tagName === "SELECT" && ![...field.options].some((o) => o.value === String(value))) {
+          field.append(new Option(t("settings.autosave.custom", { seconds: value }), String(value)));
+        }
+        field.value = String(value);
+      }
     }
     drawShortcuts();
     refresh();
