@@ -4,6 +4,13 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.8 — 2026-11-17
+
+- Sauvegarde automatique : vos ajouts (textes, images) sont mis en lieu sûr toutes les minutes, sans toucher au fichier ; l'heure de la dernière copie de secours s'affiche en bas de la fenêtre.
+- Si PdfEditor se ferme brutalement, il propose au lancement suivant de reprendre vos modifications.
+- Nouvelle rubrique Fichiers dans les réglages : intervalle de la sauvegarde automatique, ou la désactiver.
+- Un document protégé par mot de passe n'est jamais copié en clair sur le disque par la sauvegarde automatique.
+
 ## 0.0.7 — 2026-11-16
 
 - Ajout d'images (PNG, JPEG, WebP) en mode Éditer : bouton Image, coller avec Ctrl+V, ou glisser-déposer le fichier sur la page.

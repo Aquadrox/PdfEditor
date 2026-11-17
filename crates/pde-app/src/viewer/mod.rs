@@ -2,6 +2,7 @@
 
 mod edit;
 mod images;
+mod recovery;
 #[cfg(test)]
 mod testing;
 mod text;
@@ -34,6 +35,11 @@ struct OpenDocument {
     info: DocumentInfo,
     /// Gardé en mémoire seulement, pour relire le fichier enregistré.
     password: Option<String>,
+    /// SHA-256 du fichier ouvert (hexadécimal) : une sauvegarde automatique
+    /// ne se réapplique qu'au même contenu.
+    digest: String,
+    /// Version des éléments à la dernière sauvegarde automatique.
+    autosaved: Option<u64>,
     edits: Edits,
     /// Images importées (partagées par leurs copies et avec le moteur),
     /// gardées pendant toute la session pour annuler / rétablir.
@@ -91,6 +97,7 @@ impl Viewer {
     ) -> Result<DocumentView, AppError> {
         let bytes = read_file(path, MAX_FILE_BYTES)?;
         let size = bytes.len();
+        let digest = sha256_hex(&bytes);
         let started = std::time::Instant::now();
         let opened = self.engine.open(bytes, password.clone()).inspect_err(|e| {
             // Jamais le nom du fichier : il peut être personnel.
@@ -114,6 +121,8 @@ impl Viewer {
                 revisions: vec![0; opened.info.page_count()],
                 info: opened.info,
                 password,
+                digest,
+                autosaved: None,
                 edits: Edits::new(),
                 images: Images::new(),
                 placed: HashMap::new(),
@@ -177,6 +186,14 @@ impl Viewer {
         let info = &documents.get(&doc).ok_or_else(unknown_document)?.info;
         Ok(info.page_size(page)?)
     }
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
 }
 
 fn unknown_document() -> AppError {

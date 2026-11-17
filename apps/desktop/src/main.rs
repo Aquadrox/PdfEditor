@@ -5,6 +5,7 @@
 // Pas de console en plus de la fenêtre sous Windows (version publiée).
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod autosave;
 mod closing;
 mod commands;
 mod logging;
@@ -16,6 +17,7 @@ use std::sync::Arc;
 use pde_app::app::App;
 use pde_app::news::News;
 use pde_app::recent::RecentFiles;
+use pde_app::recovery::RecoveryStore;
 use pde_app::settings_store::SettingsStore;
 use pde_app::unavailable::UnavailableEngine;
 use pde_pdf::PdfiumEngine;
@@ -56,8 +58,15 @@ fn main() {
     ));
     let check_updates = settings.get().updates.check;
     let recent = RecentFiles::load(dirs.recent_file());
-    let app = Arc::new(App::new(engine(), settings, recent));
+    let mut app = App::new(engine(), settings, recent);
+    match RecoveryStore::open(&dirs.recovery_dir()) {
+        Ok(store) => app = app.with_recovery(store),
+        Err(e) => log::warn!("sauvegarde automatique désactivée : {e}"),
+    }
+    let app = Arc::new(app);
     let protocol_app = app.clone();
+    let autosave_app = app.clone();
+    let exit_app = app.clone();
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -70,6 +79,7 @@ fn main() {
             let updates = updates::Updates::new(tauri_app.handle(), check_updates);
             updates::spawn_checks(tauri_app.handle().clone(), updates.clone());
             tauri_app.manage(updates);
+            autosave::spawn(tauri_app.handle().clone(), autosave_app);
             Ok(())
         })
         .register_asynchronous_uri_scheme_protocol("pde", move |_ctx, request, responder| {
@@ -98,6 +108,9 @@ fn main() {
             commands::image::pick_image,
             commands::image::import_image_file,
             commands::image::import_image_bytes,
+            commands::recovery::recoveries,
+            commands::recovery::restore_recovery,
+            commands::recovery::discard_recovery,
             commands::settings::get_settings,
             commands::settings::save_settings,
             commands::settings::default_settings,
@@ -110,9 +123,16 @@ fn main() {
             commands::updates::dismiss_update_news,
             closing::quit_app,
         ])
-        .run(tauri::generate_context!());
-    if let Err(error) = result {
-        log::error!("PdfEditor n'a pas pu démarrer : {error}");
-        std::process::exit(1);
+        .build(tauri::generate_context!());
+    match result {
+        Ok(tauri_app) => tauri_app.run(move |_, event| {
+            if let tauri::RunEvent::Exit = event {
+                exit_app.on_exit();
+            }
+        }),
+        Err(error) => {
+            log::error!("PdfEditor n'a pas pu démarrer : {error}");
+            std::process::exit(1);
+        }
     }
 }

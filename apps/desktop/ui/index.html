@@ -240,6 +240,7 @@
           <button class="nav-item" data-section="general" data-i18n="settings.general"></button>
           <button class="nav-item" data-section="display" data-i18n="settings.display"></button>
           <button class="nav-item" data-section="shortcuts" data-i18n="settings.shortcuts"></button>
+          <button class="nav-item" data-section="files" data-i18n="settings.files"></button>
           <button class="nav-item" data-section="diagnostic" data-i18n="settings.diagnostic"></button>
         </nav>
         <div class="settings-content">
@@ -285,6 +286,21 @@
             <h2 class="settings-section-title" data-i18n="settings.shortcuts"></h2>
             <table class="shortcuts-table"><tbody id="shortcuts-body"></tbody></table>
             <div><button id="shortcuts-reset" class="btn" data-i18n="settings.shortcuts.reset"></button></div>
+          </section>
+
+          <section class="settings-section" data-section="files" hidden>
+            <h2 class="settings-section-title" data-i18n="settings.files"></h2>
+            <div class="field">
+              <label for="set-autosave"><span data-i18n="settings.autosave"></span><span class="hint" data-i18n="settings.autosave.hint"></span></label>
+              <select id="set-autosave" class="input" data-setting="files.autosave_seconds" data-type="number">
+                <option value="0" data-i18n="settings.autosave.off"></option>
+                <option value="30" data-i18n="settings.autosave.30"></option>
+                <option value="60" data-i18n="settings.autosave.60"></option>
+                <option value="120" data-i18n="settings.autosave.120"></option>
+                <option value="300" data-i18n="settings.autosave.300"></option>
+                <option value="600" data-i18n="settings.autosave.600"></option>
+              </select>
+            </div>
           </section>
 
           <section class="settings-section" data-section="diagnostic" hidden>
@@ -355,6 +371,18 @@
         <button id="unsaved-cancel" class="btn" type="button" data-i18n="unsaved.cancel"></button>
         <button id="unsaved-discard" class="btn" type="button" data-i18n="unsaved.discard"></button>
         <button id="unsaved-save" class="btn primary" type="button" data-i18n="unsaved.save"></button>
+      </div>
+    </dialog>
+
+    <dialog id="recovery-dialog" aria-labelledby="recovery-title">
+      <div class="dialog-body">
+        <h2 id="recovery-title" class="dialog-title" data-i18n="recovery.title"></h2>
+        <p id="recovery-text"></p>
+      </div>
+      <div class="dialog-actions">
+        <button id="recovery-discard" class="btn ghost danger" type="button" data-i18n="recovery.discard"></button>
+        <button id="recovery-later" class="btn" type="button" data-i18n="recovery.later"></button>
+        <button id="recovery-restore" class="btn primary" type="button" data-i18n="recovery.restore"></button>
       </div>
     </dialog>
 

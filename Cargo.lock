@@ -2768,7 +2768,7 @@ dependencies = [
 
 [[package]]
 name = "pde-app"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "image",
  "log",
@@ -2776,12 +2776,13 @@ dependencies = [
  "png",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "pde-core"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "serde",
  "serde_json",
@@ -2792,7 +2793,7 @@ dependencies = [
 
 [[package]]
 name = "pde-pdf"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "image",
  "pde-core",
@@ -2802,14 +2803,14 @@ dependencies = [
 
 [[package]]
 name = "pde-platform"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "dirs 6.0.0",
 ]
 
 [[package]]
 name = "pdfeditor"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "log",
  "pde-app",

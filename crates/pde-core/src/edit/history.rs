@@ -105,6 +105,12 @@ impl Edits {
         self.saved = self.current_seq();
     }
 
+    /// Version de la liste d'éléments : change à chaque opération, annuler
+    /// et rétablir compris (sauvegarde automatique : « a-t-elle changé ? »).
+    pub fn revision(&self) -> u64 {
+        self.current_seq()
+    }
+
     fn current_seq(&self) -> u64 {
         self.done.last().map_or(0, |(seq, _)| *seq)
     }

@@ -12,14 +12,17 @@ use pde_core::settings::Settings;
 use crate::edit_view::SavedView;
 use crate::error::AppError;
 use crate::recent::{RecentFiles, RecentView};
+use crate::recovery::RecoveryStore;
 use crate::settings_store::{SettingsStore, SettingsView};
 use crate::view::DocumentView;
 use crate::viewer::Viewer;
 
 pub struct App {
     pub viewer: Viewer,
-    settings: SettingsStore,
+    pub(crate) settings: SettingsStore,
     recent: RecentFiles,
+    /// Sauvegarde automatique (F-02) ; absente si son dossier est inutilisable.
+    pub(crate) recovery: Option<RecoveryStore>,
 }
 
 fn megabytes(mb: u32) -> usize {
@@ -28,7 +31,7 @@ fn megabytes(mb: u32) -> usize {
         .saturating_mul(1024 * 1024)
 }
 
-fn now() -> u64 {
+pub(crate) fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
@@ -42,7 +45,14 @@ impl App {
             viewer: Viewer::new(engine, cache),
             settings,
             recent,
+            recovery: None,
         }
+    }
+
+    /// Active la sauvegarde automatique dans `store`.
+    pub fn with_recovery(mut self, store: RecoveryStore) -> Self {
+        self.recovery = Some(store);
+        self
     }
 
     pub fn settings(&self) -> SettingsView {
@@ -81,6 +91,9 @@ impl App {
     pub fn save_document(&self, id: u64, target: Option<PathBuf>) -> Result<SavedView, AppError> {
         let save_as = target.is_some();
         let saved = self.viewer.save(id, target)?;
+        if let Some(recovery) = &self.recovery {
+            recovery.remove(id);
+        }
         let max = self.settings.get().general.recent_files as usize;
         if save_as
             && max > 0

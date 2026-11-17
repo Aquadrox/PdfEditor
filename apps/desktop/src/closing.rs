@@ -29,5 +29,7 @@ pub fn on_window_event(window: &Window, event: &WindowEvent) {
 #[tauri::command]
 pub fn quit_app(handle: AppHandle) {
     CONFIRMED.store(true, Ordering::SeqCst);
+    // Choix fait : rien à proposer au prochain lancement.
+    handle.state::<Arc<App>>().shutdown();
     handle.exit(0);
 }
