@@ -54,7 +54,7 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ⬜ Images existantes (E-06)
 - ⬜ Caviardage réel (E-07)
 - ✅ Pages (P-01, P-02) : mode Pages, grille des pages ; page blanche, dupliquer, pivoter, supprimer, réordonner en glissant (clavier : Suppr, Ctrl+A, flèches, Entrée) ; une opération = une entrée d'historique, les ajouts suivent leur page ; signets renvoyés à la nouvelle place ; plan des pages repris par la sauvegarde automatique. Restent : rotation des pages portant du texte ajouté, souligné ou barré ; signets et liens qui visent une page déplacée hors de la plus longue suite gardée (recopiée)
-- ⬜ Pages : fusionner des PDF, insérer les pages d'un autre PDF, extraire (P-03)
+- ✅ Pages d'autres PDF (P-03) : « Insérer un PDF » (plusieurs fichiers, en une opération) ou PDF glissés sur la grille, à l'endroit du dépôt ; fusionner = insérer à la fin ; « Extraire » écrit les pages choisies, avec leurs ajouts, dans un nouveau PDF (nom proposé « contrat (pages 2-3).pdf », mot de passe conservé) sans changer le document ; la sauvegarde automatique désigne les PDF insérés par leur chemin et leur empreinte, sans les copier. Restent : insertion d'un PDF protégé par mot de passe (refusée avec un message), signets et champs de formulaire des PDF insérés
 - ⬜ Formulaires, métadonnées (E-08, E-11)
 - ⬜ Tests de parcours de l'interface (Playwright)
 

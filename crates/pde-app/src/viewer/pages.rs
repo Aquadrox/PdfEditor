@@ -4,7 +4,7 @@
 //! pages, signets).
 
 use pde_core::document::{DocumentId, DocumentInfo, OutlineItem, PageIndex, PageSize};
-use pde_core::edit::{Change, Edits, PagePlan};
+use pde_core::edit::{Change, Edits, PagePlan, PageSources};
 use serde::Serialize;
 
 use super::edit::{invalid, view};
@@ -103,7 +103,7 @@ impl Viewer {
     /// Le plan des pages a changé : le document est décrit à nouveau et
     /// toutes ses pages sont à redessiner.
     pub(super) fn relayout(&self, open: &mut OpenDocument, doc: DocumentId) {
-        open.info = arranged(&open.original, open.edits.plan());
+        open.info = arranged(&open.original, open.edits.plan(), open.edits.sources());
         open.layout += 1;
         let next = open.revisions.iter().max().map_or(1, |r| r + 1);
         open.revisions = vec![next; open.info.page_count()];
@@ -112,7 +112,7 @@ impl Viewer {
     }
 }
 
-fn document_view(open: &OpenDocument, doc: DocumentId) -> DocumentView {
+pub(super) fn document_view(open: &OpenDocument, doc: DocumentId) -> DocumentView {
     let file_name = open
         .path
         .file_name()
@@ -123,7 +123,11 @@ fn document_view(open: &OpenDocument, doc: DocumentId) -> DocumentView {
 
 /// Le document d'origine décrit selon le plan : tailles des pages, et
 /// signets qui suivent leur page (sans page si elle a été supprimée).
-pub(super) fn arranged(original: &DocumentInfo, plan: &PagePlan) -> DocumentInfo {
+pub(super) fn arranged(
+    original: &DocumentInfo,
+    plan: &PagePlan,
+    sources: &PageSources,
+) -> DocumentInfo {
     fn outline(items: &[OutlineItem], plan: &PagePlan) -> Vec<OutlineItem> {
         items
             .iter()
@@ -135,7 +139,7 @@ pub(super) fn arranged(original: &DocumentInfo, plan: &PagePlan) -> DocumentInfo
             .collect()
     }
     DocumentInfo {
-        page_sizes: plan.sizes(&original.page_sizes),
+        page_sizes: plan.sizes(sources),
         title: original.title.clone(),
         outline: outline(&original.outline, plan),
     }
@@ -251,7 +255,8 @@ mod tests {
             }],
         };
         let plan = PagePlan::new(vec![PlannedPage::original(1)]);
-        let info = arranged(&original, &plan);
+        let sources = PageSources::new(original.page_sizes.clone());
+        let info = arranged(&original, &plan, &sources);
         assert_eq!(info.page_sizes, [PageSize::new(842.0, 595.0)]);
         assert_eq!(info.title.as_deref(), Some("Contrat"));
         assert_eq!(info.outline[0].page, Some(0));

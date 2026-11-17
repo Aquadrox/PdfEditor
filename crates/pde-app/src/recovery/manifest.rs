@@ -1,6 +1,7 @@
 //! Contenu d'une sauvegarde automatique : un dossier par document, avec
-//! `manifest.json` (fichier d'origine, plan des pages s'il a changé,
-//! éléments ajoutés) et une image par
+//! `manifest.json` (fichier d'origine, plan des pages s'il a changé, PDF
+//! insérés désignés par leur chemin et leur empreinte, éléments ajoutés) et
+//! une image par
 //! fichier (JPEG tel quel, sinon PNG). Le PDF lui-même n'est jamais copié.
 
 use std::fs;
@@ -34,6 +35,8 @@ pub struct Snapshot {
     pub page_count: usize,
     /// Plan des pages, s'il diffère de l'original.
     pub pages: Option<PagePlan>,
+    /// PDF insérés que le plan désigne (jamais copiés).
+    pub imports: Vec<ImportRecord>,
     /// Éléments, coordonnées de `pde-core` (origine en bas).
     pub elements: Vec<Element>,
     /// Images désignées par les éléments.
@@ -49,8 +52,17 @@ pub struct Recovered {
     pub page_count: usize,
     pub saved_at: u64,
     pub pages: Option<PagePlan>,
+    pub imports: Vec<ImportRecord>,
     pub elements: Vec<Element>,
     pub images: Images,
+}
+
+/// PDF inséré : repris seulement si le fichier a le même contenu.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ImportRecord {
+    pub id: u64,
+    pub path: PathBuf,
+    pub sha256: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -64,6 +76,8 @@ struct Manifest {
     saved_at: u64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pages: Option<PagePlan>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    imports: Vec<ImportRecord>,
     elements: Vec<Element>,
     images: Vec<u64>,
 }
@@ -106,6 +120,7 @@ pub fn write(dir: &Path, snapshot: &Snapshot, saved_at: u64) -> Result<(), AppEr
         page_count: snapshot.page_count,
         saved_at,
         pages: snapshot.pages.clone(),
+        imports: snapshot.imports.clone(),
         elements: snapshot.elements.clone(),
         images: snapshot.images.keys().map(|id| id.0).collect(),
     };
@@ -169,6 +184,7 @@ pub fn read(dir: &Path) -> Result<Recovered, AppError> {
         page_count: manifest.page_count,
         saved_at: manifest.saved_at,
         pages: manifest.pages,
+        imports: manifest.imports,
         elements: manifest.elements,
         images,
     })
@@ -195,8 +211,13 @@ mod tests {
             page_count: 3,
             pages: Some(PagePlan::new(vec![
                 pde_core::edit::PlannedPage::original(2),
-                pde_core::edit::PlannedPage::original(0),
+                pde_core::edit::PlannedPage::imported(pde_core::edit::ImportId(4), 0),
             ])),
+            imports: vec![ImportRecord {
+                id: 4,
+                path: PathBuf::from("/docs/annexe.pdf"),
+                sha256: "cd".repeat(32),
+            }],
             elements: vec![
                 Element::Text(TextBox {
                     page: 0,
@@ -239,6 +260,7 @@ mod tests {
         assert_eq!((r.page_count, r.saved_at), (3, 1_700_000_000));
         assert_eq!(r.elements, s.elements);
         assert_eq!(r.pages, s.pages);
+        assert_eq!(r.imports, s.imports);
         // Pixels relus à l'identique (PNG sans perte).
         assert_eq!(r.images[&ImageId(2)], s.images[&ImageId(2)]);
         assert_eq!(
@@ -261,6 +283,7 @@ mod tests {
         let text = fs::read_to_string(dir.join(MANIFEST)).unwrap();
         assert!(text.contains("\"format\": 2"));
         s.pages = None;
+        s.imports.clear();
         write(&dir, &s, 1).unwrap();
         let text = fs::read_to_string(dir.join(MANIFEST)).unwrap();
         assert!(text.contains("\"format\": 1") && !text.contains("\"pages\""));

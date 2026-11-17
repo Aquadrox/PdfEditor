@@ -4,6 +4,12 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.15 — 2026-11-17
+
+- Mode Pages : « Insérer un PDF » ajoute les pages d'un ou plusieurs autres PDF après la sélection ; vous pouvez aussi glisser des PDF sur la grille, ils s'insèrent là où vous les déposez. Pour fusionner, insérez-les à la fin.
+- « Extraire » enregistre les pages choisies, avec ce que vous y avez ajouté, dans un nouveau PDF, sans modifier le document.
+- La sauvegarde automatique reprend aussi les pages insérées, tant que leur fichier n'a pas changé.
+
 ## 0.0.14 — 2026-11-17
 
 - Nouveau mode Pages : toutes les pages du document en grille ; ajoutez une page blanche, dupliquez, faites pivoter ou supprimez les pages choisies (clic, Ctrl+clic, Maj+clic, Ctrl+A).

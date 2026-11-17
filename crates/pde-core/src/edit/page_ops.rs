@@ -1,5 +1,5 @@
-//! Opérations sur les pages (P-01, P-02) : insérer une page blanche,
-//! supprimer, dupliquer, déplacer, pivoter.
+//! Opérations sur les pages (P-01 à P-03) : insérer une page blanche ou
+//! les pages d'autres PDF, supprimer, dupliquer, déplacer, pivoter.
 //!
 //! Chacune est une seule entrée de l'historique, et les éléments ajoutés
 //! suivent leur page : déplacés, copiés, retirés ou tournés avec elle.
@@ -10,6 +10,7 @@ use crate::document::{PageIndex, PageSize};
 
 use super::element::ElementId;
 use super::history::{Change, Edits, Operation};
+use super::import::ImportId;
 use super::pages::{MAX_PAGES, PagePlan, PlannedPage, check_blank_size};
 use super::rotate::rotated;
 
@@ -33,6 +34,34 @@ impl Edits {
         }
         let mut slots: Vec<Slot> = (0..count).map(Slot::Keep).collect();
         slots.insert(at, Slot::New(PlannedPage::blank(size)));
+        self.restructure(slots)
+    }
+
+    /// Insère, à la place `at`, des pages de PDF déjà enregistrés par
+    /// `register_import`, dans l'ordre donné (fusionner : à la fin).
+    pub fn insert_imported(
+        &mut self,
+        at: PageIndex,
+        pages: &[(ImportId, PageIndex)],
+    ) -> Result<Change, String> {
+        let count = self.plan.len();
+        if at > count {
+            return Err(missing(at));
+        }
+        if pages.is_empty() {
+            return Err("aucune page à insérer".into());
+        }
+        if let Some((_, index)) = pages
+            .iter()
+            .find(|(file, index)| self.sources.imported_page(*file, *index).is_none())
+        {
+            return Err(format!("la page {} du PDF inséré n'existe pas", index + 1));
+        }
+        let mut slots: Vec<Slot> = (0..count).map(Slot::Keep).collect();
+        let new = pages
+            .iter()
+            .map(|&(file, index)| Slot::New(PlannedPage::imported(file, index)));
+        slots.splice(at..at, new);
         self.restructure(slots)
     }
 
@@ -132,7 +161,7 @@ impl Edits {
 
     /// Plan relu d'une sauvegarde automatique, appliqué avant ses éléments.
     pub fn restore_plan(&mut self, plan: PagePlan) -> Result<Change, String> {
-        plan.validate(self.originals.len())?;
+        plan.validate(&self.sources)?;
         if plan == self.plan {
             return Ok(Change::default());
         }
@@ -290,7 +319,7 @@ mod tests {
             .iter()
             .map(|p| match p.source {
                 PageSource::Original { index } => Some(index),
-                PageSource::Blank { .. } => None,
+                PageSource::Blank { .. } | PageSource::Imported { .. } => None,
             })
             .collect()
     }
@@ -419,5 +448,32 @@ mod tests {
         let invalid = PagePlan::new(vec![PlannedPage::original(4)]);
         assert!(edits.restore_plan(invalid).is_err());
         assert!(edits.restore_plan(plan).unwrap().is_empty());
+    }
+
+    #[test]
+    fn pages_of_another_pdf_are_inserted_in_one_operation() {
+        let mut edits = three_pages();
+        edits.register_import(ImportId(1), vec![LANDSCAPE, A4]);
+        // Fusionner : toutes les pages du PDF, à la fin.
+        let change = edits
+            .insert_imported(3, &[(ImportId(1), 0), (ImportId(1), 1)])
+            .unwrap();
+        assert!(change.layout);
+        assert_eq!(edits.page_sizes(), [A4, LANDSCAPE, A4, LANDSCAPE, A4]);
+        assert_eq!(
+            edits.plan().pages()[3],
+            PlannedPage::imported(ImportId(1), 0)
+        );
+        // En tête : les éléments des pages suivantes sont décalés.
+        edits.insert_imported(0, &[(ImportId(1), 1)]).unwrap();
+        assert_eq!(contents(&edits), texts(&[(1, "a"), (2, "b"), (3, "c")]));
+        // Une seule annulation par insertion.
+        edits.undo();
+        edits.undo();
+        assert_eq!(edits.plan().len(), 3);
+        assert!(edits.insert_imported(0, &[(ImportId(2), 0)]).is_err());
+        assert!(edits.insert_imported(0, &[(ImportId(1), 5)]).is_err());
+        assert!(edits.insert_imported(9, &[(ImportId(1), 0)]).is_err());
+        assert!(edits.insert_imported(0, &[]).is_err());
     }
 }

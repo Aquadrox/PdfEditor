@@ -4,32 +4,39 @@
 //! ses signets, liens internes et champs de formulaire la suivent. On garde
 //! donc la plus longue suite de pages d'origine déjà dans le bon ordre ;
 //! les autres pages (déplacées au-delà de cette suite, ou dupliquées) sont
-//! des copies prises dans un second exemplaire de l'original, et les pages
+//! des copies prises dans un second exemplaire de l'original, les pages
+//! des PDF insérés sont copiées de ceux-ci, et les pages
 //! blanches sont créées. Aucun appel `unsafe` : PDFium-render ne donne pas
 //! accès au déplacement de pages sans recopie.
 
-use pde_core::edit::{PagePlan, PageSource};
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+
+use pde_core::edit::{ImportId, Imports, PagePlan, PageSource, PageSources};
 use pde_core::engine::EngineError;
 use pdfium_render::prelude::{
     PdfDocument, PdfPagePaperSize, PdfPageRenderRotation, PdfPoints, Pdfium,
 };
 
 use crate::convert::internal;
+use crate::reader;
 
 /// Range les pages de `doc` (l'original tout juste chargé) selon `plan`.
 /// `source` : l'original et son mot de passe, rechargé seulement si une
-/// page doit être copiée.
+/// page doit être copiée ; `imports` : PDF insérés que le plan désigne.
 pub(crate) fn arrange<'a>(
     pdfium: &'a Pdfium,
     doc: &mut PdfDocument<'a>,
     plan: &PagePlan,
     source: (&[u8], Option<&str>),
+    imports: &Imports,
 ) -> Result<(), EngineError> {
     let count = page_count(doc);
     if plan.is_identity(count) {
         return Ok(());
     }
-    plan.validate(count).map_err(EngineError::Internal)?;
+    let sources = PageSources::with_imports(reader::document_info(doc)?.page_sizes, imports);
+    plan.validate(&sources).map_err(EngineError::Internal)?;
     let kept = kept_pages(plan);
 
     // 1. Pages d'origine absentes de la suite gardée : retirées, de la
@@ -48,6 +55,7 @@ pub(crate) fn arrange<'a>(
     // 2. Les pages restantes sont dans l'ordre du plan : chaque autre page
     //    est insérée à sa place, de la première à la dernière.
     let mut copies: Option<PdfDocument<'a>> = None;
+    let mut imported: HashMap<ImportId, PdfDocument<'a>> = HashMap::new();
     for (at, (planned, kept)) in plan.pages().iter().zip(&kept).enumerate() {
         if kept.is_some() {
             continue;
@@ -73,6 +81,25 @@ pub(crate) fn arrange<'a>(
                 let size = PdfPagePaperSize::Custom(points(width), points(height));
                 doc.pages_mut()
                     .create_page_at_index(size, at)
+                    .map_err(internal)?;
+            }
+            PageSource::Imported { file, index } => {
+                // Chargé une fois par rangement, quel que soit le nombre de pages.
+                let from = match imported.entry(file) {
+                    Entry::Occupied(entry) => entry.into_mut(),
+                    Entry::Vacant(entry) => {
+                        let pdf = imports.get(&file).ok_or_else(|| {
+                            EngineError::Internal(format!("PDF inséré {} absent", file.0))
+                        })?;
+                        entry.insert(
+                            pdfium
+                                .load_pdf_from_byte_vec(pdf.bytes.clone(), None)
+                                .map_err(internal)?,
+                        )
+                    }
+                };
+                doc.pages_mut()
+                    .copy_page_from_document(from, page_index(index)?, at)
                     .map_err(internal)?;
             }
         }
@@ -108,7 +135,7 @@ pub(crate) fn kept_pages(plan: &PagePlan) -> Vec<Option<usize>> {
         .enumerate()
         .filter_map(|(at, p)| match p.source {
             PageSource::Original { index } => Some((at, index)),
-            PageSource::Blank { .. } => None,
+            PageSource::Blank { .. } | PageSource::Imported { .. } => None,
         })
         .collect();
     // Plus longue suite strictement croissante (algorithme « patience ») :

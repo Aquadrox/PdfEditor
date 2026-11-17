@@ -4,7 +4,7 @@
 use thiserror::Error;
 
 use crate::document::{DocumentId, DocumentInfo, PageIndex};
-use crate::edit::{Element, ElementId, Images, PagePlan};
+use crate::edit::{Element, ElementId, Images, Imports, PagePlan};
 use crate::geometry::Rect;
 use crate::render::{Bitmap, RenderRequest};
 use crate::text::PageText;
@@ -45,6 +45,28 @@ pub struct Placed {
     pub bounds: Rect,
 }
 
+/// Ce que le moteur applique au document d'origine : plan des pages,
+/// éléments posés, contenu des images et des PDF insérés qu'ils désignent.
+#[derive(Debug, Clone, Default)]
+pub struct Edition {
+    pub plan: PagePlan,
+    pub elements: Vec<(ElementId, Element)>,
+    pub images: Images,
+    pub imports: Imports,
+}
+
+impl Edition {
+    /// Plan et éléments, sans PDF inséré.
+    pub fn new(plan: PagePlan, elements: Vec<(ElementId, Element)>, images: Images) -> Self {
+        Self {
+            plan,
+            elements,
+            images,
+            imports: Imports::new(),
+        }
+    }
+}
+
 /// Moteur PDF partagé par toute l'application.
 ///
 /// Les implémentations sont utilisables depuis n'importe quel thread ; un
@@ -60,17 +82,14 @@ pub trait PdfEngine: Send + Sync {
     /// Texte d'une page, caractère par caractère, avec sa position.
     fn page_text(&self, doc: DocumentId, page: PageIndex) -> Result<PageText, EngineError>;
 
-    /// Repart du document tel qu'ouvert, range ses pages selon `plan` et y
-    /// pose `elements` : l'affichage et l'enregistrement montrent ensuite
-    /// exactement ce résultat. `images` : contenu des images que les
-    /// éléments désignent.
-    fn apply_edits(
-        &self,
-        doc: DocumentId,
-        plan: PagePlan,
-        elements: Vec<(ElementId, Element)>,
-        images: Images,
-    ) -> Result<Vec<Placed>, EngineError>;
+    /// Repart du document tel qu'ouvert, range ses pages selon le plan et
+    /// y pose les éléments : l'affichage et l'enregistrement montrent
+    /// ensuite exactement ce résultat.
+    fn apply_edits(&self, doc: DocumentId, edition: Edition) -> Result<Vec<Placed>, EngineError>;
+
+    /// Contenu d'un autre document tiré de l'original (extraire des pages) :
+    /// le document affiché ne change pas.
+    fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError>;
 
     /// Contenu du document dans son état actuel, prêt à écrire.
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError>;
@@ -97,14 +116,12 @@ impl<T: PdfEngine + ?Sized> PdfEngine for &T {
         (**self).page_text(doc, page)
     }
 
-    fn apply_edits(
-        &self,
-        doc: DocumentId,
-        plan: PagePlan,
-        elements: Vec<(ElementId, Element)>,
-        images: Images,
-    ) -> Result<Vec<Placed>, EngineError> {
-        (**self).apply_edits(doc, plan, elements, images)
+    fn apply_edits(&self, doc: DocumentId, edition: Edition) -> Result<Vec<Placed>, EngineError> {
+        (**self).apply_edits(doc, edition)
+    }
+
+    fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError> {
+        (**self).export(doc, edition)
     }
 
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError> {

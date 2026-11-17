@@ -1,7 +1,9 @@
-// Mode Pages (P-01, P-02) : grille des pages et barre d'outils — page
-// blanche, dupliquer, pivoter, supprimer, réordonner en glissant. Chaque
-// opération est une entrée de l'historique d'édition (annuler, rétablir) ;
-// le document est ensuite décrit à nouveau par la session.
+// Mode Pages (P-01 à P-03) : grille des pages et barre d'outils — page
+// blanche, pages d'autres PDF (bouton ou fichiers déposés), dupliquer,
+// pivoter, supprimer, extraire, réordonner en glissant. Chaque opération
+// est une entrée de l'historique d'édition (annuler, rétablir) ; le
+// document est ensuite décrit à nouveau par la session. Extraire écrit un
+// nouveau fichier sans changer le document.
 
 import { toast } from "../../components/toast.js";
 import { byId } from "../../lib/dom.js";
@@ -28,6 +30,9 @@ export class PagesMode {
     });
     const actions = {
       "pages-insert": () => this.run("insert_blank_page", { at: insertionPoint(this.selection, this.count) }),
+      // Dialogue de Rust ; null si annulé.
+      "pages-insert-pdf": () => this.run("insert_pdf", { at: insertionPoint(this.selection, this.count) }),
+      "pages-extract": () => this.extract(),
       "pages-duplicate": () => this.run("duplicate_pages", { pages: this.selection.pages }),
       "pages-rotate-left": () => this.run("rotate_pages", { pages: this.selection.pages, turns: 3 }),
       "pages-rotate-right": () => this.run("rotate_pages", { pages: this.selection.pages, turns: 1 }),
@@ -77,10 +82,13 @@ export class PagesMode {
   refresh() {
     const { pages } = this.selection;
     const none = pages.length === 0 || this.busy;
-    for (const id of ["pages-duplicate", "pages-rotate-left", "pages-rotate-right"]) byId(id).disabled = none;
+    for (const id of ["pages-duplicate", "pages-rotate-left", "pages-rotate-right", "pages-extract"]) {
+      byId(id).disabled = none;
+    }
     // Un document garde au moins une page.
     byId("pages-remove").disabled = none || pages.length >= this.count;
     byId("pages-insert").disabled = this.busy || !this.session.doc;
+    byId("pages-insert-pdf").disabled = this.busy || !this.session.doc;
     byId("pages-undo").disabled = !this.session.view.can_undo;
     byId("pages-redo").disabled = !this.session.view.can_redo;
     byId("pages-count").textContent = pages.length > 1 ? t("pages.selected", { n: pages.length }) : "";
@@ -91,6 +99,28 @@ export class PagesMode {
     this.run("remove_pages", { pages: this.selection.pages });
   }
 
+  /** PDF déposés sur la grille : leurs pages sont insérées là où ils tombent. */
+  insertFiles(paths, point = null) {
+    const at = point ? this.grid.indexAt(point) : insertionPoint(this.selection, this.count);
+    return this.run("insert_pdf_files", { paths, at });
+  }
+
+  /** Pages choisies écrites dans un nouveau PDF (dialogue de Rust). */
+  async extract() {
+    if (this.busy || this.selection.pages.length === 0) return;
+    this.busy = true;
+    this.refresh();
+    try {
+      const saved = await invoke("extract_pages", { id: this.session.doc.id, pages: this.selection.pages });
+      if (saved) toast(t("pages.extracted", { name: saved.file_name }));
+    } catch (error) {
+      fail(error);
+    } finally {
+      this.busy = false;
+      this.refresh();
+    }
+  }
+
   /** Opération sur les pages ; ensuite, les pages qu'elle désigne sont choisies. */
   async run(command, args) {
     if (this.busy || !this.session.doc) return;
@@ -98,6 +128,8 @@ export class PagesMode {
     this.refresh();
     try {
       const result = await invoke(command, { id: this.session.doc.id, ...args });
+      // Dialogue annulé : rien n'a changé.
+      if (!result) return;
       await this.session.apply(result.edit, result.document);
       this.grid.setSelection(selectPages(result.selected));
     } catch (error) {

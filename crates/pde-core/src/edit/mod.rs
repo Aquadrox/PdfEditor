@@ -10,6 +10,7 @@ mod annotation;
 mod element;
 mod history;
 mod image;
+mod import;
 mod layout;
 mod note;
 mod page_ops;
@@ -27,6 +28,7 @@ pub use history::{Change, Edits, Operation};
 pub use image::{
     ImageAsset, ImageBox, ImageData, ImageId, Images, MIN_IMAGE_SIDE, OPACITY_RANGE, Placement,
 };
+pub use import::{ImportId, ImportedPdf, Imports, PageSources};
 pub use layout::{leading, wrap};
 pub use note::{MAX_AUTHOR_CHARS, MAX_NOTE_CHARS, NOTE_SIZE, NoteBox};
 pub use pages::{BLANK_SIDE_RANGE, MAX_PAGES, PagePlan, PageSource, PlannedPage, check_blank_size};

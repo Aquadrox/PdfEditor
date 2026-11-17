@@ -108,6 +108,14 @@ le plan change, `pde-app` décrit à nouveau le document (tailles, signets
 renvoyés à leur nouvelle place) et l'interface refait la visionneuse, les
 miniatures et la grille du mode Pages.
 
+Pages d'autres PDF (P-03, `pde-core::edit::import`) : un PDF inséré est lu
+une fois, décrit par le moteur (taille des pages) puis gardé en mémoire
+pour la session sous un `ImportId`, comme une image ; le plan désigne ses
+pages (`PageSource::Imported`), que `pde-pdf` copie à chaque rangement. Le
+moteur reçoit tout ce qu'il applique dans une `Edition` (plan, éléments,
+images, PDF insérés) ; `PdfEngine::export` produit un autre document à
+partir de l'original (extraire des pages) sans toucher au document affiché.
+
 Images ajoutées (E-02) : `pde-app::images` reconnaît le format au contenu
 (PNG, JPEG, WebP, crate `image` en Rust pur), borne la taille avant de
 décoder (64 Mo, 60 mégapixels) et applique l'orientation EXIF. Un JPEG est
@@ -130,7 +138,7 @@ couleur), recréées à chaque pose comme le reste.
 Sauvegarde automatique (F-02, `pde-app::recovery`) : chaque lancement écrit
 dans `recovery/<session>/doc-<n>/` (dossier de données) un `manifest.json`
 (chemin, empreinte SHA-256 du PDF d'origine, plan des pages s'il a changé,
-éléments) et ses images ; le
+PDF insérés désignés par chemin et empreinte, éléments) et ses images ; le
 PDF n'est jamais copié, un document protégé par mot de passe n'est jamais
 sauvegardé. La session est verrouillée (`session.lock`, `File::try_lock`)
 tant que le lancement tourne : au démarrage, une session qu'on peut

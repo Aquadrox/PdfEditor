@@ -3,13 +3,14 @@
 
 use std::sync::Arc;
 
-use pde_core::edit::{Change, Element, ImageId, Images};
+use pde_core::edit::{Change, Element, ImageId, Images, ImportId, PageSource};
 
 use super::edit::{invalid, view};
+use super::import::{ReadPdf, register_as};
 use super::{Viewer, lock};
 use crate::edit_view::EditView;
 use crate::error::AppError;
-use crate::recovery::{Recovered, Snapshot};
+use crate::recovery::{ImportRecord, Recovered, Snapshot};
 
 /// Document à sauvegarder, et la version de ses éléments à ce moment.
 #[derive(Debug, Clone)]
@@ -49,6 +50,8 @@ impl Viewer {
                 continue;
             }
             let elements: Vec<Element> = open.edits.elements().map(|(_, e)| e.clone()).collect();
+            let changed_plan = (!open.edits.plan().is_identity(open.original.page_count()))
+                .then(|| open.edits.plan().clone());
             let images: Images = elements
                 .iter()
                 .filter_map(|e| match e {
@@ -72,8 +75,24 @@ impl Viewer {
                     file_name,
                     digest: open.digest.clone(),
                     page_count: open.original.page_count(),
-                    pages: (!open.edits.plan().is_identity(open.original.page_count()))
-                        .then(|| open.edits.plan().clone()),
+                    pages: changed_plan.clone(),
+                    imports: changed_plan
+                        .iter()
+                        .flat_map(|plan| plan.pages())
+                        .filter_map(|page| match page.source {
+                            PageSource::Imported { file, .. } => Some(file),
+                            _ => None,
+                        })
+                        .collect::<std::collections::BTreeSet<ImportId>>()
+                        .into_iter()
+                        .filter_map(|file| {
+                            open.import_files.get(&file).map(|f| ImportRecord {
+                                id: file.0,
+                                path: f.path.clone(),
+                                sha256: f.digest.clone(),
+                            })
+                        })
+                        .collect(),
                     elements,
                     images,
                 },
@@ -93,6 +112,12 @@ impl Viewer {
     /// fichier (même empreinte, même nombre de pages). Le plan des pages et
     /// chaque élément deviennent des opérations ordinaires, annulables.
     pub fn restore(&self, id: u64, recovered: &Recovered) -> Result<EditView, AppError> {
+        // PDF insérés : relus (hors du verrou) et inchangés.
+        let imported = recovered
+            .imports
+            .iter()
+            .map(|record| self.reread(record))
+            .collect::<Result<Vec<_>, _>>()?;
         self.with_document(id, |open, doc| {
             if open.digest != recovered.digest
                 || open.original.page_count() != recovered.page_count
@@ -108,6 +133,9 @@ impl Viewer {
                 let new = ImageId(open.images.keys().next_back().map_or(1, |last| last.0 + 1));
                 open.images.insert(new, Arc::clone(asset));
                 renamed.insert(*old, new);
+            }
+            for (id, item) in imported {
+                register_as(open, id, item);
             }
             let mut added = 0;
             let mut layout = false;
@@ -143,6 +171,28 @@ impl Viewer {
             log::info!("sauvegarde automatique reprise : {added} élément(s)");
             Ok(view(open))
         })
+    }
+}
+
+impl Viewer {
+    /// PDF inséré désigné par une sauvegarde automatique : refusé s'il a
+    /// changé ou disparu.
+    fn reread(&self, record: &ImportRecord) -> Result<(ImportId, ReadPdf), AppError> {
+        let name = record
+            .path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let changed = || {
+            invalid(format!(
+                "le PDF inséré « {name} » a changé ou n'est plus là : les modifications ne peuvent pas être reprises"
+            ))
+        };
+        let read = self.read_pdf(&record.path).map_err(|_| changed())?;
+        if read.file.digest != record.sha256 {
+            return Err(changed());
+        }
+        Ok((ImportId(record.id), read))
     }
 }
 
@@ -247,6 +297,35 @@ mod tests {
     }
 
     #[test]
+    fn inserted_pdfs_are_named_by_the_backup_and_checked_on_restore() {
+        let s = Session::new("reprise-insertion");
+        let annexe = s.dir.join("annexe.pdf");
+        std::fs::write(&annexe, crate::fake::SIMPLE_PDF).unwrap();
+        s.viewer
+            .insert_pdf_files(s.id, std::slice::from_ref(&annexe), 2)
+            .unwrap();
+        let snapshot = s.viewer.autosave_work().pending.remove(0).snapshot;
+        assert_eq!(snapshot.imports.len(), 1);
+        assert_eq!(snapshot.imports[0].path, annexe);
+
+        let path = s.dir.join("contrat.pdf");
+        let reopened = s.viewer.open_file(&path, None).unwrap().id;
+        let view = s
+            .viewer
+            .restore(reopened, &recovered(snapshot.clone()))
+            .unwrap();
+        assert_eq!(view.layout, 1);
+        assert_eq!(s.viewer.document_view(reopened).unwrap().pages.len(), 4);
+
+        // Le PDF inséré a changé depuis : la reprise est refusée.
+        std::fs::write(&annexe, crate::fake::pdf_with_pages(5)).unwrap();
+        let again = s.viewer.open_file(&path, None).unwrap().id;
+        let error = s.viewer.restore(again, &recovered(snapshot)).unwrap_err();
+        assert!(error.message.contains("annexe.pdf"), "{}", error.message);
+        assert!(!s.viewer.edit_view(again).unwrap().can_undo);
+    }
+
+    #[test]
     fn a_changed_file_is_refused() {
         let s = Session::new("reprise-refusee");
         s.viewer.add_element(s.id, text("a")).unwrap();
@@ -275,6 +354,7 @@ mod tests {
             page_count: snapshot.page_count,
             saved_at: 1,
             pages: snapshot.pages,
+            imports: snapshot.imports,
             elements: snapshot.elements,
             images: snapshot.images,
         }

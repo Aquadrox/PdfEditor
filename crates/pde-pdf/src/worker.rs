@@ -6,8 +6,7 @@ use std::sync::Arc;
 use std::sync::mpsc::Receiver;
 
 use pde_core::document::DocumentId;
-use pde_core::edit::{Element, ElementId, Images, PagePlan};
-use pde_core::engine::{EngineError, OpenedDocument, Placed};
+use pde_core::engine::{Edition, EngineError, OpenedDocument, Placed};
 use pdfium_render::prelude::{PdfDocument, Pdfium};
 
 use crate::convert::{internal, open_error};
@@ -82,15 +81,27 @@ fn handle<'a>(
         }
         Command::ApplyEdits {
             doc,
-            plan,
-            elements,
-            images,
+            edition,
             reply,
         } => {
             let result = docs
                 .get_mut(&doc)
                 .ok_or(EngineError::UnknownDocument)
-                .and_then(|s| apply_edits(pdfium, s, &plan, &elements, &images));
+                .and_then(|s| {
+                    let (fresh, placed) = build(pdfium, s, &edition)?;
+                    s.current = fresh;
+                    Ok(placed)
+                });
+            let _ = reply.send(result);
+        }
+        Command::Export {
+            doc,
+            edition,
+            reply,
+        } => {
+            let result = slot(docs, doc)
+                .and_then(|s| build(pdfium, s, &edition))
+                .and_then(|(built, _)| built.save_to_bytes().map_err(internal));
             let _ = reply.send(result);
         }
         Command::Save { doc, reply } => {
@@ -119,24 +130,23 @@ fn load<'a>(
     pdfium.load_pdf_from_byte_vec(source.to_vec(), password)
 }
 
-/// Recharge l'original, range ses pages, pose les éléments, et ne
-/// remplace le document affiché qu'en cas de succès : un élément
-/// impossible à écrire laisse l'affichage précédent intact.
-fn apply_edits<'a>(
+/// Recharge l'original, range ses pages et pose les éléments, dans un
+/// nouveau document : celui affiché n'est remplacé qu'en cas de succès (un
+/// élément impossible à écrire laisse l'affichage précédent intact), et une
+/// extraction ne le touche pas.
+fn build<'a>(
     pdfium: &'a Pdfium,
-    slot: &mut Slot<'a>,
-    plan: &PagePlan,
-    elements: &[(ElementId, Element)],
-    images: &Images,
-) -> Result<Vec<Placed>, EngineError> {
+    slot: &Slot<'a>,
+    edition: &Edition,
+) -> Result<(PdfDocument<'a>, Vec<Placed>), EngineError> {
     let mut fresh = load(pdfium, &slot.source, slot.password.as_deref()).map_err(internal)?;
     arrange::arrange(
         pdfium,
         &mut fresh,
-        plan,
+        &edition.plan,
         (&slot.source, slot.password.as_deref()),
+        &edition.imports,
     )?;
-    let placed = writer::apply(&mut fresh, elements, images)?;
-    slot.current = fresh;
-    Ok(placed)
+    let placed = writer::apply(&mut fresh, &edition.elements, &edition.images)?;
+    Ok((fresh, placed))
 }

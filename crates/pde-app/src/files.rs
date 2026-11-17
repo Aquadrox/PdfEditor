@@ -25,13 +25,18 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), AppError> {
     fs::rename(temporary, path).map_err(failed)
 }
 
+/// Nom du fichier sans l'extension « .pdf ».
+fn pdf_stem(file_name: &str) -> &str {
+    match file_name.rsplit_once('.') {
+        Some((stem, ext)) if ext.eq_ignore_ascii_case("pdf") && !stem.is_empty() => stem,
+        _ => file_name,
+    }
+}
+
 /// Nom proposé pour une copie : « contrat.pdf » + « (modifié) » →
 /// « contrat (modifié).pdf ». Une copie de copie ne reprend pas le suffixe.
 pub fn copy_name(file_name: &str, suffix: &str) -> String {
-    let stem = match file_name.rsplit_once('.') {
-        Some((stem, ext)) if ext.eq_ignore_ascii_case("pdf") && !stem.is_empty() => stem,
-        _ => file_name,
-    };
+    let stem = pdf_stem(file_name);
     if suffix.is_empty() || stem.ends_with(suffix) {
         format!("{stem}.pdf")
     } else {
@@ -39,9 +44,47 @@ pub fn copy_name(file_name: &str, suffix: &str) -> String {
     }
 }
 
+/// Nom proposé pour des pages extraites (numéros à partir de 0) :
+/// « contrat (page 2).pdf », « contrat (pages 1-3, 5).pdf ».
+pub fn extract_name(file_name: &str, pages: &[usize]) -> String {
+    let mut pages = pages.to_vec();
+    pages.sort_unstable();
+    pages.dedup();
+    let mut ranges: Vec<(usize, usize)> = Vec::new();
+    for page in pages.iter().map(|p| p + 1) {
+        match ranges.last_mut() {
+            Some((_, end)) if *end + 1 == page => *end = page,
+            _ => ranges.push((page, page)),
+        }
+    }
+    let list = ranges
+        .iter()
+        .map(|&(start, end)| {
+            if start == end {
+                start.to_string()
+            } else {
+                format!("{start}-{end}")
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    let label = if pages.len() == 1 { "page" } else { "pages" };
+    format!("{} ({label} {list}).pdf", pdf_stem(file_name))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn extract_names() {
+        assert_eq!(extract_name("contrat.pdf", &[1]), "contrat (page 2).pdf");
+        assert_eq!(
+            extract_name("contrat.pdf", &[4, 0, 1, 2, 2]),
+            "contrat (pages 1-3, 5).pdf"
+        );
+        assert_eq!(extract_name("scan", &[0, 2]), "scan (pages 1, 3).pdf");
+    }
 
     #[test]
     fn copy_names() {
