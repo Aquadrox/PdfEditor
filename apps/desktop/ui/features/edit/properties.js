@@ -6,6 +6,7 @@
 import { byId, el } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
 import { isAnnotation } from "./annotation-state.js";
+import { samePage } from "./selection-state.js";
 import { geometryInMm, SWATCHES, withGeometryMm, withText } from "./edit-state.js";
 import { rotated, withOpacity } from "./image-state.js";
 
@@ -86,8 +87,11 @@ export function attachProperties(session, pages, actions) {
   byId("prop-rotate-left").addEventListener("click", () => changeSelected((element, page) => rotated(element, -1, page)));
   byId("prop-rotate-right").addEventListener("click", () => changeSelected((element, page) => rotated(element, 1, page)));
   keepRatio.addEventListener("change", () => changeSelected((element) => ({ ...element, keep_ratio: keepRatio.checked })));
-  byId("prop-duplicate").addEventListener("click", () => selected() && actions.duplicate(selected()));
-  byId("prop-delete").addEventListener("click", () => selected() && actions.remove(selected().id));
+  byId("prop-duplicate").addEventListener("click", () => selected() && actions.duplicate());
+  byId("prop-delete").addEventListener("click", () => selected() && actions.removeSelection());
+  for (const button of document.querySelectorAll("[data-arrange]")) {
+    button.addEventListener("click", () => actions.arrange(button.dataset.arrange));
+  }
   byId("prop-close").addEventListener("click", actions.close);
 
   /**
@@ -96,11 +100,24 @@ export function attachProperties(session, pages, actions) {
    */
   function refresh(visible = true) {
     const item = selected();
-    const kind = item?.element.kind;
+    const count = session.selection.length;
+    // Plusieurs éléments : seulement aligner, répartir, dupliquer, supprimer.
+    const many = count > 1;
+    const kind = many ? "many" : item?.element.kind;
     panel.hidden = !visible;
     byId("prop-empty").hidden = Boolean(item);
     byId("prop-fields").hidden = !item;
     byId("prop-close").hidden = !item;
+    byId("prop-arrange-fields").hidden = !many;
+    byId("prop-geometry").hidden = many;
+    if (many) {
+      const items = session.selection.map((id) => session.element(id)).filter(Boolean);
+      const together = samePage(items);
+      byId("prop-arrange-note").hidden = together;
+      for (const button of document.querySelectorAll("[data-arrange]")) {
+        button.disabled = !together || (button.dataset.arrange.startsWith("distribute") && items.length < 3);
+      }
+    }
     byId("prop-text-fields").hidden = kind !== "text";
     byId("prop-image-fields").hidden = kind !== "image";
     byId("prop-note-fields").hidden = kind !== "note";
@@ -108,11 +125,11 @@ export function attachProperties(session, pages, actions) {
       if (document.activeElement !== noteText) noteText.value = item.element.text;
       byId("prop-note-author").textContent = item.element.author ? t("props.noteAuthor", { author: item.element.author }) : t("props.noteNoAuthor");
     }
-    byId("prop-annot-fields").hidden = !isAnnotation(item?.element);
-    if (isAnnotation(item?.element)) showAnnotationFields(item.element);
+    byId("prop-annot-fields").hidden = many || !isAnnotation(item?.element);
+    if (!many && isAnnotation(item?.element)) showAnnotationFields(item.element);
     const titles = { image: "props.imageTitle", shape: "props.shapeTitle", ink: "props.inkTitle", markup: "props.markupTitle", note: "props.noteTitle" };
-    byId("properties-title").textContent = t(!item ? "props.panel" : (titles[kind] ?? "props.title"));
-    if (!visible || !item) return;
+    byId("properties-title").textContent = many ? t("props.manyTitle", { count }) : t(!item ? "props.panel" : (titles[kind] ?? "props.title"));
+    if (!visible || !item || many) return;
     const values = geometryInMm(item.element, item.bounds);
     if (kind === "text" && document.activeElement !== text) text.value = item.element.text;
     // Caractères qu'aucune police embarquée ne couvre (pde-fonts).

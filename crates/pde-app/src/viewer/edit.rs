@@ -114,7 +114,11 @@ impl Viewer {
     }
 
     /// Élément venu de l'interface : vérifié, ramené à l'origine en bas.
-    fn checked(&self, open: &OpenDocument, element: &Element) -> Result<Element, AppError> {
+    pub(super) fn checked(
+        &self,
+        open: &OpenDocument,
+        element: &Element,
+    ) -> Result<Element, AppError> {
         element
             .validate(open.info.page_count(), Some(&open.images))
             .map_err(invalid)?;
@@ -124,7 +128,7 @@ impl Viewer {
 
     /// Applique l'opération au document ; en cas d'échec, elle est oubliée et
     /// le document reste tel qu'avant.
-    fn commit(
+    pub(super) fn commit(
         &self,
         open: &mut OpenDocument,
         doc: DocumentId,

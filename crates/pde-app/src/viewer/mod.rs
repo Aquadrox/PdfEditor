@@ -1,6 +1,7 @@
 //! Visionneuse : documents ouverts, images et texte de leurs pages.
 
 mod edit;
+mod group;
 mod images;
 mod recovery;
 #[cfg(test)]
