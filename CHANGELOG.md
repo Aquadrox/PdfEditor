@@ -4,6 +4,13 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.9 — 2026-11-17
+
+- Annotations en mode Éditer : surligner, souligner ou barrer du texte en le sélectionnant à la souris.
+- Dessin à main levée, et formes : rectangle, ellipse, trait et flèche (Maj pour un carré, un cercle ou un angle de 45°).
+- Couleur, épaisseur et remplissage se choisissent dans la barre d'outils avant de tracer, ou dans le panneau Propriétés ensuite ; les annotations se déplacent, se redimensionnent par leurs poignées, se dupliquent et s'annulent.
+- La sélection de texte suit mieux le texte du document : elle ne déborde plus sur les segments voisins.
+
 ## 0.0.8 — 2026-11-17
 
 - Sauvegarde automatique : vos ajouts (textes, images) sont mis en lieu sûr toutes les minutes, sans toucher au fichier ; l'heure de la dernière copie de secours s'affiche en bas de la fenêtre.

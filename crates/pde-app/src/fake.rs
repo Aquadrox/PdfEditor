@@ -117,6 +117,18 @@ impl PdfEngine for FakeEngine {
                     id,
                     bounds: image.bounds(),
                 }),
+                Element::Shape(shape) => Ok(Placed {
+                    id,
+                    bounds: shape.bounds(),
+                }),
+                Element::Ink(ink) => Ok(Placed {
+                    id,
+                    bounds: ink.bounds(),
+                }),
+                Element::Markup(markup) => Ok(Placed {
+                    id,
+                    bounds: markup.bounds(),
+                }),
                 Element::Text(text) => {
                     let height = leading(&text.style);
                     Ok(Placed {

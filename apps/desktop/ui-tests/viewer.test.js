@@ -78,3 +78,26 @@ test("erreur d'ouverture expliquée, l'accueil reste affiché", async () => {
     await app.close();
   }
 });
+
+test("couche texte : chaque segment couvre exactement sa place dans le PDF", async () => {
+  const run = { text: "Bonjour PdfEditor", x: 72, y: 60, width: 200, height: 14 };
+  const app = await launch({
+    initial_files: [{ ok: ["/docs/contrat.pdf"] }],
+    open_document: [{ ok: documentView(1) }],
+    page_text: [{ ok: { runs: [run] } }],
+  });
+  try {
+    await app.page.locator(".text-layer span").first().waitFor({ state: "attached" });
+    const page = await app.page.locator(".page").first().boundingBox();
+    const span = await app.page.evaluate(() => {
+      const r = document.querySelector(".text-layer span").getBoundingClientRect();
+      return { left: r.left, right: r.right };
+    });
+    const scale = page.width / 595;
+    // Avant correction, la boîte était étirée deux fois (≈ 1,8 × plus large).
+    assert.ok(Math.abs(span.left - (page.x + run.x * scale)) < 1, JSON.stringify(span));
+    assert.ok(Math.abs(span.right - (page.x + (run.x + run.width) * scale)) < 2, JSON.stringify(span));
+  } finally {
+    await app.close();
+  }
+});

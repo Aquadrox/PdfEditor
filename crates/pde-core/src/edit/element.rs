@@ -1,11 +1,12 @@
-//! Éléments ajoutés à un document : zones de texte (E-01), images (E-02) ;
-//! annotations ensuite.
+//! Éléments ajoutés à un document : zones de texte (E-01), images (E-02),
+//! annotations dessinées (E-04).
 //!
 //! Coordonnées : page affichée (rotation appliquée), points, origine en bas
 //! à gauche, comme le reste de `pde-core`.
 
 use serde::{Deserialize, Serialize};
 
+use super::annotation::{InkBox, MarkupBox, ShapeBox};
 use super::image::{ImageBox, Images};
 use crate::document::PageIndex;
 use crate::geometry::Point;
@@ -114,6 +115,9 @@ pub struct TextBox {
 pub enum Element {
     Text(TextBox),
     Image(ImageBox),
+    Shape(ShapeBox),
+    Ink(InkBox),
+    Markup(MarkupBox),
 }
 
 impl Element {
@@ -121,6 +125,9 @@ impl Element {
         match self {
             Element::Text(text) => text.page,
             Element::Image(image) => image.page,
+            Element::Shape(shape) => shape.page,
+            Element::Ink(ink) => ink.page,
+            Element::Markup(markup) => markup.page,
         }
     }
 
@@ -132,6 +139,9 @@ impl Element {
         }
         match self {
             Element::Image(image) => image.validate(images),
+            Element::Shape(shape) => shape.validate(),
+            Element::Ink(ink) => ink.validate(),
+            Element::Markup(markup) => markup.validate(),
             Element::Text(text) => {
                 let numbers = [
                     text.top_left.x,

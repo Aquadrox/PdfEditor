@@ -44,6 +44,38 @@
   background: var(--line);
 }
 
+.tool-options {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.tool-options[hidden] {
+  display: none;
+}
+
+.edit-toolbar .swatches {
+  gap: 6px;
+  margin: 0 var(--space-1);
+}
+
+.edit-toolbar .swatch {
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.checkbox input {
+  accent-color: var(--accent);
+}
+
 .edit-toolbar .spacer {
   flex: 1;
 }
@@ -97,6 +129,30 @@
 }
 
 .desk.editing .text-layer {
+  pointer-events: none;
+}
+
+/* Outil Surligner : le texte se sélectionne à travers la couche d'édition. */
+.desk.editing.tool-markup .text-layer {
+  pointer-events: auto;
+}
+
+.desk.editing.tool-markup .edit-layer.active {
+  pointer-events: none;
+}
+
+.desk.editing.tool-ink .edit-layer.active,
+.desk.editing.tool-shape .edit-layer.active {
+  cursor: crosshair;
+}
+
+/* Aperçu d'un tracé en cours (coordonnées de la page). */
+.edit-layer .draft {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
   pointer-events: none;
 }
 
@@ -165,6 +221,16 @@
   bottom: -6px;
   left: -6px;
   cursor: nesw-resize;
+}
+
+/* Extrémités d'un trait : poignées rondes posées sur leur point. */
+.edit-layer .handle.start,
+.edit-layer .handle.end {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: move;
 }
 
 .edit-layer .handle.left {
@@ -350,4 +416,9 @@
     z-index: 5;
     box-shadow: var(--shadow-float);
   }
+}
+
+/* Champs propres à un genre d'annotation (panneau Propriétés). */
+.properties [data-annot-only][hidden] {
+  display: none;
 }

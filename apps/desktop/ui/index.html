@@ -42,6 +42,15 @@
       <symbol id="i-align-right" viewBox="0 0 24 24"><path d="M4 6h16M10 12h10M6 18h14" /></symbol>
       <symbol id="i-rotate-left" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></symbol>
       <symbol id="i-rotate-right" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></symbol>
+      <symbol id="i-highlighter" viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3" /><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4" /></symbol>
+      <symbol id="i-underline" viewBox="0 0 24 24"><path d="M6 4v6a6 6 0 0 0 12 0V4" /><path d="M4 20h16" /></symbol>
+      <symbol id="i-strike" viewBox="0 0 24 24"><path d="M16 4H9a3 3 0 0 0-2.83 4" /><path d="M14 12a4 4 0 0 1 0 8H6" /><path d="M4 12h16" /></symbol>
+      <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.2 6.8 17.2 2.8 4 16v4h4Z" /><path d="m14.5 5.5 4 4" /></symbol>
+      <symbol id="i-shapes" viewBox="0 0 24 24"><rect x="3" y="11" width="10" height="10" rx="1" /><circle cx="16" cy="8" r="5" /></symbol>
+      <symbol id="i-square" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1" /></symbol>
+      <symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /></symbol>
+      <symbol id="i-line" viewBox="0 0 24 24"><path d="M5 19 19 5" /></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 19 19 5" /><path d="M9 5h10v10" /></symbol>
       <symbol id="i-file-up" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3" /></symbol>
     </svg>
 
@@ -77,7 +86,11 @@
       <div id="edit-toolbar" class="edit-toolbar" role="toolbar" data-i18n-aria="edit.toolbar" hidden>
         <button id="tool-text" class="btn on" aria-pressed="true"><svg class="icon"><use href="#i-type" /></svg><span data-i18n="edit.text"></span></button>
         <button id="tool-image" class="btn ghost" data-i18n-title="edit.imageHint"><svg class="icon"><use href="#i-image" /></svg><span data-i18n="edit.image"></span></button>
+        <button id="tool-markup" class="btn ghost" aria-pressed="false" data-i18n-title="edit.markupHint"><svg class="icon"><use href="#i-highlighter" /></svg><span data-i18n="edit.markup"></span></button>
+        <button id="tool-ink" class="btn ghost" aria-pressed="false" data-i18n-title="edit.inkHint"><svg class="icon"><use href="#i-pencil" /></svg><span data-i18n="edit.ink"></span></button>
+        <button id="tool-shape" class="btn ghost" aria-pressed="false" data-i18n-title="edit.shapeHint"><svg class="icon"><use href="#i-shapes" /></svg><span data-i18n="edit.shape"></span></button>
         <span class="separator" aria-hidden="true"></span>
+        <span class="tool-options" data-tool-options="text">
         <select class="input font-select" data-style="font" data-i18n-aria="edit.font" data-i18n-title="edit.font">
           <option value="sans" data-i18n="font.sans"></option>
           <option value="serif" data-i18n="font.serif"></option>
@@ -90,6 +103,36 @@
         <button class="btn ghost icon bold" data-style="bold" data-i18n-label="edit.bold">G</button>
         <button class="btn ghost icon italic" data-style="italic" data-i18n-label="edit.italic">I</button>
         <input class="color-input" type="color" data-style="color" data-i18n-aria="edit.color" />
+        </span>
+        <span class="tool-options" data-tool-options="markup" hidden>
+          <span class="segmented">
+            <button class="btn ghost icon" data-annot="mark" data-value="highlight" data-i18n-label="edit.mark.highlight"><svg class="icon"><use href="#i-highlighter" /></svg></button>
+            <button class="btn ghost icon" data-annot="mark" data-value="underline" data-i18n-label="edit.mark.underline"><svg class="icon"><use href="#i-underline" /></svg></button>
+            <button class="btn ghost icon" data-annot="mark" data-value="strike_out" data-i18n-label="edit.mark.strike_out"><svg class="icon"><use href="#i-strike" /></svg></button>
+          </span>
+          <span class="swatches" data-annot-swatches></span>
+        </span>
+        <span class="tool-options" data-tool-options="ink" hidden>
+          <span class="swatches" data-annot-swatches></span>
+          <span class="with-unit">
+            <input class="input num size-input" type="number" min="0.25" max="48" step="0.5" data-annot="width" data-i18n-aria="edit.width" data-i18n-title="edit.width" />
+            <span class="unit" aria-hidden="true">pt</span>
+          </span>
+        </span>
+        <span class="tool-options" data-tool-options="shape" hidden>
+          <span class="segmented">
+            <button class="btn ghost icon" data-annot="shape" data-value="rectangle" data-i18n-label="edit.shape.rectangle"><svg class="icon"><use href="#i-square" /></svg></button>
+            <button class="btn ghost icon" data-annot="shape" data-value="ellipse" data-i18n-label="edit.shape.ellipse"><svg class="icon"><use href="#i-circle" /></svg></button>
+            <button class="btn ghost icon" data-annot="shape" data-value="line" data-i18n-label="edit.shape.line"><svg class="icon"><use href="#i-line" /></svg></button>
+            <button class="btn ghost icon" data-annot="shape" data-value="arrow" data-i18n-label="edit.shape.arrow"><svg class="icon"><use href="#i-arrow" /></svg></button>
+          </span>
+          <span class="swatches" data-annot-swatches></span>
+          <span class="with-unit">
+            <input class="input num size-input" type="number" min="0.25" max="48" step="0.5" data-annot="width" data-i18n-aria="edit.width" data-i18n-title="edit.width" />
+            <span class="unit" aria-hidden="true">pt</span>
+          </span>
+          <label class="checkbox"><input type="checkbox" data-annot="filled" /><span data-i18n="edit.filled"></span></label>
+        </span>
         <span class="spacer"></span>
         <button id="edit-undo" class="btn ghost icon" disabled data-i18n-label="edit.undo" data-shortcut-hint="undo"><svg class="icon"><use href="#i-undo" /></svg></button>
         <button id="edit-redo" class="btn ghost icon" disabled data-i18n-label="edit.redo" data-shortcut-hint="redo"><svg class="icon"><use href="#i-redo" /></svg></button>
@@ -181,6 +224,27 @@
               <button class="btn ghost icon" data-style="align" data-value="right" data-i18n-label="props.right"><svg class="icon"><use href="#i-align-right" /></svg></button>
             </div>
           </div>
+          </div>
+          <div id="prop-annot-fields" class="properties-group" hidden>
+            <span class="caption" data-annot-only="markup" data-i18n="props.mark"></span>
+            <div class="segmented" data-annot-only="markup">
+              <button class="btn ghost icon" data-annot="mark" data-value="highlight" data-i18n-label="edit.mark.highlight"><svg class="icon"><use href="#i-highlighter" /></svg></button>
+            <button class="btn ghost icon" data-annot="mark" data-value="underline" data-i18n-label="edit.mark.underline"><svg class="icon"><use href="#i-underline" /></svg></button>
+            <button class="btn ghost icon" data-annot="mark" data-value="strike_out" data-i18n-label="edit.mark.strike_out"><svg class="icon"><use href="#i-strike" /></svg></button>
+            </div>
+            <span class="caption" data-annot-only="shape" data-i18n="props.shape"></span>
+            <div class="segmented" data-annot-only="shape">
+              <button class="btn ghost icon" data-annot="shape" data-value="rectangle" data-i18n-label="edit.shape.rectangle"><svg class="icon"><use href="#i-square" /></svg></button>
+            <button class="btn ghost icon" data-annot="shape" data-value="ellipse" data-i18n-label="edit.shape.ellipse"><svg class="icon"><use href="#i-circle" /></svg></button>
+            <button class="btn ghost icon" data-annot="shape" data-value="line" data-i18n-label="edit.shape.line"><svg class="icon"><use href="#i-line" /></svg></button>
+            <button class="btn ghost icon" data-annot="shape" data-value="arrow" data-i18n-label="edit.shape.arrow"><svg class="icon"><use href="#i-arrow" /></svg></button>
+            </div>
+            <span class="caption" data-i18n="edit.color"></span>
+            <div class="swatches" data-annot-swatches></div>
+            <label class="stacked" data-annot-only="shape ink"><span class="caption" data-i18n="edit.width"></span>
+              <input class="input num" type="number" min="0.25" max="48" step="0.5" data-annot="width" />
+            </label>
+            <label class="inline checkbox" data-annot-only="fillable"><input type="checkbox" data-annot="filled" /><span data-i18n="edit.filled"></span></label>
           </div>
           <div id="prop-image-fields" class="properties-group" hidden>
             <label class="caption" for="prop-opacity" data-i18n="props.opacity"></label>

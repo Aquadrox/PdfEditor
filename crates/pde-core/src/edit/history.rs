@@ -216,7 +216,7 @@ mod tests {
             .elements()
             .map(|(_, e)| match e {
                 Element::Text(t) => t.text.clone(),
-                Element::Image(_) => String::new(),
+                _ => String::new(),
             })
             .collect()
     }

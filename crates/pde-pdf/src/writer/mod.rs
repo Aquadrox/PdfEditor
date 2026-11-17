@@ -1,6 +1,7 @@
 //! Écriture des éléments ajoutés dans un document PDFium : zones de texte
-//! (`text.rs`) et images (`image.rs`).
+//! (`text.rs`), images (`image.rs`), annotations dessinées (`annotation.rs`).
 
+mod annotation;
 mod image;
 mod text;
 
@@ -27,6 +28,9 @@ pub(crate) fn apply(
                 })?;
                 image::write_image(doc, box_, asset)?
             }
+            Element::Shape(shape) => annotation::write_shape(doc, shape)?,
+            Element::Ink(ink) => annotation::write_ink(doc, ink)?,
+            Element::Markup(markup) => annotation::write_markup(doc, markup)?,
         };
         placed.push(Placed { id: *id, bounds });
     }
