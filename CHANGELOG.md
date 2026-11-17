@@ -4,6 +4,12 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.17 — 2026-11-17
+
+- Les images déjà présentes dans le PDF se modifient en mode Éditer : choisissez-les d'un clic, puis déplacez-les, redimensionnez-les par leurs coins ou supprimez-les.
+- « Remplacer… » met une autre image à la place, dans le même cadre ; une seule annulation suffit à revenir en arrière.
+- Une image déplacée ou agrandie garde toute sa qualité : elle n'est jamais recompressée.
+
 ## 0.0.16 — 2026-11-17
 
 - Caviardage réel : avec l'outil Caviarder, glissez sur du texte ou tracez une zone ; ce qui se trouve dessous (texte, images, annotations) est supprimé du fichier, pas seulement masqué.

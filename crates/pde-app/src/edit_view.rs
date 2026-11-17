@@ -48,6 +48,13 @@ pub fn flip(element: &Element, page: PageSize) -> Element {
             }
             Element::Redact(redact)
         }
+        Element::ExistingImage(mut image) => {
+            image.original.top_left = flip_point(image.original.top_left, page);
+            if let Some(frame) = &mut image.frame {
+                frame.top_left = flip_point(frame.top_left, page);
+            }
+            Element::ExistingImage(image)
+        }
     }
 }
 

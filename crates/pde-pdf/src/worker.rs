@@ -104,6 +104,17 @@ fn handle<'a>(
                 .and_then(|(built, _)| built.save_to_bytes().map_err(internal));
             let _ = reply.send(result);
         }
+        Command::PageImages {
+            doc,
+            edition,
+            page,
+            reply,
+        } => {
+            let result = slot(docs, doc)
+                .and_then(|s| arranged(pdfium, s, &edition))
+                .and_then(|arranged| writer::page_images(&arranged, page));
+            let _ = reply.send(result);
+        }
         Command::Save { doc, reply } => {
             let result = slot(docs, doc).and_then(|s| s.current.save_to_bytes().map_err(internal));
             let _ = reply.send(result);
@@ -139,6 +150,17 @@ fn build<'a>(
     slot: &Slot<'a>,
     edition: &Edition,
 ) -> Result<(PdfDocument<'a>, Vec<Placed>), EngineError> {
+    let mut fresh = arranged(pdfium, slot, edition)?;
+    let placed = writer::apply(&mut fresh, &edition.elements, &edition.images)?;
+    Ok((fresh, placed))
+}
+
+/// L'original rechargé, pages rangées selon le plan, sans aucun élément.
+fn arranged<'a>(
+    pdfium: &'a Pdfium,
+    slot: &Slot<'a>,
+    edition: &Edition,
+) -> Result<PdfDocument<'a>, EngineError> {
     let mut fresh = load(pdfium, &slot.source, slot.password.as_deref()).map_err(internal)?;
     arrange::arrange(
         pdfium,
@@ -147,6 +169,5 @@ fn build<'a>(
         (&slot.source, slot.password.as_deref()),
         &edition.imports,
     )?;
-    let placed = writer::apply(&mut fresh, &edition.elements, &edition.images)?;
-    Ok((fresh, placed))
+    Ok(fresh)
 }

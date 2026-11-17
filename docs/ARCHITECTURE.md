@@ -116,6 +116,18 @@ supprime les annotations touchées et pose un aplat noir : le contenu
 caviardé n'existe plus dans le document, le reste garde son aspect.
 L'interface demande confirmation avant d'écrire des zones nouvelles.
 
+Images d'origine (E-06, `pde-core::edit::existing`, `pde-pdf`
+`writer/existing.rs`) : une image du document est désignée par son rang
+parmi les objets de la page arrangée, avant tout ajout (stable, puisque le
+moteur repart de l'original), et par son cadre d'origine, vérifié à chaque
+pose. L'élément `ExistingImage` porte le nouveau cadre (déplacement et
+mise à l'échelle appliqués à sa matrice, orientation gardée) ou rien
+(supprimée) ; il suit sa page comme les autres. Remplacer = la supprimer et
+poser une image ajoutée dans son cadre, en une opération
+(`Edits::add_and_update`). L'interface ne crée l'élément qu'à la première
+modification : avant, l'image est proposée à la sélection telle que la
+décrit `PdfEngine::page_images`.
+
 Pages d'autres PDF (P-03, `pde-core::edit::import`) : un PDF inséré est lu
 une fois, décrit par le moteur (taille des pages) puis gardé en mémoire
 pour la session sous un `ImportId`, comme une image ; le plan désigne ses

@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 use std::sync::mpsc::{Sender, SyncSender, channel, sync_channel};
 
 use pde_core::document::{DocumentId, PageIndex};
-use pde_core::engine::{Edition, EngineError, OpenedDocument, PdfEngine, Placed};
+use pde_core::engine::{Edition, EngineError, OpenedDocument, PageImage, PdfEngine, Placed};
 use pde_core::render::{Bitmap, RenderRequest};
 use pde_core::text::PageText;
 use pdfium_render::prelude::Pdfium;
@@ -40,6 +40,12 @@ pub(crate) enum Command {
         doc: DocumentId,
         edition: Edition,
         reply: Reply<Vec<u8>>,
+    },
+    PageImages {
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+        reply: Reply<Vec<PageImage>>,
     },
     Save {
         doc: DocumentId,
@@ -141,6 +147,20 @@ impl PdfEngine for PdfiumEngine {
         self.ask(|reply| Command::Export {
             doc,
             edition,
+            reply,
+        })
+    }
+
+    fn page_images(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+    ) -> Result<Vec<PageImage>, EngineError> {
+        self.ask(|reply| Command::PageImages {
+            doc,
+            edition,
+            page,
             reply,
         })
     }

@@ -243,6 +243,36 @@ impl Edits {
         Ok(self.record_batch(operations))
     }
 
+    /// Ajoute, remplace et retire des éléments en une seule opération
+    /// (remplacer une image d'origine : la supprimer et poser la nouvelle ;
+    /// supprimer une sélection qui mêle images d'origine et ajouts).
+    pub fn add_and_update(
+        &mut self,
+        added: Vec<Element>,
+        updated: Vec<(ElementId, Element)>,
+        removed: &[ElementId],
+    ) -> Result<(Vec<ElementId>, Change), String> {
+        let mut operations = Vec::new();
+        for &id in removed {
+            let element = self.get(id).ok_or_else(|| unknown(id))?.clone();
+            operations.push(Operation::Remove { id, element });
+        }
+        for (id, after) in updated {
+            let before = self.get(id).ok_or_else(|| unknown(id))?.clone();
+            if before != after {
+                operations.push(Operation::Update { id, before, after });
+            }
+        }
+        let mut ids = Vec::with_capacity(added.len());
+        for element in added {
+            self.next_id += 1;
+            let id = ElementId(self.next_id);
+            ids.push(id);
+            operations.push(Operation::Add { id, element });
+        }
+        Ok((ids, self.record_batch(operations)))
+    }
+
     /// Retire plusieurs éléments en une opération.
     pub fn remove_many(&mut self, ids: &[ElementId]) -> Result<Change, String> {
         let operations = ids
@@ -449,6 +479,32 @@ mod tests {
         edits.undo();
         let (b, _) = edits.add(text(0, "b"));
         assert_ne!(a, b);
+    }
+
+    #[test]
+    fn added_and_updated_together_is_one_entry() {
+        let mut edits = Edits::new();
+        let (a, _) = edits.add(text(0, "a"));
+        let (ids, change) = edits
+            .add_and_update(vec![text(1, "b")], vec![(a, text(0, "a2"))], &[])
+            .unwrap();
+        assert_eq!(ids.len(), 1);
+        assert_eq!(change.pages, [0, 1]);
+        assert_eq!(texts(&edits), ["a2", "b"]);
+        edits.undo();
+        assert_eq!(texts(&edits), ["a"]);
+        assert!(
+            edits
+                .add_and_update(Vec::new(), vec![(ElementId(99), text(0, "x"))], &[])
+                .is_err()
+        );
+        let (c, _) = edits.add(text(2, "c"));
+        edits
+            .add_and_update(Vec::new(), Vec::new(), &[a, c])
+            .unwrap();
+        assert!(edits.is_empty());
+        edits.undo();
+        assert_eq!(texts(&edits), ["a", "c"]);
     }
 
     #[test]

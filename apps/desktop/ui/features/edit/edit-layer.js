@@ -13,6 +13,7 @@ import { annotationResized, bboxOf, handlesOf, isAnnotation, newNote } from "./a
 import { startDrawing } from "./draw-tool.js";
 import { snapped, union } from "./selection-state.js";
 import { resizedFrame } from "./image-state.js";
+import { asImage, isExisting, withFrame } from "./existing-image.js";
 import { openTextEditor } from "./text-editor.js";
 
 /** En dessous (pixels), un appui sur un élément est un clic, pas un déplacement. */
@@ -27,13 +28,14 @@ function fail(error) {
 /** Poignées : largeur d'une zone de texte, coins d'une image, voir handlesOf. */
 function handles(element) {
   if (element.kind === "text") return ["left", "right"];
-  if (element.kind === "image") return ["nw", "ne", "sw", "se"];
+  if (element.kind === "image" || isExisting(element)) return ["nw", "ne", "sw", "se"];
   return handlesOf(element);
 }
 
 /** Élément après un redimensionnement de (dx, dy) points par la poignée `edge`. */
 function resizedBy(element, edge, dx, dy, page) {
   if (isAnnotation(element)) return annotationResized(element, edge, dx, dy, page);
+  if (isExisting(element)) return withFrame(element, resizedFrame(asImage(element), edge, dx, dy, page));
   return element.kind === "image" ? resizedFrame(element, edge, dx, dy, page) : resized(element, edge, dx, page);
 }
 
@@ -46,6 +48,7 @@ function labelOf(element) {
     ink: "edit.inkBox",
     note: "edit.noteBox",
     redact: "edit.redactBox",
+    existing_image: "edit.existingImage",
     markup: `edit.mark.${element.mark}`,
   }[element.kind];
 }
@@ -108,8 +111,14 @@ export class EditLayer {
     }
     layer.classList.toggle("active", this.active);
     const page = this.viewer.doc.pages[index];
-    const boxes = this.session.view.elements
-      .filter((e) => e.element.page === index && e.id !== this.editing?.id)
+    // Images d'origine de la page : demandées une fois, la couche est
+    // redessinée à leur arrivée.
+    if (this.active) {
+      this.session.loadPageImages(index).then((loaded) => loaded && this.render(frame, index), () => {});
+    }
+    const boxes = this.session
+      .itemsOn(index)
+      .filter((e) => e.id !== this.editing?.id)
       .map((item) => this.box(item, page, index));
     layer.querySelectorAll(".element").forEach((node) => node.remove());
     layer.prepend(...boxes);
@@ -280,8 +289,9 @@ export class EditLayer {
     const { dx, dy } = pointsFromPixels(dxPx, dyPx, frameWidth, page);
     const element = resizedBy(item.element, edge, dx, dy, page);
     if (isAnnotation(element)) return percentBox(bboxOf(element), page);
-    const height = element.kind === "image" ? element.height : item.bounds.height;
-    return percentBox({ ...element.top_left, width: element.width, height }, page);
+    const shown = isExisting(element) ? asImage(element) : element;
+    const height = shown.kind === "image" ? shown.height : item.bounds.height;
+    return percentBox({ ...shown.top_left, width: shown.width, height }, page);
   }
 
   /** Poignée d'extrémité d'un trait, posée sur son point dans le contour. */

@@ -1,11 +1,13 @@
 //! Visionneuse : documents ouverts, images et texte de leurs pages.
 
 mod edit;
+mod existing;
 mod group;
 mod images;
 mod import;
 mod pages;
 
+pub use existing::PageImageView;
 pub use import::ImportFile;
 pub use pages::PagesView;
 mod recovery;
@@ -21,7 +23,7 @@ use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
 use std::collections::BTreeMap;
 
 use pde_core::edit::{Edits, ElementId, Images, ImportId, Imports};
-use pde_core::engine::PdfEngine;
+use pde_core::engine::{PageImage, PdfEngine};
 use pde_core::geometry::Rect;
 use pde_core::render::RenderRequest;
 use pde_core::text::PageText;
@@ -62,6 +64,8 @@ struct OpenDocument {
     /// la sauvegarde automatique.
     imports: Imports,
     import_files: BTreeMap<ImportId, ImportFile>,
+    /// Images d'origine de chaque page déjà lue (oubliées si le plan change).
+    page_images: HashMap<PageIndex, Vec<PageImage>>,
     /// Place de chaque élément, telle que posée par le moteur.
     placed: HashMap<ElementId, Rect>,
     /// Version de chaque page, augmentée à chaque changement de son contenu
@@ -147,6 +151,7 @@ impl Viewer {
                 images: Images::new(),
                 imports: Imports::new(),
                 import_files: BTreeMap::new(),
+                page_images: HashMap::new(),
                 placed: HashMap::new(),
             },
         );

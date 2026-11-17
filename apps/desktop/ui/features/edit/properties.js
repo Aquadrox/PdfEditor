@@ -88,6 +88,7 @@ export function attachProperties(session, pages, actions) {
   byId("prop-rotate-right").addEventListener("click", () => changeSelected((element, page) => rotated(element, 1, page)));
   keepRatio.addEventListener("change", () => changeSelected((element) => ({ ...element, keep_ratio: keepRatio.checked })));
   byId("prop-duplicate").addEventListener("click", () => selected() && actions.duplicate());
+  byId("prop-replace").addEventListener("click", () => selected() && actions.replace());
   byId("prop-delete").addEventListener("click", () => selected() && actions.removeSelection());
   for (const button of document.querySelectorAll("[data-arrange]")) {
     button.addEventListener("click", () => actions.arrange(button.dataset.arrange));
@@ -136,7 +137,11 @@ export function attachProperties(session, pages, actions) {
       markup: "props.markupTitle",
       note: "props.noteTitle",
       redact: "props.redactTitle",
+      existing_image: "props.existingTitle",
     };
+    // Image d'origine : remplacée plutôt que dupliquée.
+    byId("prop-replace").hidden = many || kind !== "existing_image";
+    byId("prop-duplicate").hidden = !many && kind === "existing_image";
     byId("properties-title").textContent = many ? t("props.manyTitle", { count }) : t(!item ? "props.panel" : (titles[kind] ?? "props.title"));
     if (!visible || !item || many) return;
     const values = geometryInMm(item.element, item.bounds);
