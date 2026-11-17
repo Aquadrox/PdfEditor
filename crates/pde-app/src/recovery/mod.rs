@@ -8,5 +8,5 @@
 mod manifest;
 mod store;
 
-pub use manifest::{ImportRecord, Recovered, Snapshot};
+pub use manifest::{FormState, ImportRecord, Recovered, Snapshot};
 pub use store::{RecoveryStore, RecoveryView};

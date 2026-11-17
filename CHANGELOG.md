@@ -4,6 +4,15 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.18 — 2026-11-17
+
+- Le texte déjà présent dans le PDF se modifie : en mode Éditer, choisissez « Texte du document », cliquez sur une ligne et récrivez-la à sa place.
+- La police du document est gardée quand elle contient les caractères saisis ; sinon une police proche la remplace et le panneau Propriétés le signale.
+- Vider une ligne du document la supprime ; une annulation la fait revenir.
+- Les formulaires PDF se remplissent en mode Lire : champs texte, cases à cocher, boutons radio et listes ; les valeurs sont enregistrées dans le fichier.
+- « Aplatir le formulaire » (menu) fige les champs remplis dans la page.
+- « Propriétés du document… » (menu) change le titre, l'auteur, le sujet et les mots-clés du PDF.
+
 ## 0.0.17 — 2026-11-17
 
 - Les images déjà présentes dans le PDF se modifient en mode Éditer : choisissez-les d'un clic, puis déplacez-les, redimensionnez-les par leurs coins ou supprimez-les.

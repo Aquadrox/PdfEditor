@@ -2,13 +2,17 @@
 
 mod edit;
 mod existing;
+mod form;
 mod group;
 mod images;
 mod import;
+mod original_text;
 mod pages;
 
 pub use existing::PageImageView;
+pub use form::{FieldView, WidgetView};
 pub use import::ImportFile;
+pub use original_text::TextBlockView;
 pub use pages::PagesView;
 mod recovery;
 #[cfg(test)]
@@ -23,8 +27,7 @@ use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
 use std::collections::BTreeMap;
 
 use pde_core::edit::{Edits, ElementId, Images, ImportId, Imports};
-use pde_core::engine::{PageImage, PdfEngine};
-use pde_core::geometry::Rect;
+use pde_core::engine::{PageImage, PageTextBlock, PdfEngine, Placed};
 use pde_core::render::RenderRequest;
 use pde_core::text::PageText;
 
@@ -66,8 +69,12 @@ struct OpenDocument {
     import_files: BTreeMap<ImportId, ImportFile>,
     /// Images d'origine de chaque page déjà lue (oubliées si le plan change).
     page_images: HashMap<PageIndex, Vec<PageImage>>,
+    /// Blocs de texte d'origine de chaque page déjà lue (plan actuel).
+    page_text_blocks: HashMap<PageIndex, Vec<PageTextBlock>>,
+    /// Champs du formulaire (lus une fois, oubliés si le plan change).
+    form_fields: Option<Vec<pde_core::edit::FormField>>,
     /// Place de chaque élément, telle que posée par le moteur.
-    placed: HashMap<ElementId, Rect>,
+    placed: HashMap<ElementId, Placed>,
     /// Version de chaque page, augmentée à chaque changement de son contenu
     /// (l'interface la met dans l'adresse de l'image pour la recharger).
     revisions: Vec<u64>,
@@ -152,6 +159,8 @@ impl Viewer {
                 imports: Imports::new(),
                 import_files: BTreeMap::new(),
                 page_images: HashMap::new(),
+                page_text_blocks: HashMap::new(),
+                form_fields: None,
                 placed: HashMap::new(),
             },
         );

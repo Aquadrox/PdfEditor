@@ -3,6 +3,7 @@
 //! Fonctions appelées uniquement depuis le thread du moteur.
 
 use pde_core::document::{DocumentInfo, OutlineItem, PageIndex, PageSize};
+use pde_core::edit::Metadata;
 use pde_core::engine::EngineError;
 use pde_core::render::{Bitmap, RenderRequest, pixel_size};
 use pde_core::text::{PageText, TextChar};
@@ -30,17 +31,26 @@ pub(crate) fn document_info(doc: &PdfDocument) -> Result<DocumentInfo, EngineErr
             )
         })
         .collect();
-    let title = doc
-        .metadata()
-        .get(PdfDocumentMetadataTagType::Title)
-        .map(|tag| tag.value().trim().to_owned())
-        .filter(|title| !title.is_empty());
+    let tag = |kind| {
+        doc.metadata()
+            .get(kind)
+            .map(|tag| tag.value().trim().to_owned())
+            .unwrap_or_default()
+    };
+    let metadata = Metadata {
+        title: tag(PdfDocumentMetadataTagType::Title),
+        author: tag(PdfDocumentMetadataTagType::Author),
+        subject: tag(PdfDocumentMetadataTagType::Subject),
+        keywords: tag(PdfDocumentMetadataTagType::Keywords),
+    };
+    let title = Some(metadata.title.clone()).filter(|title| !title.is_empty());
     let mut budget = MAX_OUTLINE_ITEMS;
     let outline = outline_level(doc.bookmarks().root(), 0, &mut budget);
     Ok(DocumentInfo {
         page_sizes,
         title,
         outline,
+        metadata,
     })
 }
 

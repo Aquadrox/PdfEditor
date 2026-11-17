@@ -161,14 +161,22 @@ impl Viewer {
             elements,
             images: open.images.clone(),
             imports: open.imports.clone(),
+            fields: open.edits.fields().clone(),
+            metadata: open.edits.metadata().cloned(),
+            flatten: open.edits.flatten(),
         };
         let placed = self.engine.apply_edits(doc, edition)?;
-        open.placed = placed.into_iter().map(|p| (p.id, p.bounds)).collect();
+        open.placed = placed.into_iter().map(|p| (p.id, p)).collect();
         if change.layout {
             self.relayout(open, doc);
             return Ok(());
         }
-        for page in change.pages {
+        let pages: Vec<usize> = if change.all_pages {
+            (0..open.revisions.len()).collect()
+        } else {
+            change.pages
+        };
+        for page in pages {
             if let Some(revision) = open.revisions.get_mut(page) {
                 *revision += 1;
             }
@@ -199,14 +207,19 @@ pub(super) fn view(open: &OpenDocument) -> EditView {
         .elements()
         .filter_map(|(id, element)| {
             let size = open.info.page_size(element.page()).ok()?;
-            let bounds = open.placed.get(&id)?;
-            Some(ElementView::new(id, element, bounds, size))
+            let placed = open.placed.get(&id)?;
+            let mut view = ElementView::new(id, element, &placed.bounds, size);
+            view.replaced_font = placed.replaced_font;
+            Some(view)
         })
         .collect();
     EditView {
         elements,
         revisions: open.revisions.clone(),
         layout: open.layout,
+        fields: open.edits.fields().clone(),
+        metadata: open.edits.metadata().cloned(),
+        flattened: open.edits.flatten(),
         can_undo: open.edits.can_undo(),
         can_redo: open.edits.can_redo(),
         dirty: open.edits.is_dirty(),

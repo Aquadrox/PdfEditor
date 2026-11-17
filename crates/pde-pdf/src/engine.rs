@@ -4,7 +4,10 @@ use std::sync::OnceLock;
 use std::sync::mpsc::{Sender, SyncSender, channel, sync_channel};
 
 use pde_core::document::{DocumentId, PageIndex};
-use pde_core::engine::{Edition, EngineError, OpenedDocument, PageImage, PdfEngine, Placed};
+use pde_core::edit::FormField;
+use pde_core::engine::{
+    Edition, EngineError, OpenedDocument, PageImage, PageTextBlock, PdfEngine, Placed,
+};
 use pde_core::render::{Bitmap, RenderRequest};
 use pde_core::text::PageText;
 use pdfium_render::prelude::Pdfium;
@@ -41,11 +44,22 @@ pub(crate) enum Command {
         edition: Edition,
         reply: Reply<Vec<u8>>,
     },
+    FormFields {
+        doc: DocumentId,
+        edition: Edition,
+        reply: Reply<Vec<FormField>>,
+    },
     PageImages {
         doc: DocumentId,
         edition: Edition,
         page: PageIndex,
         reply: Reply<Vec<PageImage>>,
+    },
+    PageTextBlocks {
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+        reply: Reply<Vec<PageTextBlock>>,
     },
     Save {
         doc: DocumentId,
@@ -151,6 +165,18 @@ impl PdfEngine for PdfiumEngine {
         })
     }
 
+    fn form_fields(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+    ) -> Result<Vec<FormField>, EngineError> {
+        self.ask(|reply| Command::FormFields {
+            doc,
+            edition,
+            reply,
+        })
+    }
+
     fn page_images(
         &self,
         doc: DocumentId,
@@ -158,6 +184,20 @@ impl PdfEngine for PdfiumEngine {
         page: PageIndex,
     ) -> Result<Vec<PageImage>, EngineError> {
         self.ask(|reply| Command::PageImages {
+            doc,
+            edition,
+            page,
+            reply,
+        })
+    }
+
+    fn page_text_blocks(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+    ) -> Result<Vec<PageTextBlock>, EngineError> {
+        self.ask(|reply| Command::PageTextBlocks {
             doc,
             edition,
             page,

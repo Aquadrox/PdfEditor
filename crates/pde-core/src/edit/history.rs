@@ -7,6 +7,7 @@ use std::collections::BTreeMap;
 use crate::document::{PageIndex, PageSize};
 
 use super::element::{Element, ElementId};
+use super::form::{FieldValue, Metadata};
 use super::import::{ImportId, PageSources};
 use super::pages::PagePlan;
 
@@ -34,6 +35,22 @@ pub enum Operation {
         before: PagePlan,
         after: PagePlan,
     },
+    /// Valeur d'un champ du formulaire (`None` : celle de l'original).
+    Field {
+        name: String,
+        before: Option<FieldValue>,
+        after: Option<FieldValue>,
+    },
+    /// Propriétés du document (`None` : celles de l'original).
+    Metadata {
+        before: Option<Metadata>,
+        after: Option<Metadata>,
+    },
+    /// Formulaire aplati (champs fondus dans les pages).
+    Flatten {
+        before: bool,
+        after: bool,
+    },
 }
 
 impl Operation {
@@ -54,6 +71,35 @@ impl Operation {
                 before: after,
                 after: before,
             },
+            Operation::Field {
+                name,
+                before,
+                after,
+            } => Operation::Field {
+                name,
+                before: after,
+                after: before,
+            },
+            Operation::Metadata { before, after } => Operation::Metadata {
+                before: after,
+                after: before,
+            },
+            Operation::Flatten { before, after } => Operation::Flatten {
+                before: after,
+                after: before,
+            },
+        }
+    }
+
+    /// L'opération touche le document entier (formulaire, propriétés) :
+    /// toutes les pages sont à redessiner.
+    fn touches_document(&self) -> bool {
+        match self {
+            Operation::Field { .. } | Operation::Metadata { .. } | Operation::Flatten { .. } => {
+                true
+            }
+            Operation::Batch(operations) => operations.iter().any(Operation::touches_document),
+            _ => false,
         }
     }
 
@@ -74,8 +120,11 @@ impl Operation {
             }
             Operation::Update { before, after, .. } => vec![before.page(), after.page()],
             Operation::Batch(operations) => operations.iter().flat_map(Operation::pages).collect(),
-            // Toutes les pages changent : voir `Change::layout`.
-            Operation::Pages { .. } => Vec::new(),
+            // Toutes les pages changent : voir `Change::layout` et `Change::all_pages`.
+            Operation::Pages { .. }
+            | Operation::Field { .. }
+            | Operation::Metadata { .. }
+            | Operation::Flatten { .. } => Vec::new(),
         };
         pages.sort_unstable();
         pages.dedup();
@@ -90,12 +139,15 @@ pub struct Change {
     /// Le plan des pages a changé (nombre, ordre, tailles) : tout le
     /// document est à redessiner.
     pub layout: bool,
+    /// Formulaire ou propriétés changés : toutes les pages sont à
+    /// redessiner, leur nombre et leur taille ne changent pas.
+    pub all_pages: bool,
 }
 
 impl Change {
     /// L'opération n'a rien changé.
     pub fn is_empty(&self) -> bool {
-        self.pages.is_empty() && !self.layout
+        self.pages.is_empty() && !self.layout && !self.all_pages
     }
 }
 
@@ -107,6 +159,10 @@ pub struct Edits {
     /// Taille affichée des pages de l'original et des PDF insérés.
     pub(super) sources: PageSources,
     pub(super) plan: PagePlan,
+    /// Valeurs saisies dans les champs, par nom complet.
+    pub(super) fields: BTreeMap<String, FieldValue>,
+    pub(super) metadata: Option<Metadata>,
+    pub(super) flatten: bool,
     /// Opérations faites, chacune avec son numéro (pour l'état enregistré).
     done: Vec<(u64, Operation)>,
     undone: Vec<(u64, Operation)>,
@@ -349,10 +405,21 @@ impl Edits {
                 }
             }
             Operation::Pages { after, .. } => self.plan = after,
+            Operation::Field { name, after, .. } => match after {
+                Some(value) => {
+                    self.fields.insert(name, value);
+                }
+                None => {
+                    self.fields.remove(&name);
+                }
+            },
+            Operation::Metadata { after, .. } => self.metadata = after,
+            Operation::Flatten { after, .. } => self.flatten = after,
         }
         Change {
             pages: operation.pages(),
             layout: operation.changes_layout(),
+            all_pages: operation.touches_document(),
         }
     }
 }

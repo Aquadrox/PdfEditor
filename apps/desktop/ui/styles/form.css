@@ -1,0 +1,60 @@
+/* Formulaire (E-08) : contrôles transparents posés sur les champs ; la
+   valeur visible est celle dessinée dans la page. */
+
+.form-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.form-field {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 2px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: rgb(39 71 184 / 6%);
+  color: transparent;
+  font: inherit;
+  font-size: calc(10px * var(--scale, 1));
+  pointer-events: auto;
+  cursor: pointer;
+  resize: none;
+  /* Aspect du système retiré (liste déroulante grise sous Linux) : on voit
+     la page en dessous. */
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.form-field:hover {
+  border-color: var(--on-paper-accent);
+}
+
+.form-field:focus-visible,
+.form-field.text:focus {
+  outline: 2px solid var(--on-paper-accent);
+  outline-offset: 0;
+}
+
+/* Saisie : le texte tapé se voit, sur fond blanc, au-dessus du rendu. */
+.form-field.text {
+  cursor: text;
+}
+
+.form-field.text:focus {
+  background: var(--paper);
+  /* Encre du document : la page reste blanche en thème sombre. */
+  color: #1c2430;
+}
+
+.form-field.choice:focus {
+  background: var(--paper);
+  color: #1c2430;
+}
+
+.form-field:disabled {
+  background: transparent;
+  cursor: not-allowed;
+}

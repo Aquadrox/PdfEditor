@@ -55,6 +55,10 @@ pub fn flip(element: &Element, page: PageSize) -> Element {
             }
             Element::ExistingImage(image)
         }
+        Element::OriginalText(mut block) => {
+            block.original.top_left = flip_point(block.original.top_left, page);
+            Element::OriginalText(block)
+        }
     }
 }
 
@@ -72,6 +76,8 @@ pub struct ElementView {
     /// Caractères d'une zone de texte qu'aucune police ne sait écrire
     /// (chinois, arabe… : signalés, prévus plus tard) ; vide sinon.
     pub missing_chars: String,
+    /// Texte d'origine récrit avec une police de remplacement (E-05).
+    pub replaced_font: bool,
 }
 
 impl ElementView {
@@ -92,6 +98,7 @@ impl ElementView {
             element: flip(element, page),
             bounds: BoxView::new(bounds, page),
             missing_chars,
+            replaced_font: false,
         }
     }
 }
@@ -105,6 +112,12 @@ pub struct EditView {
     /// Version du plan des pages : quand elle change, l'interface relit la
     /// description du document (nombre, ordre et taille des pages).
     pub layout: u64,
+    /// Valeurs saisies dans les champs du formulaire (E-08), par nom.
+    pub fields: std::collections::BTreeMap<String, pde_core::edit::FieldValue>,
+    /// Propriétés du document changées (E-11), sinon celles de l'original.
+    pub metadata: Option<pde_core::edit::Metadata>,
+    /// Formulaire aplati.
+    pub flattened: bool,
     pub can_undo: bool,
     pub can_redo: bool,
     /// Modifié depuis l'ouverture ou le dernier enregistrement.

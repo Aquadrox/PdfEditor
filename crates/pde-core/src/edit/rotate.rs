@@ -12,12 +12,12 @@ use super::annotation::{Area, MarkKind};
 use super::element::Element;
 use super::note::NOTE_SIZE;
 
-/// L'élément peut tourner avec sa page. Le texte ajouté et les traits
-/// soulignés ou barrés s'écrivent horizontalement : ils ne pivotent pas
-/// encore.
+/// L'élément peut tourner avec sa page. Le texte ajouté, le texte
+/// d'origine modifié et les traits soulignés ou barrés s'écrivent
+/// horizontalement : ils ne pivotent pas encore.
 pub fn can_rotate(element: &Element) -> bool {
     match element {
-        Element::Text(_) => false,
+        Element::Text(_) | Element::OriginalText(_) => false,
         Element::Markup(markup) => markup.mark == MarkKind::Highlight,
         Element::Image(_)
         | Element::Shape(_)
@@ -100,7 +100,7 @@ fn quarter_turn(element: Element, size: PageSize) -> Element {
             Element::Note(note)
         }
         // Écarté par `can_rotate`.
-        Element::Text(text) => Element::Text(text),
+        element @ (Element::Text(_) | Element::OriginalText(_)) => element,
     }
 }
 

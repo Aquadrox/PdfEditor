@@ -9,11 +9,14 @@
 mod annotation;
 mod element;
 mod existing;
+mod form;
+mod form_ops;
 mod history;
 mod image;
 mod import;
 mod layout;
 mod note;
+mod original_text;
 mod page_ops;
 mod pages;
 mod redact;
@@ -24,9 +27,10 @@ pub use annotation::{
     STROKE_WIDTH_RANGE, ShapeBox, ShapeKind, ellipse_curves,
 };
 pub use element::{
-    Align, Color, Element, ElementId, FONT_SIZE_RANGE, StandardFont, TextBox, TextStyle,
+    Align, Color, Element, ElementId, FONT_SIZE_RANGE, MIN_WIDTH, StandardFont, TextBox, TextStyle,
 };
 pub use existing::{ExistingImage, MIN_EXISTING_SIDE};
+pub use form::{FieldKind, FieldValue, FormField, MAX_FIELD_CHARS, Metadata, Widget};
 pub use history::{Change, Edits, Operation};
 pub use image::{
     ImageAsset, ImageBox, ImageData, ImageId, Images, MIN_IMAGE_SIDE, OPACITY_RANGE, Placement,
@@ -34,6 +38,7 @@ pub use image::{
 pub use import::{ImportId, ImportedPdf, Imports, PageSources};
 pub use layout::{leading, wrap};
 pub use note::{MAX_AUTHOR_CHARS, MAX_NOTE_CHARS, NOTE_SIZE, NoteBox};
+pub use original_text::{MAX_BLOCK_CHARS, MAX_BLOCK_OBJECTS, OriginalText};
 pub use pages::{BLANK_SIDE_RANGE, MAX_PAGES, PagePlan, PageSource, PlannedPage, check_blank_size};
 pub use redact::{MIN_REDACT_SIDE, RedactBox};
 pub use rotate::{can_rotate, rotated};

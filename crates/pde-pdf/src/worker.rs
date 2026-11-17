@@ -11,7 +11,7 @@ use pdfium_render::prelude::{PdfDocument, Pdfium};
 
 use crate::convert::{internal, open_error};
 use crate::engine::Command;
-use crate::{arrange, reader, writer};
+use crate::{arrange, form, reader, writer};
 
 /// Document ouvert : sa version affichée (d'origine, ou avec les éléments
 /// posés) et de quoi repartir de l'original à chaque modification.
@@ -104,6 +104,16 @@ fn handle<'a>(
                 .and_then(|(built, _)| built.save_to_bytes().map_err(internal));
             let _ = reply.send(result);
         }
+        Command::FormFields {
+            doc,
+            edition,
+            reply,
+        } => {
+            let result = slot(docs, doc)
+                .and_then(|s| Ok((arranged(pdfium, s, &edition)?, s)))
+                .and_then(|(arranged, s)| form::form_fields(&arranged, &s.source));
+            let _ = reply.send(result);
+        }
         Command::PageImages {
             doc,
             edition,
@@ -113,6 +123,17 @@ fn handle<'a>(
             let result = slot(docs, doc)
                 .and_then(|s| arranged(pdfium, s, &edition))
                 .and_then(|arranged| writer::page_images(&arranged, page));
+            let _ = reply.send(result);
+        }
+        Command::PageTextBlocks {
+            doc,
+            edition,
+            page,
+            reply,
+        } => {
+            let result = slot(docs, doc)
+                .and_then(|s| arranged(pdfium, s, &edition))
+                .and_then(|arranged| writer::page_text_blocks(&arranged, page));
             let _ = reply.send(result);
         }
         Command::Save { doc, reply } => {
@@ -152,6 +173,7 @@ fn build<'a>(
 ) -> Result<(PdfDocument<'a>, Vec<Placed>), EngineError> {
     let mut fresh = arranged(pdfium, slot, edition)?;
     let placed = writer::apply(&mut fresh, &edition.elements, &edition.images)?;
+    let fresh = finish(pdfium, slot, fresh, edition)?;
     Ok((fresh, placed))
 }
 
@@ -170,4 +192,28 @@ fn arranged<'a>(
         &edition.imports,
     )?;
     Ok(fresh)
+}
+
+/// Formulaire et propriétés (E-08, E-11) : valeurs écrites par `lopdf`,
+/// document rechargé (PDFium redessine les champs), puis aplati si demandé.
+fn finish<'a>(
+    pdfium: &'a Pdfium,
+    slot: &Slot<'a>,
+    doc: PdfDocument<'a>,
+    edition: &Edition,
+) -> Result<PdfDocument<'a>, EngineError> {
+    if edition.fields.is_empty() && edition.metadata.is_none() && !edition.flatten {
+        return Ok(doc);
+    }
+    let bytes = doc.save_to_bytes().map_err(internal)?;
+    drop(doc);
+    let bytes = form::patch(bytes, &edition.fields, edition.metadata.as_ref())?;
+    let doc = load(pdfium, &bytes, slot.password.as_deref()).map_err(internal)?;
+    if edition.flatten {
+        for index in 0..doc.pages().len() {
+            let mut page = doc.pages().get(index).map_err(internal)?;
+            page.flatten().map_err(internal)?;
+        }
+    }
+    Ok(doc)
 }

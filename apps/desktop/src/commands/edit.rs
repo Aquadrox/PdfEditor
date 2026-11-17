@@ -175,3 +175,13 @@ pub fn page_images(
 ) -> Result<Vec<pde_app::viewer::PageImageView>, AppError> {
     app.viewer.page_images(id, page)
 }
+
+/// Blocs de texte d'origine d'une page (objets, place, texte, style), à modifier.
+#[tauri::command(async)]
+pub fn page_text_blocks(
+    app: AppState<'_>,
+    id: u64,
+    page: usize,
+) -> Result<Vec<pde_app::viewer::TextBlockView>, AppError> {
+    app.viewer.page_text_blocks(id, page)
+}

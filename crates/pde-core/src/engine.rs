@@ -4,7 +4,9 @@
 use thiserror::Error;
 
 use crate::document::{DocumentId, DocumentInfo, PageIndex};
-use crate::edit::{Element, ElementId, Images, Imports, PagePlan};
+use std::collections::BTreeMap;
+
+use crate::edit::{Element, ElementId, FieldValue, FormField, Images, Imports, Metadata, PagePlan};
 use crate::geometry::Rect;
 use crate::render::{Bitmap, RenderRequest};
 use crate::text::PageText;
@@ -43,6 +45,34 @@ pub struct OpenedDocument {
 pub struct Placed {
     pub id: ElementId,
     pub bounds: Rect,
+    /// Texte d'origine récrit avec une police de remplacement (E-05) : la
+    /// police du document ne savait pas écrire le nouveau texte.
+    pub replaced_font: bool,
+}
+
+impl Placed {
+    pub fn new(id: ElementId, bounds: Rect) -> Self {
+        Self {
+            id,
+            bounds,
+            replaced_font: false,
+        }
+    }
+}
+
+/// Bloc de texte d'origine d'une page (E-05) : objets texte d'une même
+/// ligne, de même police, corps et couleur.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PageTextBlock {
+    /// Rangs des objets parmi les objets de la page arrangée, croissants.
+    pub objects: Vec<u32>,
+    /// Place sur la page affichée.
+    pub bounds: Rect,
+    pub text: String,
+    /// Nom de la police d'origine (sans le préfixe de sous-ensemble).
+    pub font_name: String,
+    /// Police standard la plus proche, corps et couleur du bloc.
+    pub style: crate::edit::TextStyle,
 }
 
 /// Image d'origine d'une page (E-06) : son rang parmi les objets de la
@@ -61,6 +91,12 @@ pub struct Edition {
     pub elements: Vec<(ElementId, Element)>,
     pub images: Images,
     pub imports: Imports,
+    /// Valeurs saisies dans les champs du formulaire, par nom complet.
+    pub fields: BTreeMap<String, FieldValue>,
+    /// Propriétés du document, si elles ont été changées.
+    pub metadata: Option<Metadata>,
+    /// Formulaire aplati.
+    pub flatten: bool,
 }
 
 impl Edition {
@@ -70,7 +106,7 @@ impl Edition {
             plan,
             elements,
             images,
-            imports: Imports::new(),
+            ..Self::default()
         }
     }
 }
@@ -99,6 +135,11 @@ pub trait PdfEngine: Send + Sync {
     /// le document affiché ne change pas.
     fn export(&self, doc: DocumentId, edition: Edition) -> Result<Vec<u8>, EngineError>;
 
+    /// Champs du formulaire du document arrangé selon le plan de `edition`
+    /// (valeurs et éléments non appliqués) ; vide s'il n'y en a pas.
+    fn form_fields(&self, doc: DocumentId, edition: Edition)
+    -> Result<Vec<FormField>, EngineError>;
+
     /// Images d'origine de la page `page` du document arrangé selon le plan
     /// de `edition` (ses éléments ne sont pas posés).
     fn page_images(
@@ -107,6 +148,15 @@ pub trait PdfEngine: Send + Sync {
         edition: Edition,
         page: PageIndex,
     ) -> Result<Vec<PageImage>, EngineError>;
+
+    /// Blocs de texte d'origine de la page `page` du document arrangé selon
+    /// le plan de `edition` (ses éléments ne sont pas posés).
+    fn page_text_blocks(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+    ) -> Result<Vec<PageTextBlock>, EngineError>;
 
     /// Contenu du document dans son état actuel, prêt à écrire.
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError>;
@@ -148,6 +198,23 @@ impl<T: PdfEngine + ?Sized> PdfEngine for &T {
         page: PageIndex,
     ) -> Result<Vec<PageImage>, EngineError> {
         (**self).page_images(doc, edition, page)
+    }
+
+    fn form_fields(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+    ) -> Result<Vec<FormField>, EngineError> {
+        (**self).form_fields(doc, edition)
+    }
+
+    fn page_text_blocks(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+    ) -> Result<Vec<PageTextBlock>, EngineError> {
+        (**self).page_text_blocks(doc, edition, page)
     }
 
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError> {

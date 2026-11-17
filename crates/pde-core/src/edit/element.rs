@@ -10,6 +10,7 @@ use super::annotation::{InkBox, MarkupBox, ShapeBox};
 use super::existing::ExistingImage;
 use super::image::{ImageBox, Images};
 use super::note::NoteBox;
+use super::original_text::OriginalText;
 use super::redact::RedactBox;
 use crate::document::PageIndex;
 use crate::geometry::Point;
@@ -124,6 +125,7 @@ pub enum Element {
     Note(NoteBox),
     Redact(RedactBox),
     ExistingImage(ExistingImage),
+    OriginalText(OriginalText),
 }
 
 impl Element {
@@ -137,6 +139,7 @@ impl Element {
             Element::Note(note) => note.page,
             Element::Redact(redact) => redact.page,
             Element::ExistingImage(image) => image.page,
+            Element::OriginalText(block) => block.page,
         }
     }
 
@@ -151,6 +154,7 @@ impl Element {
             Element::Note(note) => note.page = page,
             Element::Redact(redact) => redact.page = page,
             Element::ExistingImage(image) => image.page = page,
+            Element::OriginalText(block) => block.page = page,
         }
         self
     }
@@ -169,6 +173,7 @@ impl Element {
             Element::Note(note) => note.validate(),
             Element::Redact(redact) => redact.validate(),
             Element::ExistingImage(image) => image.validate(),
+            Element::OriginalText(block) => block.validate(),
             Element::Text(text) => {
                 let numbers = [
                     text.top_left.x,

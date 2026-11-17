@@ -106,6 +106,8 @@ impl Viewer {
         open.info = arranged(&open.original, open.edits.plan(), open.edits.sources());
         open.layout += 1;
         open.page_images.clear();
+        open.page_text_blocks.clear();
+        open.form_fields = None;
         let next = open.revisions.iter().max().map_or(1, |r| r + 1);
         open.revisions = vec![next; open.info.page_count()];
         lock(&self.cache).remove_document(doc);
@@ -143,6 +145,7 @@ pub(super) fn arranged(
         page_sizes: plan.sizes(sources),
         title: original.title.clone(),
         outline: outline(&original.outline, plan),
+        metadata: original.metadata.clone(),
     }
 }
 
@@ -254,6 +257,7 @@ mod tests {
                     children: Vec::new(),
                 }],
             }],
+            metadata: Default::default(),
         };
         let plan = PagePlan::new(vec![PlannedPage::original(1)]);
         let sources = PageSources::new(original.page_sizes.clone());

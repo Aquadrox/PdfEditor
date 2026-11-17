@@ -4,23 +4,27 @@
 //! appliqué en dernier pour effacer aussi ce qui a été ajouté dessous.
 
 mod annotation;
+mod blocks;
 mod existing;
 mod image;
 mod note;
+mod original_text;
 mod redact;
 mod text;
 
 use std::collections::BTreeMap;
 
 use pde_core::document::PageIndex;
-use pde_core::edit::{Element, ElementId, Images};
+use pde_core::edit::{Element, ElementId, Images, MIN_WIDTH};
 use pde_core::engine::{EngineError, Placed};
-use pde_core::geometry::Rect;
+use pde_core::geometry::{Point, Rect};
 use pdfium_render::prelude::{PdfDocument, PdfPage};
 
 use crate::convert::internal;
 use crate::display::DisplayTransform;
+use original_text::Rewritten;
 
+pub(crate) use blocks::page_text_blocks;
 pub(crate) use existing::page_images;
 
 /// Pose les éléments, page par page ; renvoie leur place sur la page affichée.
@@ -32,7 +36,7 @@ pub(crate) fn apply(
     let mut placed = Vec::with_capacity(elements.len());
     let mut fonts = text::Fonts::default();
     let mut redactions: BTreeMap<PageIndex, Vec<Rect>> = BTreeMap::new();
-    // Images d'origine d'abord : leur rang est celui de la page arrangée.
+    // Objets d'origine d'abord : leur rang est celui de la page arrangée.
     let existing: Vec<_> = elements
         .iter()
         .filter_map(|(_, e)| match e {
@@ -40,8 +44,16 @@ pub(crate) fn apply(
             _ => None,
         })
         .collect();
-    existing::apply(doc, &existing)?;
+    let texts: Vec<_> = elements
+        .iter()
+        .filter_map(|(id, e)| match e {
+            Element::OriginalText(block) => Some((*id, block)),
+            _ => None,
+        })
+        .collect();
+    let mut rewritten = existing::apply(doc, &existing, &texts)?;
     for (id, element) in elements {
+        let mut replaced_font = false;
         let bounds = match element {
             Element::Text(box_) => text::write_text(doc, box_, &mut fonts)?,
             Element::Image(box_) => {
@@ -55,13 +67,29 @@ pub(crate) fn apply(
             Element::Markup(markup) => annotation::write_markup(doc, markup)?,
             Element::Note(note) => note::write_note(doc, note)?,
             Element::ExistingImage(image) => image.bounds(),
+            Element::OriginalText(block) => match rewritten.remove(id) {
+                Some(Rewritten::Kept(bounds) | Rewritten::Removed(bounds)) => bounds,
+                Some(Rewritten::Replaced(replacement)) => {
+                    replaced_font = true;
+                    let written = text::write_text(doc, &replacement, &mut fonts)?;
+                    // Le cadre écrit va jusqu'au bord de la page : on garde
+                    // la largeur d'origine pour la sélection.
+                    let right = written.min().x + block.original.width.max(MIN_WIDTH);
+                    Rect::from_corners(written.min(), Point::new(right, written.max().y))
+                }
+                None => block.bounds(),
+            },
             Element::Redact(redact) => {
                 let areas = redactions.entry(redact.page).or_default();
                 areas.extend(redact.areas.iter().map(|a| a.rect()));
                 redact.bounds()
             }
         };
-        placed.push(Placed { id: *id, bounds });
+        placed.push(Placed {
+            id: *id,
+            bounds,
+            replaced_font,
+        });
     }
     for (page, areas) in &redactions {
         redact::redact_page(doc, *page, areas)?;

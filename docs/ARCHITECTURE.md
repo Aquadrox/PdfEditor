@@ -41,7 +41,7 @@ adaptateur (il passe par un trait de `pde-core`) ; seul `apps/desktop` connaît 
 | Crate | Rôle | Dépendances principales | Arrive en |
 |---|---|---|---|
 | `pde-core` | Géométrie, unités, modèle du document (pages, blocs de texte, éléments), opérations d'édition, historique annuler / rétablir, réglages (TOML + validation), traits `PdfEngine`, `ChatModel`, `SecretStore`, `Clock` | `serde`, `toml`, `thiserror` | v0.0 |
-| `pde-pdf` | Moteur PDF : ouverture, rendu, extraction du texte avec positions, application des opérations, enregistrement complet ou incrémental | `pdfium-render` (PDFium) | v0.1 |
+| `pde-pdf` | Moteur PDF : ouverture, rendu, extraction du texte avec positions, application des opérations, formulaires et propriétés, enregistrement complet ou incrémental | `pdfium-render` (PDFium), `lopdf` (structure du formulaire, valeurs, dictionnaire d'information) | v0.1 |
 | `pde-fonts` | Polices Noto embarquées (Sans, Serif, Sans Mono : latin étendu, grec, cyrillique ; OFL), caractères couverts, métriques | `skrifa` | v0.2 |
 | `pde-sign` | Signature PAdES, vérification, certificats (PKCS#12, auto-signé), DocMDP / FieldMDP, horodatage RFC 3161, écriture incrémentale | `lopdf`, RustCrypto (`cms`, `x509-cert`, `rsa`, `p256`, `sha2`, `p12-keystore`) | v0.4 |
 | `pde-workflow` | Cycle de signature : plan, machine à états, manifeste embarqué, journal d'audit chaîné | `pde-core`, `serde_json`, `sha2` | v0.8 |
@@ -127,6 +127,29 @@ poser une image ajoutée dans son cadre, en une opération
 (`Edits::add_and_update`). L'interface ne crée l'élément qu'à la première
 modification : avant, l'image est proposée à la sélection telle que la
 décrit `PdfEngine::page_images`.
+
+Texte du document (E-05, `pde-core::edit::original_text`, `pde-pdf`
+`writer/blocks.rs` et `writer/original_text.rs`) : `PdfEngine::page_text_blocks`
+regroupe les objets texte droits d'une page en lignes (même police, corps
+et couleur, côte à côte) ; une ligne est désignée par le rang de ses objets
+et vérifiée par sa place d'origine, comme les images d'origine. L'élément
+`OriginalText` porte le nouveau texte (vide : supprimée) et le style de
+remplacement. À la pose, le premier objet reçoit le texte si sa police sait
+l'écrire (police non embarquée, ou caractères déjà écrits avec elle sur la
+page ; texte relu pour confirmer), les autres sont retirés ; sinon tous sont
+retirés et le texte est écrit comme une zone ajoutée, avec la police
+standard la plus proche (`Placed::replaced_font`, signalé par l'interface).
+Les retraits d'images et de texte d'une page se font ensemble, du dernier
+rang au premier (`writer/existing.rs`).
+
+Formulaires et propriétés (E-08, E-11, `pde-core::edit::form`, `pde-pdf`
+`form/`) : la structure du formulaire (champs, genres, options, valeur) est
+lue avec `lopdf`, la place des widgets par PDFium sur les pages arrangées.
+Les valeurs saisies et les propriétés sont écrites avec `lopdf` sur le
+contenu enregistré par PDFium (valeur, état des cases, apparence retirée,
+`NeedAppearances`), puis le document est rechargé : PDFium redessine les
+champs. L'aplatissement passe par PDFium. Un document chiffré est refusé
+pour ces deux opérations.
 
 Pages d'autres PDF (P-03, `pde-core::edit::import`) : un PDF inséré est lu
 une fois, décrit par le moteur (taille des pages) puis gardé en mémoire

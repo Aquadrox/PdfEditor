@@ -22,7 +22,7 @@ use crate::convert::internal;
 
 /// Hauteur au-dessus de la ligne de base (fraction du corps) des polices
 /// standard : Helvetica 718, Times 683, Courier 629 (millièmes, AFM).
-fn ascent(font: StandardFont) -> f64 {
+pub(super) fn ascent(font: StandardFont) -> f64 {
     match font {
         StandardFont::Sans => 0.718,
         StandardFont::Serif => 0.683,

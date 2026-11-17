@@ -153,6 +153,9 @@ fn extracted(open: &OpenDocument, pages: &[PageIndex]) -> Result<Edition, AppErr
         elements,
         images: open.images.clone(),
         imports: open.imports.clone(),
+        fields: open.edits.fields().clone(),
+        metadata: open.edits.metadata().cloned(),
+        flatten: open.edits.flatten(),
     })
 }
 

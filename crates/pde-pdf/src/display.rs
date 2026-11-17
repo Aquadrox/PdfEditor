@@ -71,6 +71,21 @@ impl DisplayTransform {
         Point::new(down_x, self.height - down_y)
     }
 
+    /// Point de la page PDF → point de la page affichée (origine en bas).
+    pub(crate) fn display_point(&self, x: f64, y: f64) -> Point {
+        self.point(x, y)
+    }
+
+    /// Page sans rotation : axes de la page PDF et de la page affichée
+    /// alignés (seule l'origine peut différer).
+    pub(crate) fn is_upright(&self) -> bool {
+        let near = |a: f64, b: f64| (a - b).abs() < 1e-6;
+        near(self.x_axis.0, 1.0)
+            && near(self.x_axis.1, 0.0)
+            && near(self.y_axis.0, 0.0)
+            && near(self.y_axis.1, -1.0)
+    }
+
     /// Partie linéaire de la transformation (page → affichée, origine en bas).
     fn linear(&self) -> [[f64; 2]; 2] {
         [

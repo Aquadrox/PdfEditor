@@ -248,6 +248,7 @@ mod tests {
             page_count: 1,
             pages: None,
             imports: Vec::new(),
+            form: Default::default(),
             elements: vec![Element::Text(TextBox {
                 page: 0,
                 top_left: Point::new(72.0, 700.0),

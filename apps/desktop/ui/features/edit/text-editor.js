@@ -10,12 +10,15 @@ import { cssFontFamily, hexFromColor } from "./edit-state.js";
 /**
  * Ouvre l'éditeur dans `layer` pour `element` (coordonnées de la page).
  * `onDone(text | null)` : texte validé, ou null si annulé.
+ * Options : `opaque` (fond qui cache le texte de la page dessous),
+ * `singleLine` (Entrée valide, comme Ctrl+Entrée).
  * Renvoie { commit, cancel } pour le fermer depuis l'extérieur.
  */
-export function openTextEditor(layer, element, page, onDone) {
+export function openTextEditor(layer, element, page, onDone, { opaque = false, singleLine = false } = {}) {
   const { style } = element;
-  const area = el("textarea", { class: "text-editor", spellcheck: "true", "aria-label": t("props.text") });
+  const area = el("textarea", { class: opaque ? "text-editor opaque" : "text-editor", spellcheck: "true", "aria-label": t("props.text") });
   area.value = element.text;
+  if (singleLine) area.rows = 1;
   Object.assign(area.style, percentBox({ ...element.top_left, width: element.width, height: 0 }, page), {
     height: "auto",
     fontSize: `calc(var(--scale) * ${style.size}px)`,
@@ -42,7 +45,10 @@ export function openTextEditor(layer, element, page, onDone) {
   // laisse Ctrl+Z / Ctrl+Y au champ.
   area.addEventListener("keydown", (event) => {
     if (event.key === "Escape") finish(null);
-    else if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) finish(area.value);
+    else if (event.key === "Enter" && (singleLine || event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      finish(area.value);
+    }
   });
   area.addEventListener("blur", () => finish(area.value));
   area.addEventListener("pointerdown", (event) => event.stopPropagation());

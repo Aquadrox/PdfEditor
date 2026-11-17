@@ -25,9 +25,8 @@ impl Viewer {
             if !open.page_images.contains_key(&page) {
                 let edition = Edition {
                     plan: open.edits.plan().clone(),
-                    elements: Vec::new(),
-                    images: Default::default(),
                     imports: open.imports.clone(),
+                    ..Edition::default()
                 };
                 let images = self.engine.page_images(doc, edition, page)?;
                 open.page_images.insert(page, images);

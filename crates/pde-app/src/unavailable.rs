@@ -2,7 +2,10 @@
 //! démarre quand même et explique le problème à chaque ouverture.
 
 use pde_core::document::{DocumentId, PageIndex};
-use pde_core::engine::{Edition, EngineError, OpenedDocument, PageImage, PdfEngine, Placed};
+use pde_core::edit::FormField;
+use pde_core::engine::{
+    Edition, EngineError, OpenedDocument, PageImage, PageTextBlock, PdfEngine, Placed,
+};
 use pde_core::render::{Bitmap, RenderRequest};
 use pde_core::text::PageText;
 
@@ -34,6 +37,19 @@ impl PdfEngine for UnavailableEngine {
     }
 
     fn export(&self, _: DocumentId, _: Edition) -> Result<Vec<u8>, EngineError> {
+        Err(self.error.clone())
+    }
+
+    fn form_fields(&self, _: DocumentId, _: Edition) -> Result<Vec<FormField>, EngineError> {
+        Err(self.error.clone())
+    }
+
+    fn page_text_blocks(
+        &self,
+        _: DocumentId,
+        _: Edition,
+        _: PageIndex,
+    ) -> Result<Vec<PageTextBlock>, EngineError> {
         Err(self.error.clone())
     }
 

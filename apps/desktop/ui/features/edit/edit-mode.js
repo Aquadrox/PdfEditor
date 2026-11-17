@@ -15,6 +15,7 @@ import { EditSession } from "./edit-session.js";
 import { duplicated, nudged, pagePoint, withStyle } from "./edit-state.js";
 import { newImageBox } from "./image-state.js";
 import { fittedImageBox, isExisting, withoutImage } from "./existing-image.js";
+import { isOriginalText } from "./original-text.js";
 import { aligned, distributed, nextInOrder, samePage } from "./selection-state.js";
 import { attachMarkupTool } from "./markup-tool.js";
 import { attachRedactTool } from "./redact-tool.js";
@@ -24,7 +25,7 @@ import { attachStyleControls } from "./style-controls.js";
 const fail = (error) => toast(t("edit.failed", { message: error?.message ?? String(error) }), "error");
 
 /** Outils qui se choisissent (l'image est une action) ; annotations : style par outil. */
-const TOOLS = ["text", "markup", "ink", "shape", "note", "redact"];
+const TOOLS = ["text", "retext", "markup", "ink", "shape", "note", "redact"];
 
 export class EditMode {
   /**
@@ -63,7 +64,11 @@ export class EditMode {
     );
     this.styles = attachStyleControls(
       document,
-      () => this.session.element(this.session.selected)?.element.style ?? this.session.style,
+      // Style d'une zone de texte ajoutée seulement (pas d'une ligne du document).
+      () => {
+        const element = this.session.element(this.session.selected)?.element;
+        return element?.kind === "text" ? element.style : this.session.style;
+      },
       (changes) => this.applyStyle(changes),
     );
     this.properties = attachProperties(this.session, pages, {
@@ -71,9 +76,9 @@ export class EditMode {
       remove: (id) => this.session.remove(id).catch(fail),
       // Dupliquer : toute la sélection, en une opération.
       duplicate: () => {
-        // Une image d'origine ne se duplique pas (son contenu reste dans le PDF).
+        // Une image ou un texte d'origine ne se duplique pas (son contenu reste dans le PDF).
         const copies = this.selectedItems()
-          .filter((i) => !isExisting(i.element))
+          .filter((i) => !isExisting(i.element) && !isOriginalText(i.element))
           .map((i) => duplicated(i.element, pages()[i.element.page]));
         if (copies.length === 0) return;
         const done = copies.length === 1 ? this.session.add(copies[0]) : this.session.addMany(copies);
@@ -130,6 +135,8 @@ export class EditMode {
     this.layer.commitText();
     this.tool = tool;
     this.layer.tool = tool;
+    // Outil Texte du document : les lignes des pages apparaissent ou disparaissent.
+    this.layer.refresh();
     for (const name of TOOLS) {
       const button = byId(`tool-${name}`);
       button.setAttribute("aria-pressed", String(name === tool));
@@ -345,7 +352,7 @@ export class EditMode {
 
   /** Aligner ou répartir la sélection (même page). */
   arrange(action) {
-    const items = this.selectedItems();
+    const items = this.selectedItems().filter((i) => !isOriginalText(i.element));
     if (items.length < 2 || !samePage(items)) return;
     const page = this.viewer.doc.pages[items[0].element.page];
     const changes = action === "distribute-x" || action === "distribute-y"
