@@ -42,6 +42,12 @@ pub fn flip(element: &Element, page: PageSize) -> Element {
             }
             Element::Markup(markup)
         }
+        Element::Redact(mut redact) => {
+            for area in &mut redact.areas {
+                area.top_left = flip_point(area.top_left, page);
+            }
+            Element::Redact(redact)
+        }
     }
 }
 

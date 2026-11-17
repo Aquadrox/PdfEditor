@@ -186,6 +186,10 @@ impl PdfEngine for FakeEngine {
                     id,
                     bounds: note.bounds(),
                 }),
+                Element::Redact(redact) => Ok(Placed {
+                    id,
+                    bounds: redact.bounds(),
+                }),
                 Element::Text(text) => {
                     let height = leading(&text.style);
                     Ok(Placed {

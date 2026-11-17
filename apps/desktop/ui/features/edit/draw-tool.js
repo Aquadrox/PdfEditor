@@ -1,8 +1,9 @@
-// Tracé à la souris avec les outils Forme et Dessin : aperçu SVG (en points
-// de la page) pendant le glisser, élément créé au relâchement. Échap annule.
+// Tracé à la souris avec les outils Forme, Dessin et Caviarder (zone) :
+// aperçu SVG (en points de la page) pendant le glisser, élément créé au
+// relâchement. Échap annule.
 
 import { annotationHex } from "./annotation-controls.js";
-import { constrained, newInk, newShape, withPoint } from "./annotation-state.js";
+import { constrained, newInk, newRedactArea, newShape, withPoint } from "./annotation-state.js";
 import { pagePoint } from "./edit-state.js";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -27,6 +28,10 @@ function arrowHead(start, end, width) {
 
 /** Élément d'aperçu pour l'outil et les points en cours. */
 function preview(tool, style, start, end, points) {
+  if (tool === "redact") {
+    const [x, y] = [Math.min(start.x, end.x), Math.min(start.y, end.y)];
+    return svg("rect", { class: "redact-draft", x, y, width: Math.abs(end.x - start.x), height: Math.abs(end.y - start.y) });
+  }
   const color = annotationHex(style.color);
   const stroke = { stroke: color, "stroke-width": style.width, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" };
   if (tool === "ink") return svg("polyline", { ...stroke, points: points.map((p) => `${p.x},${p.y}`).join(" ") });
@@ -73,6 +78,7 @@ export function startDrawing(event, layer, pageIndex, page, tool, style, onDone)
     draw();
   };
   const up = () => {
+    if (tool === "redact") return finish(newRedactArea(pageIndex, start, end, page));
     finish(tool === "ink" ? newInk(pageIndex, points, style) : newShape(pageIndex, start, end, style, page));
   };
   const key = (e) => {

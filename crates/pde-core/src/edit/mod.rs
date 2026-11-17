@@ -15,6 +15,7 @@ mod layout;
 mod note;
 mod page_ops;
 mod pages;
+mod redact;
 mod rotate;
 
 pub use annotation::{
@@ -32,4 +33,5 @@ pub use import::{ImportId, ImportedPdf, Imports, PageSources};
 pub use layout::{leading, wrap};
 pub use note::{MAX_AUTHOR_CHARS, MAX_NOTE_CHARS, NOTE_SIZE, NoteBox};
 pub use pages::{BLANK_SIDE_RANGE, MAX_PAGES, PagePlan, PageSource, PlannedPage, check_blank_size};
+pub use redact::{MIN_REDACT_SIDE, RedactBox};
 pub use rotate::{can_rotate, rotated};

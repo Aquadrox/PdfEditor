@@ -108,6 +108,14 @@ le plan change, `pde-app` décrit à nouveau le document (tailles, signets
 renvoyés à leur nouvelle place) et l'interface refait la visionneuse, les
 miniatures et la grille du mode Pages.
 
+Caviardage (E-07, `pde-core::edit::redact`, `pde-pdf` `writer/redact.rs`) :
+une zone caviardée est un élément comme les autres, posé en dernier. Sur sa
+page, `pde-pdf` rend la page, retire du contenu chaque objet qui touche une
+zone, le remplace par la partie correspondante du rendu (zones noircies),
+supprime les annotations touchées et pose un aplat noir : le contenu
+caviardé n'existe plus dans le document, le reste garde son aspect.
+L'interface demande confirmation avant d'écrire des zones nouvelles.
+
 Pages d'autres PDF (P-03, `pde-core::edit::import`) : un PDF inséré est lu
 une fois, décrit par le moteur (taille des pages) puis gardé en mémoire
 pour la session sous un `ImportId`, comme une image ; le plan désigne ses

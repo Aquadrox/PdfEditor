@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use super::annotation::{InkBox, MarkupBox, ShapeBox};
 use super::image::{ImageBox, Images};
 use super::note::NoteBox;
+use super::redact::RedactBox;
 use crate::document::PageIndex;
 use crate::geometry::Point;
 
@@ -120,6 +121,7 @@ pub enum Element {
     Ink(InkBox),
     Markup(MarkupBox),
     Note(NoteBox),
+    Redact(RedactBox),
 }
 
 impl Element {
@@ -131,6 +133,7 @@ impl Element {
             Element::Ink(ink) => ink.page,
             Element::Markup(markup) => markup.page,
             Element::Note(note) => note.page,
+            Element::Redact(redact) => redact.page,
         }
     }
 
@@ -143,6 +146,7 @@ impl Element {
             Element::Ink(ink) => ink.page = page,
             Element::Markup(markup) => markup.page = page,
             Element::Note(note) => note.page = page,
+            Element::Redact(redact) => redact.page = page,
         }
         self
     }
@@ -159,6 +163,7 @@ impl Element {
             Element::Ink(ink) => ink.validate(),
             Element::Markup(markup) => markup.validate(),
             Element::Note(note) => note.validate(),
+            Element::Redact(redact) => redact.validate(),
             Element::Text(text) => {
                 let numbers = [
                     text.top_left.x,

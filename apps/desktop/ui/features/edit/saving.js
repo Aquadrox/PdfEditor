@@ -1,4 +1,5 @@
-// Enregistrer, Enregistrer sous, et la question posée avant de perdre des
+// Enregistrer, Enregistrer sous, la confirmation avant d'écrire des zones
+// caviardées (E-07), et la question posée avant de perdre des
 // modifications (fermer le document ou la fenêtre, ouvrir un autre fichier).
 
 import { toast } from "../../components/toast.js";
@@ -13,6 +14,7 @@ const message = (error) => error?.message ?? String(error);
  * @param {import("./edit-session.js").EditSession} session
  */
 export async function saveDocument(session) {
+  if (!(await confirmRedaction(session))) return null;
   try {
     const saved = await invoke("save_document", { id: session.doc.id });
     await session.reload();
@@ -26,6 +28,7 @@ export async function saveDocument(session) {
 
 /** Demande le fichier puis enregistre ; `null` si annulé ou en échec. */
 export async function saveDocumentAs(session) {
+  if (!(await confirmRedaction(session))) return null;
   try {
     // Dossier et nom de copie proposés par Rust (réglage Fichiers).
     const saved = await invoke("save_document_as", { id: session.doc.id });
@@ -37,6 +40,36 @@ export async function saveDocumentAs(session) {
     toast(t("save.failed", { message: message(error) }), "error");
     return null;
   }
+}
+
+/**
+ * Zones caviardées pas encore confirmées : le contenu dessous va quitter le
+ * fichier, on le dit avant d'écrire. `true` pour continuer.
+ */
+async function confirmRedaction(session) {
+  const ids = session.view.elements.filter((e) => e.element.kind === "redact").map((e) => e.id);
+  if (ids.every((id) => session.confirmedRedactions.has(id))) return true;
+  const dialog = byId("redact-dialog");
+  byId("redact-text").textContent = t("redact.text", { name: session.doc.file_name });
+  const confirmed = await new Promise((resolve) => {
+    const answer = (value) => () => {
+      dialog.removeEventListener("cancel", cancel);
+      byId("redact-confirm").removeEventListener("click", confirm);
+      byId("redact-cancel").removeEventListener("click", cancel);
+      if (dialog.open) dialog.close();
+      resolve(value);
+    };
+    const confirm = answer(true);
+    const cancel = answer(false);
+    byId("redact-confirm").addEventListener("click", confirm);
+    byId("redact-cancel").addEventListener("click", cancel);
+    // Échap : comme « Annuler ».
+    dialog.addEventListener("cancel", cancel);
+    dialog.showModal();
+    byId("redact-cancel").focus();
+  });
+  if (confirmed) ids.forEach((id) => session.confirmedRedactions.add(id));
+  return confirmed;
 }
 
 let pending = null;

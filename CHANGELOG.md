@@ -4,6 +4,12 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.16 — 2026-11-17
+
+- Caviardage réel : avec l'outil Caviarder, glissez sur du texte ou tracez une zone ; ce qui se trouve dessous (texte, images, annotations) est supprimé du fichier, pas seulement masqué.
+- Avant d'enregistrer un document caviardé, PdfEditor demande confirmation : le contenu supprimé ne pourra plus être retrouvé.
+- Le reste d'une ligne touchée par une zone garde son aspect, mais devient une image : il n'est plus sélectionnable.
+
 ## 0.0.15 — 2026-11-17
 
 - Mode Pages : « Insérer un PDF » ajoute les pages d'un ou plusieurs autres PDF après la sélection ; vous pouvez aussi glisser des PDF sur la grille, ils s'insèrent là où vous les déposez. Pour fusionner, insérez-les à la fin.

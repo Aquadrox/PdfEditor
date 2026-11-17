@@ -146,6 +146,43 @@
   cursor: crosshair;
 }
 
+/* Outil Caviarder : glisser sur un mot le sélectionne ; ailleurs, une zone se trace. */
+.desk.editing.tool-redact .text-layer {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.desk.editing.tool-redact .text-layer span {
+  cursor: text;
+}
+
+.desk.editing.tool-redact .edit-layer.active {
+  pointer-events: none;
+}
+
+.edit-layer .draft .redact-draft {
+  fill: #000000;
+  fill-opacity: 0.55;
+  stroke: var(--danger);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.tool-hint,
+.properties-hint {
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.properties-hint {
+  margin: 0;
+  padding: 0 var(--space-4);
+}
+
+.properties-hint[hidden] {
+  display: none;
+}
+
 /* Aperçu d'un tracé en cours (coordonnées de la page). */
 .edit-layer .draft {
   position: absolute;
