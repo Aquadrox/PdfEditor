@@ -48,12 +48,13 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ✅ Enregistrer / Enregistrer sous (F-01) : contenu relu avant d'écrire, remplacement atomique, mot de passe conservé ; question avant de fermer le document ou la fenêtre, ou d'en ouvrir un autre, avec des modifications
 - ✅ Réglages Édition et Fichiers (R-03, R-04) : nom d'auteur des notes, police, taille et couleur des nouvelles zones de texte, couleur de surlignage, magnétisme et grille ; intervalle de la sauvegarde automatique, dossier proposé par les dialogues Ouvrir et Image, suffixe des copies (« Enregistrer sous » propose « contrat (modifié).pdf » à côté de l'original). Le comportement à l'enregistrement d'un document signé viendra avec la signature (v0.4)
 
-## v0.3 — Contenu existant et pages
+## v0.3 — Contenu existant et pages 🚧
 
 - ⬜ Modifier le texte existant, police de remplacement (E-05)
 - ⬜ Images existantes (E-06)
 - ⬜ Caviardage réel (E-07)
-- ⬜ Pages : insérer, supprimer, pivoter, réordonner, fusionner, extraire (P-01, P-02, P-03)
+- ✅ Pages (P-01, P-02) : mode Pages, grille des pages ; page blanche, dupliquer, pivoter, supprimer, réordonner en glissant (clavier : Suppr, Ctrl+A, flèches, Entrée) ; une opération = une entrée d'historique, les ajouts suivent leur page ; signets renvoyés à la nouvelle place ; plan des pages repris par la sauvegarde automatique. Restent : rotation des pages portant du texte ajouté, souligné ou barré ; signets et liens qui visent une page déplacée hors de la plus longue suite gardée (recopiée)
+- ⬜ Pages : fusionner des PDF, insérer les pages d'un autre PDF, extraire (P-03)
 - ⬜ Formulaires, métadonnées (E-08, E-11)
 - ⬜ Tests de parcours de l'interface (Playwright)
 

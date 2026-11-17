@@ -6,13 +6,13 @@ use std::sync::Arc;
 use std::sync::mpsc::Receiver;
 
 use pde_core::document::DocumentId;
-use pde_core::edit::{Element, ElementId, Images};
+use pde_core::edit::{Element, ElementId, Images, PagePlan};
 use pde_core::engine::{EngineError, OpenedDocument, Placed};
 use pdfium_render::prelude::{PdfDocument, Pdfium};
 
 use crate::convert::{internal, open_error};
 use crate::engine::Command;
-use crate::{reader, writer};
+use crate::{arrange, reader, writer};
 
 /// Document ouvert : sa version affichée (d'origine, ou avec les éléments
 /// posés) et de quoi repartir de l'original à chaque modification.
@@ -82,6 +82,7 @@ fn handle<'a>(
         }
         Command::ApplyEdits {
             doc,
+            plan,
             elements,
             images,
             reply,
@@ -89,7 +90,7 @@ fn handle<'a>(
             let result = docs
                 .get_mut(&doc)
                 .ok_or(EngineError::UnknownDocument)
-                .and_then(|s| apply_edits(pdfium, s, &elements, &images));
+                .and_then(|s| apply_edits(pdfium, s, &plan, &elements, &images));
             let _ = reply.send(result);
         }
         Command::Save { doc, reply } => {
@@ -118,16 +119,23 @@ fn load<'a>(
     pdfium.load_pdf_from_byte_vec(source.to_vec(), password)
 }
 
-/// Recharge l'original, pose les éléments, et ne remplace le document
-/// affiché qu'en cas de succès : un élément impossible à écrire laisse
-/// l'affichage précédent intact.
+/// Recharge l'original, range ses pages, pose les éléments, et ne
+/// remplace le document affiché qu'en cas de succès : un élément
+/// impossible à écrire laisse l'affichage précédent intact.
 fn apply_edits<'a>(
     pdfium: &'a Pdfium,
     slot: &mut Slot<'a>,
+    plan: &PagePlan,
     elements: &[(ElementId, Element)],
     images: &Images,
 ) -> Result<Vec<Placed>, EngineError> {
     let mut fresh = load(pdfium, &slot.source, slot.password.as_deref()).map_err(internal)?;
+    arrange::arrange(
+        pdfium,
+        &mut fresh,
+        plan,
+        (&slot.source, slot.password.as_deref()),
+    )?;
     let placed = writer::apply(&mut fresh, elements, images)?;
     slot.current = fresh;
     Ok(placed)

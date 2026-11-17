@@ -3,6 +3,9 @@
 mod edit;
 mod group;
 mod images;
+mod pages;
+
+pub use pages::PagesView;
 mod recovery;
 #[cfg(test)]
 mod testing;
@@ -33,7 +36,13 @@ pub const DEFAULT_CACHE_BYTES: usize = 256 * 1024 * 1024;
 struct OpenDocument {
     /// Fichier enregistré par « Enregistrer » (« Enregistrer sous » le change).
     path: PathBuf,
+    /// Le document tel qu'ouvert (tailles, signets).
+    original: DocumentInfo,
+    /// Le document arrangé selon le plan des pages : ce qui est affiché.
     info: DocumentInfo,
+    /// Version du plan des pages, augmentée à chaque changement de l'ordre,
+    /// du nombre ou de la taille des pages.
+    layout: u64,
     /// Gardé en mémoire seulement, pour relire le fichier enregistré.
     password: Option<String>,
     /// SHA-256 du fichier ouvert (hexadécimal) : une sauvegarde automatique
@@ -120,11 +129,13 @@ impl Viewer {
             OpenDocument {
                 path: path.to_path_buf(),
                 revisions: vec![0; opened.info.page_count()],
+                edits: Edits::with_pages(opened.info.page_sizes.clone()),
+                original: opened.info.clone(),
                 info: opened.info,
+                layout: 0,
                 password,
                 digest,
                 autosaved: None,
-                edits: Edits::new(),
                 images: Images::new(),
                 placed: HashMap::new(),
             },

@@ -61,7 +61,7 @@ export async function offerRecoveries({ open, restored }) {
     const doc = await open(item.path);
     if (!doc) return false;
     try {
-      restored(await invoke("restore_recovery", { id: doc.id, recoveryId: item.id }));
+      await restored(await invoke("restore_recovery", { id: doc.id, recoveryId: item.id }));
       toast(t("recovery.done", { name: item.file_name }));
       return true;
     } catch (error) {

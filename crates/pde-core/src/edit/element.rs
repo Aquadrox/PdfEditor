@@ -134,6 +134,19 @@ impl Element {
         }
     }
 
+    /// Le même élément, posé sur la page `page`.
+    pub fn with_page(mut self, page: PageIndex) -> Element {
+        match &mut self {
+            Element::Text(text) => text.page = page,
+            Element::Image(image) => image.page = page,
+            Element::Shape(shape) => shape.page = page,
+            Element::Ink(ink) => ink.page = page,
+            Element::Markup(markup) => markup.page = page,
+            Element::Note(note) => note.page = page,
+        }
+        self
+    }
+
     /// Vérifie les valeurs (venues de l'interface) avant toute écriture ;
     /// `images` : images importées, si l'appelant les connaît.
     pub fn validate(&self, page_count: usize, images: Option<&Images>) -> Result<(), String> {
@@ -201,6 +214,7 @@ mod tests {
     fn valid_text_box() {
         assert_eq!(Element::Text(text_box()).validate(1, None), Ok(()));
         assert_eq!(Element::Text(text_box()).page(), 0);
+        assert_eq!(Element::Text(text_box()).with_page(3).page(), 3);
     }
 
     #[test]

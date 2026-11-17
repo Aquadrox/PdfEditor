@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 use std::sync::mpsc::{Sender, SyncSender, channel, sync_channel};
 
 use pde_core::document::{DocumentId, PageIndex};
-use pde_core::edit::{Element, ElementId, Images};
+use pde_core::edit::{Element, ElementId, Images, PagePlan};
 use pde_core::engine::{EngineError, OpenedDocument, PdfEngine, Placed};
 use pde_core::render::{Bitmap, RenderRequest};
 use pde_core::text::PageText;
@@ -34,6 +34,7 @@ pub(crate) enum Command {
     },
     ApplyEdits {
         doc: DocumentId,
+        plan: PagePlan,
         elements: Vec<(ElementId, Element)>,
         images: Images,
         reply: Reply<Vec<Placed>>,
@@ -129,11 +130,13 @@ impl PdfEngine for PdfiumEngine {
     fn apply_edits(
         &self,
         doc: DocumentId,
+        plan: PagePlan,
         elements: Vec<(ElementId, Element)>,
         images: Images,
     ) -> Result<Vec<Placed>, EngineError> {
         self.ask(|reply| Command::ApplyEdits {
             doc,
+            plan,
             elements,
             images,
             reply,

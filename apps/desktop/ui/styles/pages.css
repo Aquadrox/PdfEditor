@@ -1,0 +1,110 @@
+/* Mode Pages : grille des pages par-dessus la table, sélection, trait de
+   dépôt pendant un glisser. */
+
+.page-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: auto;
+  background: var(--desk);
+  user-select: none;
+}
+
+.page-grid[hidden] {
+  display: none;
+}
+
+.page-grid:focus-visible {
+  outline-offset: -2px;
+}
+
+.page-grid:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.page-grid-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 184px);
+  justify-content: center;
+  gap: var(--space-6) var(--space-4);
+  padding: var(--space-8) var(--space-6);
+}
+
+.page-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  border-radius: var(--radius-float);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+/* Cadre fixe : les pages paysage et portrait reposent sur la même ligne. */
+.page-card-sheet {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 152px;
+  height: 200px;
+}
+
+.page-card-image {
+  display: block;
+  background: var(--paper);
+  box-shadow: var(--shadow-page);
+}
+
+.page-card-num {
+  font-size: var(--text-caption);
+}
+
+.page-card[aria-selected="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.page-card[aria-selected="true"] .page-card-image {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-page);
+}
+
+.page-grid:focus-visible .page-card.focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.page-grid.dragging,
+.page-grid.dragging .page-card {
+  cursor: grabbing;
+}
+
+.page-grid.dragging .page-card[aria-selected="true"] {
+  opacity: 0.55;
+}
+
+.drop-marker {
+  position: absolute;
+  width: 3px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.drop-marker[hidden] {
+  display: none;
+}
+
+.pages-count {
+  margin-left: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.pages-hint {
+  margin-right: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-caption);
+}

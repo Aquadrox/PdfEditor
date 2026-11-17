@@ -61,16 +61,31 @@ export class Viewer {
 
   /** Affiche un document (DocumentView de pde-app). */
   load(doc) {
+    this.setDocument(doc);
+    // Zoom d'ouverture (réglage display.default_zoom).
+    this.fitMode = fitModeFor(this.defaultZoom);
+    this.applyZoom(this.fittedZoom() ?? 1, { page: 0, fraction: 0 });
+    this.desk.scrollTop = 0;
+  }
+
+  /**
+   * Même document, pages changées (mode Pages) : zoom gardé, affichage
+   * ramené à `page`. Les images suivent les nouvelles versions (setRevisions).
+   */
+  reload(doc, page = 0) {
+    const { fitMode, zoom } = this;
+    this.setDocument(doc);
+    this.fitMode = fitMode;
+    this.applyZoom(this.fittedZoom() ?? zoom, { page: Math.min(page, doc.pages.length - 1), fraction: 0 });
+  }
+
+  setDocument(doc) {
     this.unload();
     this.doc = doc;
     this.frames = doc.pages.map((_, index) =>
       el("div", { class: "page", role: "group", "aria-label": t("thumb.label", { n: index + 1 }) }),
     );
     this.container.append(...this.frames);
-    // Zoom d'ouverture (réglage display.default_zoom).
-    this.fitMode = fitModeFor(this.defaultZoom);
-    this.applyZoom(this.fittedZoom() ?? 1, { page: 0, fraction: 0 });
-    this.desk.scrollTop = 0;
   }
 
   unload() {

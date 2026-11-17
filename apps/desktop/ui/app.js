@@ -10,6 +10,7 @@ import { showHome, watchDrops } from "./features/home/home.js";
 import { offerRecoveries } from "./features/recovery/recovery.js";
 import { renderRecent } from "./features/home/recent.js";
 import { openPath, pickPdf } from "./features/open/open.js";
+import { PagesMode } from "./features/pages/pages-mode.js";
 import { attachSearch } from "./features/search/search-bar.js";
 import { attachSettings } from "./features/settings/settings-view.js";
 import { attachUpdates } from "./features/updates/updates.js";
@@ -50,6 +51,30 @@ const edit = new EditMode(viewer, (view, changed) => {
   if (changed.length > 0) thumbnails.setRevisions(view.revisions, changed);
   showSaveState(view.dirty);
 });
+// Double-clic (ou Entrée) sur une page du mode Pages : ouverte en mode Lire.
+const pages = new PagesMode(edit.session, (page) => {
+  setMode("read");
+  viewer.goToPage(page);
+});
+edit.session.onLayout(relayout);
+
+/**
+ * Pages changées (mode Pages, ou son annulation) : tout ce qui montre les
+ * pages est refait ; le nom du fichier reste celui affiché.
+ */
+function relayout(doc) {
+  if (!current) return;
+  Object.assign(current, { pages: doc.pages, outline: doc.outline, title: doc.title });
+  const page = Math.min(viewer.page, doc.pages.length - 1);
+  viewer.reload(current, page);
+  thumbnails.load(current);
+  thumbnails.setCurrent(page);
+  renderOutline(byId("outline"), current.outline, (p) => viewer.goToPage(p));
+  statusbar.setDocument(current);
+  statusbar.setPage(page);
+  pages.load(current);
+  search.reset();
+}
 
 /** Pastille et barre d'état « modifié » ; Enregistrer actif s'il y a à faire. */
 function showSaveState(dirty) {
@@ -62,14 +87,18 @@ function showSaveState(dirty) {
   byId("save-state").textContent = current ? t(state, { time }) : "";
 }
 
-/** Lire ou Éditer ; les autres modes arrivent avec leurs versions. */
+/** Lire, Éditer ou Pages ; les autres modes arrivent avec leurs versions. */
 function setMode(next) {
+  const previous = mode;
   mode = current ? next : "read";
-  byId("mode-read").toggleAttribute("aria-current", false);
-  byId("mode-edit").toggleAttribute("aria-current", false);
+  for (const name of ["read", "edit", "pages"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
   byId(`mode-${mode}`).setAttribute("aria-current", "page");
-  byId("save-button").hidden = mode !== "edit";
+  byId("save-button").hidden = mode === "read";
+  if (mode !== "edit") edit.layer.commitText();
   edit.setActive(mode === "edit");
+  pages.setActive(mode === "pages", viewer.page);
+  // En quittant la grille, la page choisie est affichée.
+  if (previous === "pages" && mode !== "pages" && current) viewer.goToPage(pages.firstSelected);
 }
 
 /** Affiche `doc` (ou l'accueil) ; la promesse suit le chargement de son édition. */
@@ -83,6 +112,7 @@ function show(doc) {
   byId("menu-close").disabled = !doc;
   byId("menu-save-as").disabled = !doc;
   byId("mode-edit").disabled = !doc;
+  byId("mode-pages").disabled = !doc;
   statusbar.setDocument(doc);
   setWindowTitle(doc ? `${doc.title} – PdfEditor` : "PdfEditor").catch(() => {});
   if (doc) {
@@ -91,9 +121,13 @@ function show(doc) {
     const hasOutline = renderOutline(byId("outline"), doc.outline, (page) => viewer.goToPage(page));
     showSidebarTab(hasOutline && doc.pages.length > 1 ? "outline" : "pages");
     statusbar.setPage(0);
-    editLoading = edit.load(doc).catch((e) => toast(t("error.unexpected", { message: e?.message ?? String(e) }), "error"));
+    editLoading = edit
+      .load(doc)
+      .then(() => pages.load(doc))
+      .catch((e) => toast(t("error.unexpected", { message: e?.message ?? String(e) }), "error"));
   } else {
     edit.load(null);
+    pages.load(null);
     viewer.unload();
     thumbnails.clear();
     refreshRecent();
@@ -238,6 +272,7 @@ byId("edit-undo").addEventListener("click", () => edit.undo());
 byId("edit-redo").addEventListener("click", () => edit.redo());
 byId("mode-read").addEventListener("click", () => setMode("read"));
 byId("mode-edit").addEventListener("click", () => setMode("edit"));
+byId("mode-pages").addEventListener("click", () => setMode("pages"));
 byId("menu-settings").addEventListener("click", openSettings);
 byId("recent-clear").addEventListener("click", async () => {
   await invoke("clear_recent_files").catch((e) => toast(e?.message ?? String(e), "error"));
@@ -279,6 +314,8 @@ document.addEventListener("keydown", (event) => {
   // Page Réglages ouverte : seuls ses propres contrôles réagissent.
   if (!byId("settings-view").hidden || document.querySelector("dialog[open]")) return;
   const editable = isEditable(event.target);
+  // Mode Pages : Suppr, Ctrl+A, flèches, Entrée sur la grille.
+  if (!editable && pages.handleKey(event)) return event.preventDefault();
   // Suppr, flèches, Entrée, Échap : sur la zone sélectionnée, pas sur un bouton.
   if (!editable && edit.handleKey(event, { onButton: event.target instanceof HTMLButtonElement })) {
     return event.preventDefault();
@@ -323,7 +360,7 @@ async function start() {
       setMode("edit");
       // Rust a écrit la copie de secours de ce lancement en reprenant.
       backedUpAt = new Date();
-      edit.session.update(view);
+      return edit.session.apply(view);
     },
   });
   if (recovered) return;

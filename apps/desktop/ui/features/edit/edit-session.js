@@ -1,6 +1,8 @@
 // Session d'édition du document ouvert : état renvoyé par pde-app
 // (EditView), élément sélectionné, appels aux commandes d'édition. Les
-// autres modules s'abonnent aux changements.
+// autres modules s'abonnent aux changements ; quand le plan des pages
+// change (mode Pages, ou son annulation), le document est décrit à nouveau
+// avant que les abonnés ne reçoivent le nouvel état.
 
 import { invoke } from "../../lib/ipc.js";
 
@@ -17,7 +19,7 @@ const DEFAULT_STYLE = {
 export class EditSession {
   constructor() {
     this.doc = null;
-    this.view = { elements: [], revisions: [], can_undo: false, can_redo: false, dirty: false };
+    this.view = { elements: [], revisions: [], layout: 0, can_undo: false, can_redo: false, dirty: false };
     /** Élément principal de la sélection (panneau, poignées). */
     this.selected = null;
     /** Autres éléments sélectionnés (Maj+clic, Ctrl+A). */
@@ -25,6 +27,12 @@ export class EditSession {
     /** Style des nouvelles zones : celui de la dernière zone modifiée. */
     this.style = { ...DEFAULT_STYLE };
     this.listeners = [];
+    this.layoutListeners = [];
+  }
+
+  /** `listener(document)` quand le nombre, l'ordre ou la taille des pages change. */
+  onLayout(listener) {
+    this.layoutListeners.push(listener);
   }
 
   /** `listener(view, changedPages)` à chaque changement. */
@@ -135,11 +143,24 @@ export class EditSession {
   }
 
   async undo() {
-    this.update(await invoke("undo_edit", { id: this.doc.id }));
+    await this.apply(await invoke("undo_edit", { id: this.doc.id }));
   }
 
   async redo() {
-    this.update(await invoke("redo_edit", { id: this.doc.id }));
+    await this.apply(await invoke("redo_edit", { id: this.doc.id }));
+  }
+
+  /**
+   * Nouvel état après une opération qui peut changer le plan des pages :
+   * le document (`document`, sinon relu) est d'abord transmis aux abonnés
+   * de `onLayout`.
+   */
+  async apply(view, document = null) {
+    if (this.doc && view.layout !== this.view.layout) {
+      const described = document ?? (await invoke("document_view", { id: this.doc.id }));
+      for (const listener of this.layoutListeners) listener(described);
+    }
+    this.update(view);
   }
 
   /** Nouvel état ; les pages dont la version change sont signalées. */

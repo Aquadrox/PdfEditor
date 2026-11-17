@@ -89,6 +89,9 @@ pub struct EditView {
     pub elements: Vec<ElementView>,
     /// Version du contenu de chaque page (à mettre dans l'adresse de l'image).
     pub revisions: Vec<u64>,
+    /// Version du plan des pages : quand elle change, l'interface relit la
+    /// description du document (nombre, ordre et taille des pages).
+    pub layout: u64,
     pub can_undo: bool,
     pub can_redo: bool,
     /// Modifié depuis l'ouverture ou le dernier enregistrement.

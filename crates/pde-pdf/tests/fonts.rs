@@ -5,9 +5,8 @@
 mod common;
 
 use common::{assert_matches_reference, engine, open_simple};
-use pde_core::document::DocumentId;
-use pde_core::edit::{Element, ElementId, Images, StandardFont, TextBox, TextStyle};
-use pde_core::engine::PdfEngine;
+use pde_core::edit::{Element, ElementId, Images, PagePlan, StandardFont, TextBox, TextStyle};
+use pde_core::engine::{OpenedDocument, PdfEngine};
 use pde_core::geometry::Point;
 use pde_core::render::RenderRequest;
 
@@ -26,14 +25,19 @@ fn text(top: f64, content: &str, font: StandardFont, bold: bool) -> Element {
     })
 }
 
-fn place(doc: DocumentId, elements: Vec<Element>) {
+fn place(doc: &OpenedDocument, elements: Vec<Element>) {
     let elements = elements
         .into_iter()
         .enumerate()
         .map(|(i, e)| (ElementId(i as u64 + 1), e))
         .collect();
     engine()
-        .apply_edits(doc, elements, Images::new())
+        .apply_edits(
+            doc.id,
+            PagePlan::identity(doc.info.page_count()),
+            elements,
+            Images::new(),
+        )
         .expect("texte posé");
 }
 
@@ -50,7 +54,7 @@ const EXTENDED: &str = "Łódź, Čeština, Đà Nẵng";
 fn greek_and_cyrillic_are_written_and_read_back() {
     let doc = open_simple();
     place(
-        doc.id,
+        &doc,
         vec![
             text(500.0, GREEK, StandardFont::Sans, false),
             text(450.0, CYRILLIC, StandardFont::Serif, false),
@@ -74,7 +78,7 @@ fn greek_and_cyrillic_are_written_and_read_back() {
 fn each_variant_is_embedded_once_and_only_when_needed() {
     let doc = open_simple();
     place(
-        doc.id,
+        &doc,
         vec![
             text(500.0, GREEK, StandardFont::Sans, false),
             text(450.0, CYRILLIC, StandardFont::Sans, false),
@@ -95,7 +99,7 @@ fn each_variant_is_embedded_once_and_only_when_needed() {
 
     // Un autre style : une deuxième police.
     place(
-        doc.id,
+        &doc,
         vec![
             text(500.0, GREEK, StandardFont::Sans, false),
             text(450.0, GREEK, StandardFont::Sans, true),
@@ -108,7 +112,7 @@ fn each_variant_is_embedded_once_and_only_when_needed() {
 
     // Français seul : polices standard, rien d'embarqué, fichier léger.
     place(
-        doc.id,
+        &doc,
         vec![text(
             500.0,
             "Annexe B jointe, œuvre à 18 €",
@@ -126,7 +130,7 @@ fn each_variant_is_embedded_once_and_only_when_needed() {
 fn embedded_text_starts_at_the_top_of_its_box() {
     let doc = open_simple();
     place(
-        doc.id,
+        &doc,
         vec![text(500.0, "Παράρτημα", StandardFont::Sans, false)],
     );
     let chars = engine().page_text(doc.id, 0).expect("texte").chars;
@@ -150,7 +154,7 @@ fn embedded_text_starts_at_the_top_of_its_box() {
 fn scripts_match_the_reference_rendering() {
     let doc = open_simple();
     place(
-        doc.id,
+        &doc,
         vec![
             text(520.0, GREEK, StandardFont::Sans, false),
             text(480.0, CYRILLIC, StandardFont::Serif, true),

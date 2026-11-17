@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="styles/dialog.css" />
     <link rel="stylesheet" href="styles/settings.css" />
     <link rel="stylesheet" href="styles/edit.css" />
+    <link rel="stylesheet" href="styles/pages.css" />
     <script type="module" src="app.js"></script>
   </head>
   <body>
@@ -60,6 +61,9 @@
       <symbol id="i-al-bottom" viewBox="0 0 24 24"><path d="M2 20h20" /><rect x="6" y="4" width="4" height="12" /><rect x="14" y="9" width="4" height="7" /></symbol>
       <symbol id="i-dist-x" viewBox="0 0 24 24"><path d="M3 3v18M21 3v18" /><rect x="9" y="7" width="6" height="10" /></symbol>
       <symbol id="i-dist-y" viewBox="0 0 24 24"><path d="M3 3h18M3 21h18" /><rect x="7" y="9" width="10" height="6" /></symbol>
+      <symbol id="i-file-plus" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M12 18v-6M9 15h6" /></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2" /><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2" /></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" /></symbol>
       <symbol id="i-file-up" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3" /></symbol>
     </svg>
 
@@ -82,7 +86,7 @@
         <nav class="modes" data-i18n-aria="modes.label">
           <button id="mode-read" class="mode" aria-current="page"><svg class="icon"><use href="#i-read" /></svg><span data-i18n="mode.read"></span></button>
           <button id="mode-edit" class="mode" disabled><svg class="icon"><use href="#i-edit" /></svg><span data-i18n="mode.edit"></span></button>
-          <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-pages" /></svg><span data-i18n="mode.pages"></span></button>
+          <button id="mode-pages" class="mode" disabled><svg class="icon"><use href="#i-pages" /></svg><span data-i18n="mode.pages"></span></button>
           <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="mode.sign"></span></button>
           <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-ai" /></svg><span data-i18n="mode.ai"></span></button>
         </nav>
@@ -151,6 +155,21 @@
         <button id="edit-redo" class="btn ghost icon" disabled data-i18n-label="edit.redo" data-shortcut-hint="redo"><svg class="icon"><use href="#i-redo" /></svg></button>
       </div>
 
+      <div id="pages-toolbar" class="edit-toolbar" role="toolbar" data-i18n-aria="pages.toolbar" hidden>
+        <button id="pages-insert" class="btn ghost" data-i18n-title="pages.insertHint"><svg class="icon"><use href="#i-file-plus" /></svg><span data-i18n="pages.insert"></span></button>
+        <button id="pages-duplicate" class="btn ghost" data-i18n-title="pages.duplicateHint"><svg class="icon"><use href="#i-copy" /></svg><span data-i18n="pages.duplicate"></span></button>
+        <span class="separator" aria-hidden="true"></span>
+        <button id="pages-rotate-left" class="btn ghost icon" data-i18n-label="pages.rotateLeft"><svg class="icon"><use href="#i-rotate-left" /></svg></button>
+        <button id="pages-rotate-right" class="btn ghost icon" data-i18n-label="pages.rotateRight"><svg class="icon"><use href="#i-rotate-right" /></svg></button>
+        <span class="separator" aria-hidden="true"></span>
+        <button id="pages-remove" class="btn ghost" data-i18n-title="pages.removeHint"><svg class="icon"><use href="#i-trash" /></svg><span data-i18n="pages.remove"></span></button>
+        <span id="pages-count" class="pages-count" role="status"></span>
+        <span class="spacer"></span>
+        <span class="pages-hint" data-i18n="pages.hint"></span>
+        <button id="pages-undo" class="btn ghost icon" disabled data-i18n-label="edit.undo" data-shortcut-hint="undo"><svg class="icon"><use href="#i-undo" /></svg></button>
+        <button id="pages-redo" class="btn ghost icon" disabled data-i18n-label="edit.redo" data-shortcut-hint="redo"><svg class="icon"><use href="#i-redo" /></svg></button>
+      </div>
+
       <div id="update-banner" class="banner" role="status" hidden>
         <span id="update-text" class="banner-text"></span>
         <button id="update-notes-toggle" class="btn ghost" aria-expanded="false" data-i18n="updates.notes"></button>
@@ -183,6 +202,8 @@
           <button id="search-next" class="btn ghost icon" data-i18n-label="search.next"><svg class="icon"><use href="#i-down" /></svg></button>
           <button id="search-close" class="btn ghost icon" data-i18n-label="search.close"><svg class="icon"><use href="#i-x" /></svg></button>
         </div>
+
+        <section id="page-grid" class="page-grid" tabindex="0" hidden></section>
 
         <main id="desk" class="desk" tabindex="0" data-i18n-aria="desk.label">
           <section id="home" class="home">

@@ -1,11 +1,13 @@
-//! Éléments ajoutés et historique des opérations (annuler, rétablir),
-//! avec le suivi « modifié depuis le dernier enregistrement ».
+//! Éléments ajoutés, plan des pages et historique des opérations
+//! (annuler, rétablir), avec le suivi « modifié depuis le dernier
+//! enregistrement ». Les opérations sur les pages sont dans `page_ops.rs`.
 
 use std::collections::BTreeMap;
 
-use crate::document::PageIndex;
+use crate::document::{PageIndex, PageSize};
 
 use super::element::{Element, ElementId};
+use super::pages::PagePlan;
 
 /// Opération sur les éléments ; chacune connaît son inverse.
 #[derive(Debug, Clone, PartialEq)]
@@ -26,6 +28,11 @@ pub enum Operation {
     /// Plusieurs opérations faites ensemble (sélection multiple) : une
     /// seule entrée de l'historique, annulée d'un coup.
     Batch(Vec<Operation>),
+    /// Nouveau plan des pages (ordre, pages ajoutées, rotations).
+    Pages {
+        before: PagePlan,
+        after: PagePlan,
+    },
 }
 
 impl Operation {
@@ -42,6 +49,19 @@ impl Operation {
             Operation::Batch(operations) => {
                 Operation::Batch(operations.iter().rev().map(Operation::inverse).collect())
             }
+            Operation::Pages { before, after } => Operation::Pages {
+                before: after,
+                after: before,
+            },
+        }
+    }
+
+    /// L'opération change le plan des pages.
+    fn changes_layout(&self) -> bool {
+        match self {
+            Operation::Pages { .. } => true,
+            Operation::Batch(operations) => operations.iter().any(Operation::changes_layout),
+            _ => false,
         }
     }
 
@@ -53,6 +73,8 @@ impl Operation {
             }
             Operation::Update { before, after, .. } => vec![before.page(), after.page()],
             Operation::Batch(operations) => operations.iter().flat_map(Operation::pages).collect(),
+            // Toutes les pages changent : voir `Change::layout`.
+            Operation::Pages { .. } => Vec::new(),
         };
         pages.sort_unstable();
         pages.dedup();
@@ -64,13 +86,26 @@ impl Operation {
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Change {
     pub pages: Vec<PageIndex>,
+    /// Le plan des pages a changé (nombre, ordre, tailles) : tout le
+    /// document est à redessiner.
+    pub layout: bool,
 }
 
-/// Éléments du document et historique.
+impl Change {
+    /// L'opération n'a rien changé.
+    pub fn is_empty(&self) -> bool {
+        self.pages.is_empty() && !self.layout
+    }
+}
+
+/// Éléments du document, plan des pages et historique.
 #[derive(Debug, Clone, Default)]
 pub struct Edits {
-    elements: BTreeMap<ElementId, Element>,
-    next_id: u64,
+    pub(super) elements: BTreeMap<ElementId, Element>,
+    pub(super) next_id: u64,
+    /// Taille affichée des pages du document d'origine.
+    pub(super) originals: Vec<PageSize>,
+    pub(super) plan: PagePlan,
     /// Opérations faites, chacune avec son numéro (pour l'état enregistré).
     done: Vec<(u64, Operation)>,
     undone: Vec<(u64, Operation)>,
@@ -80,8 +115,32 @@ pub struct Edits {
 }
 
 impl Edits {
+    /// Document sans page connue (tests des éléments seuls).
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Document dont les pages d'origine ont ces tailles affichées.
+    pub fn with_pages(originals: Vec<PageSize>) -> Self {
+        Self {
+            plan: PagePlan::identity(originals.len()),
+            originals,
+            ..Self::default()
+        }
+    }
+
+    pub fn plan(&self) -> &PagePlan {
+        &self.plan
+    }
+
+    /// Taille affichée de chaque page du document arrangé.
+    pub fn page_sizes(&self) -> Vec<PageSize> {
+        self.plan.sizes(&self.originals)
+    }
+
+    /// Taille d'origine de chaque page de l'original.
+    pub fn original_sizes(&self) -> &[PageSize] {
+        &self.originals
     }
 
     pub fn elements(&self) -> impl Iterator<Item = (ElementId, &Element)> {
@@ -185,7 +244,7 @@ impl Edits {
     }
 
     /// Une opération seule reste telle quelle ; aucune : rien n'est gardé.
-    fn record_batch(&mut self, mut operations: Vec<Operation>) -> Change {
+    pub(super) fn record_batch(&mut self, mut operations: Vec<Operation>) -> Change {
         match operations.len() {
             0 => Change::default(),
             1 => self.record(operations.remove(0)),
@@ -247,9 +306,11 @@ impl Edits {
                     self.apply(operation);
                 }
             }
+            Operation::Pages { after, .. } => self.plan = after,
         }
         Change {
             pages: operation.pages(),
+            layout: operation.changes_layout(),
         }
     }
 }

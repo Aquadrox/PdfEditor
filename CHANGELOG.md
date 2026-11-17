@@ -4,6 +4,13 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.14 — 2026-11-17
+
+- Nouveau mode Pages : toutes les pages du document en grille ; ajoutez une page blanche, dupliquez, faites pivoter ou supprimez les pages choisies (clic, Ctrl+clic, Maj+clic, Ctrl+A).
+- Réordonnez les pages en les glissant ; double-cliquez sur une page pour l'ouvrir.
+- Ce que vous avez ajouté sur une page (images, dessins, notes) la suit quand elle est déplacée, copiée ou tournée ; chaque opération s'annule (Ctrl+Z).
+- Les signets du panneau Plan suivent leurs pages quand vous les réordonnez, et la sauvegarde automatique garde l'ordre des pages.
+
 ## 0.0.13 — 2026-11-17
 
 - « Enregistrer sous » propose une copie à côté de l'original, nommée avec un suffixe réglable : « contrat (modifié).pdf ».

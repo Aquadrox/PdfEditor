@@ -1,12 +1,13 @@
 //! Contenu d'une sauvegarde automatique : un dossier par document, avec
-//! `manifest.json` (fichier d'origine, éléments ajoutés) et une image par
+//! `manifest.json` (fichier d'origine, plan des pages s'il a changé,
+//! éléments ajoutés) et une image par
 //! fichier (JPEG tel quel, sinon PNG). Le PDF lui-même n'est jamais copié.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use pde_core::edit::{Element, ImageData, ImageId, Images};
+use pde_core::edit::{Element, ImageData, ImageId, Images, PagePlan};
 use pde_core::render::Bitmap;
 use serde::{Deserialize, Serialize};
 
@@ -15,8 +16,11 @@ use crate::files::write_atomic;
 use crate::images::decode;
 use crate::page_png::encode_png;
 
-/// Version du format : une version inconnue n'est pas relue.
+/// Version du format : une version inconnue n'est pas relue. Le format 2
+/// ajoute le plan des pages ; il n'est écrit que si ce plan a changé, pour
+/// qu'une version précédente de l'application ne l'ignore pas sans le dire.
 const FORMAT: u32 = 1;
+const FORMAT_WITH_PAGES: u32 = 2;
 const MANIFEST: &str = "manifest.json";
 
 /// État d'un document à sauvegarder (pris sous le verrou des documents).
@@ -26,7 +30,10 @@ pub struct Snapshot {
     pub file_name: String,
     /// SHA-256 du PDF d'origine, en hexadécimal.
     pub digest: String,
+    /// Pages du document d'origine.
     pub page_count: usize,
+    /// Plan des pages, s'il diffère de l'original.
+    pub pages: Option<PagePlan>,
     /// Éléments, coordonnées de `pde-core` (origine en bas).
     pub elements: Vec<Element>,
     /// Images désignées par les éléments.
@@ -41,6 +48,7 @@ pub struct Recovered {
     pub digest: String,
     pub page_count: usize,
     pub saved_at: u64,
+    pub pages: Option<PagePlan>,
     pub elements: Vec<Element>,
     pub images: Images,
 }
@@ -54,6 +62,8 @@ struct Manifest {
     page_count: usize,
     /// Secondes depuis 1970.
     saved_at: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pages: Option<PagePlan>,
     elements: Vec<Element>,
     images: Vec<u64>,
 }
@@ -85,12 +95,17 @@ pub fn write(dir: &Path, snapshot: &Snapshot, saved_at: u64) -> Result<(), AppEr
         write_atomic(&file, &bytes)?;
     }
     let manifest = Manifest {
-        format: FORMAT,
+        format: if snapshot.pages.is_some() {
+            FORMAT_WITH_PAGES
+        } else {
+            FORMAT
+        },
         path: snapshot.path.clone(),
         file_name: snapshot.file_name.clone(),
         source_sha256: snapshot.digest.clone(),
         page_count: snapshot.page_count,
         saved_at,
+        pages: snapshot.pages.clone(),
         elements: snapshot.elements.clone(),
         images: snapshot.images.keys().map(|id| id.0).collect(),
     };
@@ -124,7 +139,7 @@ fn read_manifest(dir: &Path) -> Result<Manifest, AppError> {
     let bytes = fs::read(dir.join(MANIFEST)).map_err(io_error)?;
     let manifest: Manifest = serde_json::from_slice(&bytes)
         .map_err(|e| invalid(format!("sauvegarde automatique illisible : {e}")))?;
-    if manifest.format != FORMAT {
+    if manifest.format != FORMAT && manifest.format != FORMAT_WITH_PAGES {
         return Err(invalid(format!(
             "sauvegarde automatique d'un autre format ({})",
             manifest.format
@@ -153,6 +168,7 @@ pub fn read(dir: &Path) -> Result<Recovered, AppError> {
         digest: manifest.source_sha256,
         page_count: manifest.page_count,
         saved_at: manifest.saved_at,
+        pages: manifest.pages,
         elements: manifest.elements,
         images,
     })
@@ -177,6 +193,10 @@ mod tests {
             file_name: "contrat.pdf".into(),
             digest: "ab".repeat(32),
             page_count: 3,
+            pages: Some(PagePlan::new(vec![
+                pde_core::edit::PlannedPage::original(2),
+                pde_core::edit::PlannedPage::original(0),
+            ])),
             elements: vec![
                 Element::Text(TextBox {
                     page: 0,
@@ -218,6 +238,7 @@ mod tests {
         );
         assert_eq!((r.page_count, r.saved_at), (3, 1_700_000_000));
         assert_eq!(r.elements, s.elements);
+        assert_eq!(r.pages, s.pages);
         // Pixels relus à l'identique (PNG sans perte).
         assert_eq!(r.images[&ImageId(2)], s.images[&ImageId(2)]);
         assert_eq!(
@@ -230,6 +251,21 @@ mod tests {
             ))
         );
         fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn plan_only_when_pages_changed_with_its_format() {
+        let dir = temp("format");
+        let mut s = snapshot();
+        write(&dir, &s, 1).unwrap();
+        let text = fs::read_to_string(dir.join(MANIFEST)).unwrap();
+        assert!(text.contains("\"format\": 2"));
+        s.pages = None;
+        write(&dir, &s, 1).unwrap();
+        let text = fs::read_to_string(dir.join(MANIFEST)).unwrap();
+        assert!(text.contains("\"format\": 1") && !text.contains("\"pages\""));
+        assert_eq!(read(&dir).unwrap().pages, None);
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]
@@ -257,7 +293,7 @@ mod tests {
         let text = fs::read_to_string(dir.join(MANIFEST)).unwrap();
         fs::write(
             dir.join(MANIFEST),
-            text.replace("\"format\": 1", "\"format\": 9"),
+            text.replace("\"format\": 2", "\"format\": 9"),
         )
         .unwrap();
         assert!(read(&dir).unwrap_err().message.contains("autre format"));

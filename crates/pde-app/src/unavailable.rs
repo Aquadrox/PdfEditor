@@ -2,7 +2,7 @@
 //! démarre quand même et explique le problème à chaque ouverture.
 
 use pde_core::document::{DocumentId, PageIndex};
-use pde_core::edit::{Element, ElementId, Images};
+use pde_core::edit::{Element, ElementId, Images, PagePlan};
 use pde_core::engine::{EngineError, OpenedDocument, PdfEngine, Placed};
 use pde_core::render::{Bitmap, RenderRequest};
 use pde_core::text::PageText;
@@ -33,6 +33,7 @@ impl PdfEngine for UnavailableEngine {
     fn apply_edits(
         &self,
         _: DocumentId,
+        _: PagePlan,
         _: Vec<(ElementId, Element)>,
         _: Images,
     ) -> Result<Vec<Placed>, EngineError> {

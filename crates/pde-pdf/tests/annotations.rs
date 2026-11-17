@@ -7,10 +7,10 @@ mod common;
 use common::{assert_matches_reference, engine, open_simple};
 use pde_core::document::DocumentId;
 use pde_core::edit::{
-    Area, Color, Element, ElementId, Images, InkBox, MarkKind, MarkupBox, NoteBox, ShapeBox,
-    ShapeKind,
+    Area, Color, Element, ElementId, Images, InkBox, MarkKind, MarkupBox, NoteBox, PagePlan,
+    ShapeBox, ShapeKind,
 };
-use pde_core::engine::PdfEngine;
+use pde_core::engine::{OpenedDocument, PdfEngine};
 use pde_core::geometry::Point;
 use pde_core::render::{Bitmap, RenderRequest};
 
@@ -38,14 +38,19 @@ fn shape(page: usize, kind: ShapeKind, start: (f64, f64), end: (f64, f64)) -> Sh
     }
 }
 
-fn place(doc: DocumentId, elements: Vec<Element>) {
+fn place(doc: &OpenedDocument, elements: Vec<Element>) {
     let elements = elements
         .into_iter()
         .enumerate()
         .map(|(i, e)| (ElementId(i as u64 + 1), e))
         .collect();
     engine()
-        .apply_edits(doc, elements, Images::new())
+        .apply_edits(
+            doc.id,
+            PagePlan::identity(doc.info.page_count()),
+            elements,
+            Images::new(),
+        )
         .expect("annotations posées");
 }
 
@@ -79,7 +84,7 @@ fn rectangle_outline_and_fill() {
     let mut filled = shape(0, ShapeKind::Rectangle, (300.0, 400.0), (400.0, 500.0));
     filled.filled = true;
     place(
-        doc.id,
+        &doc,
         vec![
             Element::Shape(shape(
                 0,
@@ -102,7 +107,7 @@ fn rectangle_outline_and_fill() {
 fn ellipse_follows_its_curve() {
     let doc = open_simple();
     place(
-        doc.id,
+        &doc,
         vec![Element::Shape(shape(
             0,
             ShapeKind::Ellipse,
@@ -123,7 +128,7 @@ fn ellipse_follows_its_curve() {
 fn arrow_has_a_filled_head_at_its_end() {
     let doc = open_simple();
     place(
-        doc.id,
+        &doc,
         vec![Element::Shape(shape(
             0,
             ShapeKind::Arrow,
@@ -152,7 +157,7 @@ fn ink_stroke_passes_through_its_points() {
         width: 10.0,
     };
     place(
-        doc.id,
+        &doc,
         vec![
             Element::Ink(InkBox {
                 page: 0,
@@ -235,7 +240,7 @@ fn assert_highlighted(page: &Bitmap, area: Area, step: &str) {
 fn highlight_colours_the_background_and_keeps_text_dark() {
     let doc = open_simple();
     let area = word_area(doc.id);
-    place(doc.id, vec![markup(MarkKind::Highlight, area)]);
+    place(&doc, vec![markup(MarkKind::Highlight, area)]);
     assert_highlighted(&render(doc.id, 0), area, "avant enregistrement");
 
     // Bords fractionnaires relevés sous Windows (boîtes de caractères de
@@ -245,9 +250,9 @@ fn highlight_colours_the_background_and_keeps_text_dark() {
         width: 83.04,
         height: 32.78,
     };
-    place(doc.id, vec![markup(MarkKind::Highlight, windows_area)]);
+    place(&doc, vec![markup(MarkKind::Highlight, windows_area)]);
     assert_highlighted(&render(doc.id, 0), windows_area, "bords fractionnaires");
-    place(doc.id, vec![markup(MarkKind::Highlight, area)]);
+    place(&doc, vec![markup(MarkKind::Highlight, area)]);
 
     // Toujours vrai après enregistrement (mode de fusion écrit dans le PDF).
     let bytes = engine().save(doc.id).expect("enregistrement");
@@ -268,7 +273,7 @@ fn underline_and_strike_out_draw_thin_lines() {
         color: RED,
     };
     let band = under.band(&area);
-    place(doc.id, vec![Element::Markup(under.clone())]);
+    place(&doc, vec![Element::Markup(under.clone())]);
     let page = render(doc.id, 0);
     let mid_x = (band.min().x + band.max().x) as u32 / 2;
     let mid_y = ((band.min().y + band.max().y) / 2.0).round() as u32;
@@ -276,7 +281,7 @@ fn underline_and_strike_out_draw_thin_lines() {
 
     under.mark = MarkKind::StrikeOut;
     let band = under.band(&area);
-    place(doc.id, vec![Element::Markup(under)]);
+    place(&doc, vec![Element::Markup(under)]);
     let page = render(doc.id, 0);
     let mid_y = ((band.min().y + band.max().y) / 2.0).round() as u32;
     assert_near(color_at(&page, mid_x + 1, mid_y), RED_RGB, 40);
@@ -288,7 +293,7 @@ fn shapes_stay_where_drawn_on_a_rotated_page() {
     let doc = open_simple();
     // Page 2 affichée en 842 × 595 : rectangle en haut à gauche de l'écran.
     place(
-        doc.id,
+        &doc,
         vec![Element::Shape(shape(
             1,
             ShapeKind::Rectangle,
@@ -322,7 +327,7 @@ fn annotations_match_the_reference_rendering() {
         })
         .collect();
     place(
-        doc.id,
+        &doc,
         vec![
             markup(MarkKind::Highlight, area),
             Element::Shape(shape(
@@ -362,7 +367,7 @@ fn note(page: usize, x: f64, top: f64) -> Element {
 #[test]
 fn note_is_a_real_pdf_annotation_with_its_comment_and_author() {
     let doc = open_simple();
-    place(doc.id, vec![note(0, 300.0, 600.0)]);
+    place(&doc, vec![note(0, 300.0, 600.0)]);
     // Icône dessinée à sa place, rien autour.
     let page = render(doc.id, 0);
     let icon: Vec<[u8; 3]> = (302..318)
@@ -392,8 +397,8 @@ fn note_is_a_real_pdf_annotation_with_its_comment_and_author() {
 #[test]
 fn removing_a_note_removes_its_annotation() {
     let doc = open_simple();
-    place(doc.id, vec![note(0, 300.0, 600.0)]);
-    place(doc.id, Vec::new());
+    place(&doc, vec![note(0, 300.0, 600.0)]);
+    place(&doc, Vec::new());
     let bytes = engine().save(doc.id).expect("enregistrement");
     assert!(!String::from_utf8_lossy(&bytes).contains("A verifier"));
     engine().close(doc.id);
@@ -403,7 +408,7 @@ fn removing_a_note_removes_its_annotation() {
 fn note_icon_stays_where_placed_on_a_rotated_page() {
     let doc = open_simple();
     // Page 2 affichée en 842 × 595.
-    place(doc.id, vec![note(1, 700.0, 100.0)]);
+    place(&doc, vec![note(1, 700.0, 100.0)]);
     let page = render(doc.id, 1);
     let icon: Vec<[u8; 3]> = (702..718)
         .flat_map(|x| (82..98).map(move |y| (x, y)))
