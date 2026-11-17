@@ -7,6 +7,7 @@
 pub mod document;
 pub mod edit;
 pub mod image;
+pub mod pages;
 pub mod recovery;
 pub mod settings;
 pub mod updates;

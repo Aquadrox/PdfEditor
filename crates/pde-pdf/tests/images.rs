@@ -10,8 +10,8 @@ use common::{assert_matches_reference, engine, open_simple};
 use image::ExtendedColorType;
 use image::codecs::jpeg::JpegEncoder;
 use pde_core::document::DocumentId;
-use pde_core::edit::{Element, ElementId, ImageAsset, ImageBox, ImageId, Images};
-use pde_core::engine::PdfEngine;
+use pde_core::edit::{Element, ElementId, ImageAsset, ImageBox, ImageId, Images, PagePlan};
+use pde_core::engine::{OpenedDocument, PdfEngine};
 use pde_core::geometry::Point;
 use pde_core::render::{Bitmap, RenderRequest};
 
@@ -63,14 +63,19 @@ fn images(list: Vec<(u64, Arc<ImageAsset>)>) -> Images {
     list.into_iter().map(|(id, a)| (ImageId(id), a)).collect()
 }
 
-fn place(doc: DocumentId, frames: Vec<ImageBox>, images: Images) {
+fn place(doc: &OpenedDocument, frames: Vec<ImageBox>, images: Images) {
     let elements = frames
         .into_iter()
         .enumerate()
         .map(|(i, f)| (ElementId(i as u64 + 1), Element::Image(f)))
         .collect();
     engine()
-        .apply_edits(doc, elements, images)
+        .apply_edits(
+            doc.id,
+            PagePlan::identity(doc.info.page_count()),
+            elements,
+            images,
+        )
         .expect("images posées");
 }
 
@@ -102,7 +107,7 @@ fn transparent_pixels_show_the_page_below() {
     // Moitié gauche rouge, moitié droite transparente.
     let asset = pixels(20, 10, |x, _| if x < 10 { RED } else { CLEAR });
     place(
-        doc.id,
+        &doc,
         vec![frame(0, 100.0, 500.0, (200.0, 100.0), 1)],
         images(vec![(1, asset)]),
     );
@@ -120,7 +125,7 @@ fn opacity_lets_the_page_show_through() {
     let mut jpeg_half = frame(0, 300.0, 500.0, (100.0, 100.0), 2);
     jpeg_half.opacity = 0.5;
     place(
-        doc.id,
+        &doc,
         vec![half, jpeg_half],
         images(vec![
             (1, pixels(4, 4, |_, _| RED)),
@@ -149,7 +154,7 @@ fn jpeg_is_drawn_and_kept_without_recompression() {
     let asset = Arc::new(ImageAsset::jpeg(400, 400, bytes).unwrap());
     let blue = jpeg(16, 16, [0, 0, 255]);
     place(
-        doc.id,
+        &doc,
         vec![
             frame(0, 72.0, 400.0, (200.0, 200.0), 1),
             frame(0, 350.0, 400.0, (100.0, 100.0), 2),
@@ -176,7 +181,7 @@ fn rotation_turns_the_image_inside_its_frame() {
     turned.rotation = 1;
     let mut upside_down = frame(0, 350.0, 500.0, (100.0, 200.0), 1);
     upside_down.rotation = 2;
-    place(doc.id, vec![turned, upside_down], images(vec![(1, asset)]));
+    place(&doc, vec![turned, upside_down], images(vec![(1, asset)]));
     let page = render(doc.id, 0);
     assert_near(color_at(&page, 250, 450), [255, 0, 0], 8);
     assert_near(color_at(&page, 150, 450), [0, 0, 255], 8);
@@ -192,7 +197,7 @@ fn image_stays_upright_on_a_rotated_page() {
     // Page 2 affichée en 842 × 595 : haut rouge, bas bleu, à l'écran aussi.
     let asset = pixels(10, 10, |_, y| if y < 5 { RED } else { BLUE });
     place(
-        doc.id,
+        &doc,
         vec![frame(1, 50.0, 560.0, (100.0, 100.0), 1)],
         images(vec![(1, asset)]),
     );
@@ -210,7 +215,7 @@ fn transparency_and_opacity_survive_saving() {
     let mut jpeg_half = frame(0, 350.0, 500.0, (100.0, 100.0), 2);
     jpeg_half.opacity = 0.5;
     place(
-        doc.id,
+        &doc,
         vec![frame(0, 100.0, 500.0, (200.0, 100.0), 1), jpeg_half],
         images(vec![(1, asset), (2, jpeg(16, 16, [0, 0, 255]))]),
     );
@@ -228,7 +233,7 @@ fn transparency_and_opacity_survive_saving() {
 fn missing_image_is_refused_and_display_unchanged() {
     let doc = open_simple();
     place(
-        doc.id,
+        &doc,
         vec![frame(0, 100.0, 500.0, (100.0, 100.0), 1)],
         images(vec![(1, pixels(2, 2, |_, _| RED))]),
     );
@@ -238,7 +243,12 @@ fn missing_image_is_refused_and_display_unchanged() {
     )];
     assert!(
         engine()
-            .apply_edits(doc.id, elements, Images::new())
+            .apply_edits(
+                doc.id,
+                PagePlan::identity(doc.info.page_count()),
+                elements,
+                Images::new()
+            )
             .is_err()
     );
     assert_near(color_at(&render(doc.id, 0), 150, 450), [255, 0, 0], 8);
@@ -253,7 +263,7 @@ fn images_match_the_reference_rendering() {
     faded.opacity = 0.6;
     faded.rotation = 3;
     place(
-        doc.id,
+        &doc,
         vec![frame(0, 72.0, 520.0, (200.0, 200.0), 1), faded],
         images(vec![(1, checker), (2, jpeg(32, 18, [20, 110, 100]))]),
     );

@@ -71,7 +71,9 @@ impl Viewer {
                     path: open.path.clone(),
                     file_name,
                     digest: open.digest.clone(),
-                    page_count: open.info.page_count(),
+                    page_count: open.original.page_count(),
+                    pages: (!open.edits.plan().is_identity(open.original.page_count()))
+                        .then(|| open.edits.plan().clone()),
                     elements,
                     images,
                 },
@@ -88,12 +90,13 @@ impl Viewer {
     }
 
     /// Réapplique une sauvegarde au document `id`, qui doit être le même
-    /// fichier (même empreinte, même nombre de pages). Chaque élément devient
-    /// une opération ordinaire, annulable.
+    /// fichier (même empreinte, même nombre de pages). Le plan des pages et
+    /// chaque élément deviennent des opérations ordinaires, annulables.
     pub fn restore(&self, id: u64, recovered: &Recovered) -> Result<EditView, AppError> {
         self.with_document(id, |open, doc| {
-            let page_count = open.info.page_count();
-            if open.digest != recovered.digest || page_count != recovered.page_count {
+            if open.digest != recovered.digest
+                || open.original.page_count() != recovered.page_count
+            {
                 return Err(invalid(format!(
                     "« {} » a changé depuis la sauvegarde automatique : ses modifications ne peuvent pas y être reprises",
                     recovered.file_name
@@ -106,8 +109,15 @@ impl Viewer {
                 open.images.insert(new, Arc::clone(asset));
                 renamed.insert(*old, new);
             }
-            let mut pages = Vec::new();
             let mut added = 0;
+            let mut layout = false;
+            if let Some(plan) = &recovered.pages {
+                let change = open.edits.restore_plan(plan.clone()).map_err(invalid)?;
+                layout = change.layout;
+                added += usize::from(layout);
+            }
+            let page_count = open.edits.plan().len();
+            let mut pages = Vec::new();
             for element in &recovered.elements {
                 let mut element = element.clone();
                 if let Element::Image(image) = &mut element {
@@ -124,7 +134,7 @@ impl Viewer {
             }
             pages.sort_unstable();
             pages.dedup();
-            if let Err(e) = self.redraw(open, doc, Change { pages }) {
+            if let Err(e) = self.redraw(open, doc, Change { pages, layout }) {
                 (0..added).for_each(|_| {
                     open.edits.rollback();
                 });
@@ -211,6 +221,32 @@ mod tests {
     }
 
     #[test]
+    fn page_plan_is_saved_and_restored_before_the_elements() {
+        let s = Session::new("reprise-pages");
+        // Rien sur les pages : pas de plan dans la sauvegarde.
+        s.viewer.add_element(s.id, text("a")).unwrap();
+        assert!(s.viewer.autosave_work().pending[0].snapshot.pages.is_none());
+        // Page 1 (avec son texte) placée après la page 2.
+        s.viewer.move_pages(s.id, &[0], 2).unwrap();
+        let snapshot = s.viewer.autosave_work().pending.remove(0).snapshot;
+        assert_eq!(snapshot.page_count, 2);
+        assert!(snapshot.pages.is_some());
+
+        let reopened = s
+            .viewer
+            .open_file(&s.dir.join("contrat.pdf"), None)
+            .unwrap()
+            .id;
+        let view = s.viewer.restore(reopened, &recovered(snapshot)).unwrap();
+        assert_eq!(view.layout, 1);
+        assert_eq!(view.elements[0].element.page(), 1);
+        // Annuler défait l'élément, puis le plan.
+        s.viewer.undo(reopened).unwrap();
+        let view = s.viewer.undo(reopened).unwrap();
+        assert!(!view.can_undo && view.layout == 2);
+    }
+
+    #[test]
     fn a_changed_file_is_refused() {
         let s = Session::new("reprise-refusee");
         s.viewer.add_element(s.id, text("a")).unwrap();
@@ -238,6 +274,7 @@ mod tests {
             digest: snapshot.digest,
             page_count: snapshot.page_count,
             saved_at: 1,
+            pages: snapshot.pages,
             elements: snapshot.elements,
             images: snapshot.images,
         }

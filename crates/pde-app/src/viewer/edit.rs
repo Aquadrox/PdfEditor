@@ -134,7 +134,7 @@ impl Viewer {
         doc: DocumentId,
         change: Change,
     ) -> Result<(), AppError> {
-        if change.pages.is_empty() {
+        if change.is_empty() {
             return Ok(());
         }
         self.redraw(open, doc, change).inspect_err(|_| {
@@ -142,7 +142,8 @@ impl Viewer {
         })
     }
 
-    /// Pose tous les éléments et marque les pages touchées comme changées.
+    /// Range les pages, pose tous les éléments et marque les pages touchées
+    /// comme changées (toutes si le plan des pages a changé).
     pub(super) fn redraw(
         &self,
         open: &mut OpenDocument,
@@ -154,10 +155,17 @@ impl Viewer {
             .elements()
             .map(|(id, e)| (id, e.clone()))
             .collect();
-        let placed = self
-            .engine
-            .apply_edits(doc, elements, open.images.clone())?;
+        let placed = self.engine.apply_edits(
+            doc,
+            open.edits.plan().clone(),
+            elements,
+            open.images.clone(),
+        )?;
         open.placed = placed.into_iter().map(|p| (p.id, p.bounds)).collect();
+        if change.layout {
+            self.relayout(open, doc);
+            return Ok(());
+        }
         for page in change.pages {
             if let Some(revision) = open.revisions.get_mut(page) {
                 *revision += 1;
@@ -196,6 +204,7 @@ pub(super) fn view(open: &OpenDocument) -> EditView {
     EditView {
         elements,
         revisions: open.revisions.clone(),
+        layout: open.layout,
         can_undo: open.edits.can_undo(),
         can_redo: open.edits.can_redo(),
         dirty: open.edits.is_dirty(),

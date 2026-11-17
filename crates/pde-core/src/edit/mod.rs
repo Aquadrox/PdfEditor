@@ -1,8 +1,9 @@
-//! Modifications du document (v0.2 : éléments ajoutés, textes, images et
-//! annotations).
+//! Modifications du document : éléments ajoutés (textes, images,
+//! annotations) et plan des pages (ordre, pages blanches, rotations).
 //!
-//! Le PDF d'origine n'est jamais modifié : les éléments ajoutés forment une
-//! liste, posée par le moteur sur une copie du document à chaque changement.
+//! Le PDF d'origine n'est jamais modifié : le plan des pages et la liste des
+//! éléments sont appliqués par le moteur à une copie du document à chaque
+//! changement.
 //! L'historique garde chaque opération et son inverse (annuler, rétablir).
 
 mod annotation;
@@ -11,6 +12,9 @@ mod history;
 mod image;
 mod layout;
 mod note;
+mod page_ops;
+mod pages;
+mod rotate;
 
 pub use annotation::{
     Area, FILL_OPACITY, InkBox, MAX_INK_POINTS, MAX_MARKUP_AREAS, MarkKind, MarkupBox,
@@ -25,3 +29,5 @@ pub use image::{
 };
 pub use layout::{leading, wrap};
 pub use note::{MAX_AUTHOR_CHARS, MAX_NOTE_CHARS, NOTE_SIZE, NoteBox};
+pub use pages::{BLANK_SIDE_RANGE, MAX_PAGES, PagePlan, PageSource, PlannedPage, check_blank_size};
+pub use rotate::{can_rotate, rotated};

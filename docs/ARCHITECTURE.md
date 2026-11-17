@@ -93,6 +93,21 @@ rectangle dans la page…) et produire son **inverse** ; les tests vérifient
 éléments (`pde-core::edit`) : l'image affichée est exactement ce qui sera
 enregistré, et annuler revient à reposer la liste précédente.
 
+Pages (P-01, P-02, `pde-core::edit::pages`) : un **plan des pages** décrit
+le document arrangé à partir de l'original (page d'origine ou page blanche,
+quarts de tour ajoutés). Insérer, supprimer, dupliquer, déplacer et pivoter
+sont des opérations de l'historique comme les autres ; les éléments ajoutés
+suivent leur page (déplacés, copiés, retirés, tournés avec elle — sauf le
+texte ajouté, souligné ou barré, qui refuse encore la rotation). `pde-pdf`
+(`arrange.rs`) range les pages avant d'y poser les éléments : la plus longue
+suite de pages d'origine déjà dans le bon ordre reste formée des mêmes objets
+PDF (signets, liens internes et champs de formulaire les suivent) ; les
+autres sont des copies prises dans un second exemplaire de l'original.
+PDFium-render n'offre pas de déplacement sans recopie hors `unsafe`. Quand
+le plan change, `pde-app` décrit à nouveau le document (tailles, signets
+renvoyés à leur nouvelle place) et l'interface refait la visionneuse, les
+miniatures et la grille du mode Pages.
+
 Images ajoutées (E-02) : `pde-app::images` reconnaît le format au contenu
 (PNG, JPEG, WebP, crate `image` en Rust pur), borne la taille avant de
 décoder (64 Mo, 60 mégapixels) et applique l'orientation EXIF. Un JPEG est
@@ -114,7 +129,8 @@ couleur), recréées à chaque pose comme le reste.
 
 Sauvegarde automatique (F-02, `pde-app::recovery`) : chaque lancement écrit
 dans `recovery/<session>/doc-<n>/` (dossier de données) un `manifest.json`
-(chemin, empreinte SHA-256 du PDF d'origine, éléments) et ses images ; le
+(chemin, empreinte SHA-256 du PDF d'origine, plan des pages s'il a changé,
+éléments) et ses images ; le
 PDF n'est jamais copié, un document protégé par mot de passe n'est jamais
 sauvegardé. La session est verrouillée (`session.lock`, `File::try_lock`)
 tant que le lancement tourne : au démarrage, une session qu'on peut

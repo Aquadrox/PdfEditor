@@ -5,6 +5,7 @@
 //! « acteur »). Le reste de l'application ne voit que le trait
 //! [`pde_core::engine::PdfEngine`].
 
+mod arrange;
 mod convert;
 mod display;
 mod engine;

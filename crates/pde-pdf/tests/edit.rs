@@ -4,7 +4,7 @@
 mod common;
 
 use common::{SIMPLE, engine, open_simple};
-use pde_core::edit::{Align, Color, Element, ElementId, Images, TextBox, TextStyle};
+use pde_core::edit::{Align, Color, Element, ElementId, Images, PagePlan, TextBox, TextStyle};
 use pde_core::engine::PdfEngine;
 use pde_core::geometry::Point;
 use pde_core::render::RenderRequest;
@@ -28,6 +28,7 @@ fn added_text_is_drawn_and_readable() {
     let placed = engine()
         .apply_edits(
             doc.id,
+            PagePlan::identity(doc.info.page_count()),
             vec![(
                 ElementId(1),
                 text_box(0, 100.0, 500.0, 300.0, "Annexe B jointe"),
@@ -59,6 +60,7 @@ fn long_text_wraps_inside_its_box() {
     let placed = engine()
         .apply_edits(
             doc.id,
+            PagePlan::identity(doc.info.page_count()),
             vec![(ElementId(1), text_box(0, 72.0, 400.0, 120.0, words))],
             Images::new(),
         )
@@ -84,6 +86,7 @@ fn text_stays_upright_on_a_rotated_page() {
     engine()
         .apply_edits(
             doc.id,
+            PagePlan::identity(doc.info.page_count()),
             vec![(ElementId(1), text_box(1, 50.0, 560.0, 400.0, "Droit"))],
             Images::new(),
         )
@@ -118,6 +121,7 @@ fn accents_euro_and_ligatures_survive() {
     engine()
         .apply_edits(
             doc.id,
+            PagePlan::identity(doc.info.page_count()),
             vec![(ElementId(1), text_box(0, 72.0, 300.0, 450.0, sample))],
             Images::new(),
         )
@@ -133,12 +137,18 @@ fn removing_every_element_returns_to_the_original() {
     engine()
         .apply_edits(
             doc.id,
+            PagePlan::identity(doc.info.page_count()),
             vec![(ElementId(1), text_box(0, 72.0, 300.0, 300.0, "Temporaire"))],
             Images::new(),
         )
         .unwrap();
     engine()
-        .apply_edits(doc.id, Vec::new(), Images::new())
+        .apply_edits(
+            doc.id,
+            PagePlan::identity(doc.info.page_count()),
+            Vec::new(),
+            Images::new(),
+        )
         .unwrap();
     let text = engine().page_text(doc.id, 0).unwrap().text();
     assert!(!text.contains("Temporaire"));
@@ -152,6 +162,7 @@ fn saved_document_reopens_with_the_added_text() {
     engine()
         .apply_edits(
             doc.id,
+            PagePlan::identity(doc.info.page_count()),
             vec![(
                 ElementId(1),
                 text_box(0, 72.0, 300.0, 300.0, "Signé à Lyon"),
@@ -208,6 +219,7 @@ fn rendering_matches_the_reference_image() {
     engine()
         .apply_edits(
             doc.id,
+            PagePlan::identity(doc.info.page_count()),
             vec![
                 (
                     ElementId(1),
@@ -269,6 +281,7 @@ fn saved_protected_document_keeps_its_password() {
     engine()
         .apply_edits(
             doc.id,
+            PagePlan::identity(doc.info.page_count()),
             vec![(
                 ElementId(1),
                 text_box(0, 72.0, 300.0, 300.0, "Confidentiel"),
