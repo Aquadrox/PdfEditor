@@ -77,6 +77,10 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ⬜ Estimation du coût, confirmation, consommation, plafond (IA-03)
 - ⬜ Panneau IA : analyse sur sélection / pages / document (IA-04)
 - ⬜ Questions sur le document avec citations de pages (IA-05)
+- ⬜ Catalogue des actions (`pde-app::actions`) : chaque action de l'éditeur décrite une seule fois (nom, explication, paramètres en JSON Schema, contrôle, exécution annulable) ; il sert à la palette de commandes, à l'aide « Comment faire ? », aux outils de l'IA et plus tard au serveur MCP — une action ajoutée à l'éditeur est aussitôt connue de tous
+- ⬜ Palette de commandes Ctrl+K et « Comment faire ? », sans IA (V-08)
+- ⬜ Assistant d'actions (IA-15) : sélection + demande → appel d'outils de l'API compatible OpenAI (`tools`) → actions proposées en aperçu, Appliquer / Refuser ; ou explication avec l'outil montré ; repli sur « Comment faire ? » avec un modèle qui n'appelle pas d'outils
+- ⬜ Recettes intégrées et personnelles (IA-16)
 
 ## v0.6 — IA : traduction
 
@@ -89,6 +93,7 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ⬜ Modification par consigne, différences, acceptation bloc par bloc, annulable (IA-09)
 - ⬜ Anonymisation assistée (IA-10)
 - ⬜ Annulation d'une action en cours (IA-12)
+- ⬜ Serveur MCP local optionnel, sur le catalogue des actions (IA-17)
 
 ## v0.8 — Cycle de signature
 

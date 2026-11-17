@@ -14,6 +14,7 @@ les tests. Priorité : **M** indispensable à la v1.0 · **S** souhaitable · **
 | V-05 | Sélection, copie et recherche de texte (occurrences surlignées, suivante / précédente) | M |
 | V-06 | Plusieurs documents ouverts (onglets) | S |
 | V-07 | Mode présentation, mode sombre du document (inversion à l'affichage seulement) | P |
+| V-08 | Palette de commandes (Ctrl+K) : toutes les actions de l'éditeur par leur nom, avec leur raccourci ; « Comment faire ? » trouve l'outil et le montre dans la barre, sans IA | S |
 
 ## E — Édition
 
@@ -108,6 +109,9 @@ Aucune modification n'est appliquée sans aperçu ni accord de l'utilisateur.
 | IA-12 | Annulation d'une action en cours ; réponses affichées au fil de l'eau | S |
 | IA-13 | Pages scannées : reconnaissance du texte (OCR local, ou modèle IA avec vision) | P |
 | IA-14 | Remplissage assisté de formulaire | P |
+| IA-15 | **Assistant d'actions** : sur une sélection (zone, texte, pages) ou le document, une demande en langage courant, écrite ou dictée (« caviarde-moi ça », « masque ce numéro », « surligne toutes les dates », « tourne les pages scannées »). L'IA répond par des **actions proposées**, tirées du catalogue de l'éditeur, affichées en aperçu sur la page et appliquées seulement sur accord (une seule annulation) ; ou elle explique comment faire et montre l'outil dans la barre. Elle distingue masquer (un aplat, le contenu reste dans le fichier) et caviarder (suppression réelle) et le dit | M |
+| IA-16 | **Recettes** (compétences sur mesure) : une consigne enregistrée avec les seules actions qu'elle peut proposer (« Anonymiser selon le RGPD », « Préparer pour signature », « Relire les montants ») ; recettes intégrées et personnelles, modifiables, exportables en fichier pour les partager | S |
+| IA-17 | **Serveur MCP local**, désactivé par défaut : le même catalogue d'actions offert aux assistants externes (Claude Desktop, autres clients MCP) sur le document ouvert ; lecture seule par défaut, chaque modification confirmée dans PdfEditor | P |
 
 ## A — Android (v1.1)
 

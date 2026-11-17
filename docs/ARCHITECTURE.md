@@ -220,6 +220,61 @@ Portée (sélection | pages | tout)
   seuil, sans confirmation ; documents signés : modification IA refusée tant
   qu'elle invaliderait une signature.
 
+### Assistant d'actions (IA-15 à IA-17)
+
+Demander à l'IA « caviarde-moi ça » sur une zone choisie : elle propose
+l'action, ou explique comment la faire. Méthode retenue : un **catalogue
+d'actions** unique et l'**appel d'outils** (function calling) de l'API
+compatible OpenAI ; les « compétences » sont des **recettes** ; MCP n'est
+qu'un adaptateur de plus sur le même catalogue.
+
+```
+Sélection (page, zone, texte) + demande de l'utilisateur
+  → recette éventuelle : consigne + actions permises            pde-ai
+  → contexte : demande, texte de la sélection (donnée balisée),
+    outils = actions permises du catalogue (JSON Schema)        pde-app::actions
+  → ChatModel avec `tools` → appels d'outils proposés
+  → contrôle : schéma, portée (pages et zones de la sélection),
+    action permise par la recette ; sinon rejeté
+  → aperçu sur la page (zones en pointillés) + texte d'explication
+  → Appliquer : une opération groupée de l'historique (Batch), annulable ;
+    les confirmations propres à l'action restent (caviardage)
+```
+
+- **Catalogue** (`pde-app::actions`) : chaque action (caviarder une zone ou
+  un texte, masquer, surligner, ajouter une note, pivoter, supprimer ou
+  extraire des pages, chercher…) a un nom, une explication en français, ses
+  paramètres en JSON Schema, son contrôle et son exécution par les cas
+  d'usage existants. La palette de commandes, l'aide « Comment faire ? »,
+  les outils de l'IA et le serveur MCP en sont tirés : rien à maintenir en
+  double, et un test vérifie que chaque action a son explication, son schéma
+  et son outil dans la barre.
+- **Pourquoi l'appel d'outils** : il est géré par la plupart des fournisseurs
+  compatibles (OpenAI, DeepSeek, Mistral, GLM, OpenRouter, modèles locaux
+  récents via Ollama) ; la réponse est structurée, donc vérifiable avant tout
+  aperçu. Un modèle sans outils répond en texte : l'assistant explique alors
+  et renvoie à l'outil, sans rien proposer d'appliquer.
+- **Recettes** (IA-16) : fichiers TOML (consigne, actions permises, portée
+  par défaut), intégrées en lecture seule et personnelles dans le dossier de
+  données ; c'est la forme « compétence sur mesure », sans code exécutable.
+- **Serveur MCP** (IA-17, plus tard) : `pdfeditor --mcp` (stdio) ou serveur
+  local, désactivé par défaut ; il expose le catalogue tel quel (outils MCP =
+  actions) sur le document ouvert. Le retenir comme cœur aurait imposé un
+  protocole de plus à l'assistant intégré sans rien lui apporter ; comme
+  adaptateur, il coûte peu une fois le catalogue en place.
+- **Sécurité** : seule la demande de l'utilisateur est une consigne ; le
+  texte du document reste une donnée et ne peut pas déclencher d'action, car
+  rien n'est appliqué sans aperçu ni accord. « Masquer » (aplat, contenu
+  conservé) et « caviarder » (suppression réelle) sont deux actions
+  distinctes, et l'assistant signale la différence quand la demande parle
+  de confidentialité.
+- **Voix** : le champ de demande accepte la dictée du système (Windows+H) et
+  celle de VoiceToText ; une transcription intégrée reprendrait son moteur
+  (copie adaptée, comme le reste) si l'usage le justifie.
+- **Tests** : `FakeChatModel` qui rejoue des appels d'outils ; appels
+  invalides, hors portée ou non permis par la recette rejetés ; parcours
+  Playwright de l'aperçu et de l'acceptation.
+
 ## Reprise de VoiceToText
 
 Code **copié puis adapté** (pas de dépendance entre les dépôts : chacun évolue
