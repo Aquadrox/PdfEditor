@@ -23,6 +23,9 @@ pub enum Operation {
         id: ElementId,
         element: Element,
     },
+    /// Plusieurs opérations faites ensemble (sélection multiple) : une
+    /// seule entrée de l'historique, annulée d'un coup.
+    Batch(Vec<Operation>),
 }
 
 impl Operation {
@@ -35,6 +38,10 @@ impl Operation {
                 before: after,
                 after: before,
             },
+            // Défaites dans l'ordre inverse.
+            Operation::Batch(operations) => {
+                Operation::Batch(operations.iter().rev().map(Operation::inverse).collect())
+            }
         }
     }
 
@@ -45,7 +52,9 @@ impl Operation {
                 vec![element.page()]
             }
             Operation::Update { before, after, .. } => vec![before.page(), after.page()],
+            Operation::Batch(operations) => operations.iter().flat_map(Operation::pages).collect(),
         };
+        pages.sort_unstable();
         pages.dedup();
         pages
     }
@@ -135,6 +144,55 @@ impl Edits {
         }))
     }
 
+    /// Ajoute plusieurs éléments en une opération (dupliquer une sélection).
+    pub fn add_many(&mut self, elements: Vec<Element>) -> (Vec<ElementId>, Change) {
+        let mut ids = Vec::with_capacity(elements.len());
+        let operations = elements
+            .into_iter()
+            .map(|element| {
+                self.next_id += 1;
+                let id = ElementId(self.next_id);
+                ids.push(id);
+                Operation::Add { id, element }
+            })
+            .collect();
+        (ids, self.record_batch(operations))
+    }
+
+    /// Remplace plusieurs éléments en une opération ; les éléments
+    /// inchangés sont ignorés, et rien n'est gardé si aucun ne change.
+    pub fn update_many(&mut self, changes: Vec<(ElementId, Element)>) -> Result<Change, String> {
+        let mut operations = Vec::new();
+        for (id, after) in changes {
+            let before = self.get(id).ok_or_else(|| unknown(id))?.clone();
+            if before != after {
+                operations.push(Operation::Update { id, before, after });
+            }
+        }
+        Ok(self.record_batch(operations))
+    }
+
+    /// Retire plusieurs éléments en une opération.
+    pub fn remove_many(&mut self, ids: &[ElementId]) -> Result<Change, String> {
+        let operations = ids
+            .iter()
+            .map(|&id| {
+                let element = self.get(id).ok_or_else(|| unknown(id))?.clone();
+                Ok(Operation::Remove { id, element })
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        Ok(self.record_batch(operations))
+    }
+
+    /// Une opération seule reste telle quelle ; aucune : rien n'est gardé.
+    fn record_batch(&mut self, mut operations: Vec<Operation>) -> Change {
+        match operations.len() {
+            0 => Change::default(),
+            1 => self.record(operations.remove(0)),
+            _ => self.record(Operation::Batch(operations)),
+        }
+    }
+
     pub fn remove(&mut self, id: ElementId) -> Result<Change, String> {
         let element = self.get(id).ok_or_else(|| unknown(id))?.clone();
         Ok(self.record(Operation::Remove { id, element }))
@@ -183,6 +241,11 @@ impl Edits {
             }
             Operation::Remove { id, .. } => {
                 self.elements.remove(&id);
+            }
+            Operation::Batch(operations) => {
+                for operation in &operations {
+                    self.apply(operation);
+                }
             }
         }
         Change {
@@ -313,5 +376,59 @@ mod tests {
         edits.undo();
         let (b, _) = edits.add(text(0, "b"));
         assert_ne!(a, b);
+    }
+
+    #[test]
+    fn group_operations_are_one_history_entry() {
+        let mut edits = Edits::new();
+        let (a, _) = edits.add(text(0, "a"));
+        let (b, _) = edits.add(text(2, "b"));
+        let change = edits
+            .update_many(vec![(a, text(0, "A")), (b, text(2, "B"))])
+            .unwrap();
+        assert_eq!(change.pages, [0, 2]);
+        assert_eq!(texts(&edits), ["A", "B"]);
+        // Une seule annulation défait tout le groupe.
+        edits.undo();
+        assert_eq!(texts(&edits), ["a", "b"]);
+        edits.redo();
+        assert_eq!(texts(&edits), ["A", "B"]);
+
+        let (copies, change) = edits.add_many(vec![text(1, "c"), text(1, "d")]);
+        assert_eq!((copies.len(), change.pages.as_slice()), (2, &[1][..]));
+        assert_eq!(edits.remove_many(&[a, copies[1]]).unwrap().pages, [0, 1]);
+        assert_eq!(texts(&edits), ["B", "c"]);
+        edits.undo();
+        assert_eq!(texts(&edits), ["A", "B", "c", "d"]);
+        // Rollback d'un groupe (pose impossible) : tout est défait.
+        edits
+            .update_many(vec![(a, text(0, "x")), (b, text(2, "y"))])
+            .unwrap();
+        edits.rollback();
+        assert_eq!(texts(&edits), ["A", "B", "c", "d"]);
+    }
+
+    #[test]
+    fn unchanged_or_empty_groups_leave_no_trace() {
+        let mut edits = Edits::new();
+        let (a, _) = edits.add(text(0, "a"));
+        let revision = edits.revision();
+        assert!(
+            edits
+                .update_many(vec![(a, text(0, "a"))])
+                .unwrap()
+                .pages
+                .is_empty()
+        );
+        assert!(edits.remove_many(&[]).unwrap().pages.is_empty());
+        assert_eq!(edits.revision(), revision);
+        // Élément inconnu : refusé, rien n'est changé.
+        assert!(
+            edits
+                .update_many(vec![(a, text(0, "z")), (ElementId(99), text(0, "?"))])
+                .is_err()
+        );
+        assert!(edits.remove_many(&[a, ElementId(99)]).is_err());
+        assert_eq!(texts(&edits), ["a"]);
     }
 }

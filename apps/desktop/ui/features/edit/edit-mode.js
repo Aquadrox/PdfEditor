@@ -9,11 +9,12 @@ import { t } from "../../lib/i18n.js";
 import { invoke, invokeBytes } from "../../lib/ipc.js";
 import { attachAnnotationControls, renderAnnotationSwatches } from "./annotation-controls.js";
 import { TOOL_DEFAULTS, isAnnotation, withAnnotationStyle } from "./annotation-state.js";
-import { colorFromHex } from "./edit-state.js";
+import { colorFromHex, ptFromMm } from "./edit-state.js";
 import { EditLayer } from "./edit-layer.js";
 import { EditSession } from "./edit-session.js";
 import { duplicated, nudged, pagePoint, withStyle } from "./edit-state.js";
 import { newImageBox } from "./image-state.js";
+import { aligned, distributed, nextInOrder, samePage } from "./selection-state.js";
 import { attachMarkupTool } from "./markup-tool.js";
 import { attachProperties, renderSwatches } from "./properties.js";
 import { attachStyleControls } from "./style-controls.js";
@@ -40,6 +41,9 @@ export class EditMode {
     this.author = "";
     this.layer.onNote = (note) => this.addNote(note);
     this.layer.onNoteOpen = () => byId("prop-note").focus();
+    /** Magnétisme (réglage Édition). */
+    this.snapSettings = { enabled: true, grid: 0 };
+    this.layer.snap = () => this.snapSettings;
     const pages = () => viewer.doc?.pages ?? [];
     renderSwatches();
     renderAnnotationSwatches(document);
@@ -63,7 +67,14 @@ export class EditMode {
     this.properties = attachProperties(this.session, pages, {
       change: (id, element) => this.session.change(id, element).catch(fail),
       remove: (id) => this.session.remove(id).catch(fail),
-      duplicate: (item) => this.session.add(duplicated(item.element, pages()[item.element.page])).catch(fail),
+      // Dupliquer : toute la sélection, en une opération.
+      duplicate: () => {
+        const copies = this.selectedItems().map((i) => duplicated(i.element, pages()[i.element.page]));
+        const done = copies.length === 1 ? this.session.add(copies[0]) : this.session.addMany(copies);
+        done.catch(fail);
+      },
+      removeSelection: () => this.session.removeMany(this.session.selection).catch(fail),
+      arrange: (action) => this.arrange(action),
       close: () => this.session.select(null),
     });
     for (const tool of TOOLS) byId(`tool-${tool}`).addEventListener("click", () => this.setTool(tool));
@@ -140,6 +151,7 @@ export class EditMode {
       size: settings.font_size,
       ...(text && { color: text }),
     };
+    this.snapSettings = { enabled: settings.snap !== false, grid: ptFromMm(settings.grid_mm ?? 0) };
     const highlight = colorFromHex(settings.highlight_color);
     if (highlight) this.toolStyles.markup.color = highlight;
     this.styles.refresh();
@@ -246,22 +258,65 @@ export class EditMode {
   }
 
   /** Touche hors champ de saisie ; `true` si le mode l'a utilisée. */
-  handleKey(event) {
-    if (!this.active) return false;
-    const item = this.session.element(this.session.selected);
-    if (!item) return false;
+  /**
+   * Touches du mode. Sur un bouton, seul Ctrl+A est pris : Tab, Entrée,
+   * flèches gardent leur rôle (passer au contrôle suivant, l'activer).
+   */
+  handleKey(event, { onButton = false } = {}) {
+    if (!this.active || !this.viewer.doc) return false;
+    // Ctrl+A : tous les éléments de la page affichée (jamais tout le texte
+    // de la fenêtre).
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
+      const ids = this.session.view.elements.filter((e) => e.element.page === this.viewer.page).map((e) => e.id);
+      this.session.selectMany(ids);
+      return true;
+    }
+    if (onButton) return false;
+    // Tab / Maj+Tab : élément suivant ou précédent (ordre de lecture).
+    if (event.key === "Tab" && !event.ctrlKey && !event.altKey) {
+      const next = nextInOrder(this.session.view.elements, this.session.selected, event.shiftKey);
+      if (next === null) return false;
+      this.session.select(next);
+      this.revealSelected();
+      return true;
+    }
+    const items = this.selectedItems();
+    if (items.length === 0) return false;
     if (event.key === "Delete" || event.key === "Backspace") {
-      this.session.remove(item.id).catch(fail);
+      this.session.removeMany(items.map((i) => i.id)).catch(fail);
     } else if (event.key === "Escape") {
       this.session.select(null);
     } else if (event.key === "Enter") {
-      this.layer.editSelected();
+      if (items.length === 1) this.layer.editSelected();
     } else {
-      const page = this.viewer.doc.pages[item.element.page];
-      const element = nudged(item.element, event.key, event.shiftKey, page);
-      if (!element) return false;
-      this.session.change(item.id, element).catch(fail);
+      const pages = this.viewer.doc.pages;
+      const changes = items.map((i) => ({ id: i.id, element: nudged(i.element, event.key, event.shiftKey, pages[i.element.page]) }));
+      if (changes.some((c) => !c.element)) return false;
+      this.session.changeMany(changes).catch(fail);
     }
     return true;
   }
+
+  /** Éléments sélectionnés, l'élément principal d'abord. */
+  selectedItems() {
+    return this.session.selection.map((id) => this.session.element(id)).filter(Boolean);
+  }
+
+  /** Page de l'élément sélectionné amenée à l'écran (Tab). */
+  revealSelected() {
+    const item = this.session.element(this.session.selected);
+    if (item && item.element.page !== this.viewer.page) this.viewer.goToPage(item.element.page);
+  }
+
+  /** Aligner ou répartir la sélection (même page). */
+  arrange(action) {
+    const items = this.selectedItems();
+    if (items.length < 2 || !samePage(items)) return;
+    const page = this.viewer.doc.pages[items[0].element.page];
+    const changes = action === "distribute-x" || action === "distribute-y"
+      ? distributed(items, action.slice(-1), page)
+      : aligned(items, action, page);
+    this.session.changeMany(changes).catch(fail);
+  }
+
 }

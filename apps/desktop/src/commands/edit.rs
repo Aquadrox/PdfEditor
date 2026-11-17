@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use pde_app::edit_view::{EditView, SavedView};
 use pde_app::error::{AppError, ErrorKind};
 use pde_core::edit::Element;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_dialog::DialogExt;
 
@@ -40,6 +40,53 @@ pub fn update_element(
     element: Element,
 ) -> Result<EditView, AppError> {
     app.viewer.update_element(id, element_id, element)
+}
+
+#[derive(Serialize)]
+pub struct AddedMany {
+    ids: Vec<u64>,
+    view: EditView,
+}
+
+/// Plusieurs éléments en une opération (dupliquer une sélection).
+#[tauri::command(async)]
+pub fn add_elements(
+    app: AppState<'_>,
+    id: u64,
+    elements: Vec<Element>,
+) -> Result<AddedMany, AppError> {
+    let (ids, view) = app.viewer.add_elements(id, elements)?;
+    Ok(AddedMany { ids, view })
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ElementChange {
+    element_id: u64,
+    element: Element,
+}
+
+/// Plusieurs éléments changés en une opération (déplacer, aligner).
+#[tauri::command(async)]
+pub fn update_elements(
+    app: AppState<'_>,
+    id: u64,
+    changes: Vec<ElementChange>,
+) -> Result<EditView, AppError> {
+    let changes = changes
+        .into_iter()
+        .map(|c| (c.element_id, c.element))
+        .collect();
+    app.viewer.update_elements(id, changes)
+}
+
+#[tauri::command(async)]
+pub fn remove_elements(
+    app: AppState<'_>,
+    id: u64,
+    element_ids: Vec<u64>,
+) -> Result<EditView, AppError> {
+    app.viewer.remove_elements(id, &element_ids)
 }
 
 #[tauri::command(async)]

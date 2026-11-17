@@ -280,7 +280,7 @@ document.addEventListener("keydown", (event) => {
   if (!byId("settings-view").hidden || document.querySelector("dialog[open]")) return;
   const editable = isEditable(event.target);
   // Suppr, flèches, Entrée, Échap : sur la zone sélectionnée, pas sur un bouton.
-  if (!editable && !(event.target instanceof HTMLButtonElement) && edit.handleKey(event)) {
+  if (!editable && edit.handleKey(event, { onButton: event.target instanceof HTMLButtonElement })) {
     return event.preventDefault();
   }
   const shortcut = eventToShortcut(event);

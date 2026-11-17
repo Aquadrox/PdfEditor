@@ -13,7 +13,9 @@
     "font": "sans",
     "font_size": 11.0,
     "text_color": "#1c2430",
-    "highlight_color": "#ffd54a"
+    "highlight_color": "#ffd54a",
+    "snap": true,
+    "grid_mm": 0.0
   },
   "files": {
     "autosave_seconds": 60

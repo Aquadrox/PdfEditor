@@ -52,6 +52,14 @@
       <symbol id="i-line" viewBox="0 0 24 24"><path d="M5 19 19 5" /></symbol>
       <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 19 19 5" /><path d="M9 5h10v10" /></symbol>
       <symbol id="i-note" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></symbol>
+      <symbol id="i-al-left" viewBox="0 0 24 24"><path d="M4 2v20" /><rect x="8" y="6" width="12" height="4" /><rect x="8" y="14" width="7" height="4" /></symbol>
+      <symbol id="i-al-center" viewBox="0 0 24 24"><path d="M12 2v20" /><rect x="6" y="6" width="12" height="4" /><rect x="8.5" y="14" width="7" height="4" /></symbol>
+      <symbol id="i-al-right" viewBox="0 0 24 24"><path d="M20 2v20" /><rect x="4" y="6" width="12" height="4" /><rect x="9" y="14" width="7" height="4" /></symbol>
+      <symbol id="i-al-top" viewBox="0 0 24 24"><path d="M2 4h20" /><rect x="6" y="8" width="4" height="12" /><rect x="14" y="8" width="4" height="7" /></symbol>
+      <symbol id="i-al-middle" viewBox="0 0 24 24"><path d="M2 12h20" /><rect x="6" y="6" width="4" height="12" /><rect x="14" y="8.5" width="4" height="7" /></symbol>
+      <symbol id="i-al-bottom" viewBox="0 0 24 24"><path d="M2 20h20" /><rect x="6" y="4" width="4" height="12" /><rect x="14" y="9" width="4" height="7" /></symbol>
+      <symbol id="i-dist-x" viewBox="0 0 24 24"><path d="M3 3v18M21 3v18" /><rect x="9" y="7" width="6" height="10" /></symbol>
+      <symbol id="i-dist-y" viewBox="0 0 24 24"><path d="M3 3h18M3 21h18" /><rect x="7" y="9" width="10" height="6" /></symbol>
       <symbol id="i-file-up" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3" /></symbol>
     </svg>
 
@@ -270,7 +278,24 @@
             </div>
             <label class="inline checkbox"><input id="prop-keep-ratio" type="checkbox" /><span data-i18n="props.keepRatio"></span></label>
           </div>
-          <div class="properties-group">
+          <div id="prop-arrange-fields" class="properties-group" hidden>
+            <span class="caption" data-i18n="props.arrange"></span>
+            <div class="segmented">
+              <button class="btn ghost icon" data-arrange="left" data-i18n-label="props.alignLeft"><svg class="icon"><use href="#i-al-left" /></svg></button>
+              <button class="btn ghost icon" data-arrange="center" data-i18n-label="props.alignCenter"><svg class="icon"><use href="#i-al-center" /></svg></button>
+              <button class="btn ghost icon" data-arrange="right" data-i18n-label="props.alignRight"><svg class="icon"><use href="#i-al-right" /></svg></button>
+              <button class="btn ghost icon" data-arrange="top" data-i18n-label="props.alignTop"><svg class="icon"><use href="#i-al-top" /></svg></button>
+              <button class="btn ghost icon" data-arrange="middle" data-i18n-label="props.alignMiddle"><svg class="icon"><use href="#i-al-middle" /></svg></button>
+              <button class="btn ghost icon" data-arrange="bottom" data-i18n-label="props.alignBottom"><svg class="icon"><use href="#i-al-bottom" /></svg></button>
+            </div>
+            <span class="caption" data-i18n="props.distribute"></span>
+            <div class="segmented">
+              <button class="btn ghost icon" data-arrange="distribute-x" data-i18n-label="props.distributeX"><svg class="icon"><use href="#i-dist-x" /></svg></button>
+              <button class="btn ghost icon" data-arrange="distribute-y" data-i18n-label="props.distributeY"><svg class="icon"><use href="#i-dist-y" /></svg></button>
+            </div>
+            <p id="prop-arrange-note" class="caption" data-i18n="props.arrangeNote" hidden></p>
+          </div>
+          <div id="prop-geometry" class="properties-group">
             <span class="caption" data-i18n="props.position"></span>
             <div class="row2">
               <label class="inline"><span class="caption" aria-hidden="true">X</span><input id="prop-x" class="input num" inputmode="decimal" data-i18n-aria="props.x" /></label>
@@ -389,6 +414,14 @@
             <div class="field">
               <label for="set-highlight-color" data-i18n="settings.highlightColor"></label>
               <input id="set-highlight-color" class="color-input" type="color" data-setting="edit.highlight_color" />
+            </div>
+            <div class="field">
+              <label for="set-snap"><span data-i18n="settings.snap"></span><span class="hint" data-i18n="settings.snap.hint"></span></label>
+              <input id="set-snap" class="switch" type="checkbox" role="switch" data-setting="edit.snap" />
+            </div>
+            <div class="field">
+              <label for="set-grid"><span data-i18n="settings.grid"></span><span class="hint" data-i18n="settings.grid.hint"></span></label>
+              <input id="set-grid" class="input num narrow" type="number" min="0" max="50" step="0.5" data-setting="edit.grid_mm" data-type="number" />
             </div>
           </section>
 

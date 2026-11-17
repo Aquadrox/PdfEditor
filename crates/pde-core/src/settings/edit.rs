@@ -20,7 +20,15 @@ pub struct Edit {
     pub text_color: String,
     /// Couleur de surlignage (`#rrggbb`).
     pub highlight_color: String,
+    /// Magnétisme : un élément déplacé s'aligne sur les bords et centres
+    /// des autres et de la page (Alt pendant le glisser : désactivé).
+    pub snap: bool,
+    /// Pas de la grille de magnétisme (mm) ; 0 : pas de grille.
+    pub grid_mm: f64,
 }
+
+/// Pas de grille accepté (mm).
+pub const GRID_MM_RANGE: std::ops::RangeInclusive<f64> = 0.0..=50.0;
 
 impl Default for Edit {
     fn default() -> Self {
@@ -30,6 +38,8 @@ impl Default for Edit {
             font_size: 11.0,
             text_color: DEFAULT_TEXT_COLOR.into(),
             highlight_color: DEFAULT_HIGHLIGHT_COLOR.into(),
+            snap: true,
+            grid_mm: 0.0,
         }
     }
 }
@@ -59,6 +69,19 @@ impl Edit {
                 FONT_SIZE_RANGE.end()
             ));
             e.font_size = clamped;
+        }
+        let grid = if e.grid_mm.is_finite() {
+            e.grid_mm
+        } else {
+            0.0
+        };
+        let clamped = grid.clamp(*GRID_MM_RANGE.start(), *GRID_MM_RANGE.end());
+        if clamped != e.grid_mm {
+            warnings.push(format!(
+                "edit.grid_mm = {} hors de 0 à 50 : ramené à {clamped}",
+                e.grid_mm
+            ));
+            e.grid_mm = clamped;
         }
         for (name, value, default) in [
             ("edit.text_color", &mut e.text_color, DEFAULT_TEXT_COLOR),
@@ -110,6 +133,8 @@ mod tests {
             font_size: 900.0,
             text_color: "rouge".into(),
             highlight_color: "#ABCDEF".into(),
+            snap: false,
+            grid_mm: -3.0,
         };
         let mut warnings = Vec::new();
         let checked = e.checked(&mut warnings);
@@ -121,7 +146,9 @@ mod tests {
         );
         assert_eq!(checked.author.chars().count(), MAX_AUTHOR_CHARS);
         assert_eq!(checked.font, StandardFont::Serif);
-        assert_eq!(warnings.len(), 3, "{warnings:?}");
+        assert_eq!(checked.grid_mm, 0.0);
+        assert!(!checked.snap);
+        assert_eq!(warnings.len(), 4, "{warnings:?}");
     }
 
     #[test]

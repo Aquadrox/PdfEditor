@@ -426,3 +426,23 @@
 .properties .notice[hidden] {
   display: none;
 }
+
+/* Repères du magnétisme pendant un déplacement. */
+.edit-layer .snap-guide {
+  position: absolute;
+  pointer-events: none;
+  background: var(--on-paper-accent);
+  opacity: 0.8;
+}
+
+.edit-layer .snap-guide.x {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.edit-layer .snap-guide.y {
+  left: 0;
+  right: 0;
+  height: 1px;
+}

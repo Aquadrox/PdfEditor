@@ -4,6 +4,14 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.12 — 2026-11-17
+
+- Sélection de plusieurs éléments : Maj+clic, Ctrl+A pour toute la page, Tab pour passer d'un élément au suivant.
+- Les éléments sélectionnés se déplacent, se décalent aux flèches, se dupliquent et se suppriment ensemble ; une seule annulation suffit à revenir en arrière.
+- Aligner (bords, centres) et répartir régulièrement plusieurs éléments.
+- Magnétisme : en déplaçant un élément, il se cale sur les bords et centres des autres et de la page, avec un repère ; grille réglable dans les réglages Édition, Alt pour s'en passer.
+- Correctif : un élément non sélectionné se déplace dès le premier glisser.
+
 ## 0.0.11 — 2026-11-17
 
 - Les zones de texte s'écrivent aussi en grec, en cyrillique et dans tout l'alphabet latin (polonais, tchèque, vietnamien…) : la police nécessaire est incluse dans le PDF, seulement quand il le faut.

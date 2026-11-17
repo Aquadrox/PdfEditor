@@ -18,7 +18,10 @@ export class EditSession {
   constructor() {
     this.doc = null;
     this.view = { elements: [], revisions: [], can_undo: false, can_redo: false, dirty: false };
+    /** Élément principal de la sélection (panneau, poignées). */
     this.selected = null;
+    /** Autres éléments sélectionnés (Maj+clic, Ctrl+A). */
+    this.extra = new Set();
     /** Style des nouvelles zones : celui de la dernière zone modifiée. */
     this.style = { ...DEFAULT_STYLE };
     this.listeners = [];
@@ -36,6 +39,7 @@ export class EditSession {
   async load(doc) {
     this.doc = doc;
     this.selected = null;
+    this.extra.clear();
     this.update(doc ? await invoke("edit_view", { id: doc.id }) : { elements: [], revisions: [] });
   }
 
@@ -48,15 +52,74 @@ export class EditSession {
     return this.view.elements.find((e) => e.id === id) ?? null;
   }
 
+  /** Sélection : élément principal d'abord. */
+  get selection() {
+    return this.selected === null ? [] : [this.selected, ...this.extra];
+  }
+
+  isSelected(id) {
+    return id === this.selected || this.extra.has(id);
+  }
+
+  /** Sélection d'un seul élément (ou aucune avec null). */
   select(id) {
     this.selected = id;
+    this.extra.clear();
     this.notify([]);
+  }
+
+  /** Plusieurs éléments ; le premier devient le principal. */
+  selectMany(ids) {
+    this.selected = ids[0] ?? null;
+    this.extra = new Set(ids.slice(1));
+    this.notify([]);
+  }
+
+  /** Maj+clic : ajoute l'élément à la sélection, ou l'en retire. */
+  toggle(id) {
+    if (id === this.selected) {
+      const [next, ...rest] = this.extra;
+      this.selected = next ?? null;
+      this.extra = new Set(rest);
+    } else if (this.extra.has(id)) {
+      this.extra.delete(id);
+    } else if (this.selected === null) {
+      this.selected = id;
+    } else {
+      this.extra.add(id);
+    }
+    this.notify([]);
+  }
+
+  /** Plusieurs éléments ajoutés en une opération ; ils deviennent la sélection. */
+  async addMany(elements) {
+    const added = await invoke("add_elements", { id: this.doc.id, elements });
+    this.selected = added.ids[0] ?? null;
+    this.extra = new Set(added.ids.slice(1));
+    this.update(added.view);
+    return added.ids;
+  }
+
+  /** Plusieurs éléments changés en une opération : [{ id, element }]. */
+  async changeMany(changes) {
+    if (changes.length === 0) return;
+    if (changes.length === 1) return this.change(changes[0].id, changes[0].element);
+    const payload = changes.map(({ id, element }) => ({ elementId: id, element }));
+    this.update(await invoke("update_elements", { id: this.doc.id, changes: payload }));
+  }
+
+  async removeMany(ids) {
+    if (ids.length === 1) return this.remove(ids[0]);
+    this.selected = null;
+    this.extra.clear();
+    this.update(await invoke("remove_elements", { id: this.doc.id, elementIds: ids }));
   }
 
   async add(element) {
     const added = await invoke("add_element", { id: this.doc.id, element });
     if (element.style) this.style = { ...element.style };
     this.selected = added.id;
+    this.extra.clear();
     this.update(added.view);
     return added.id;
   }
@@ -84,7 +147,12 @@ export class EditSession {
     const before = this.view.revisions;
     const changed = view.revisions.flatMap((revision, page) => (revision !== before[page] ? [page] : []));
     this.view = view;
-    if (this.selected !== null && !this.element(this.selected)) this.selected = null;
+    for (const id of this.extra) if (!this.element(id)) this.extra.delete(id);
+    if (this.selected !== null && !this.element(this.selected)) {
+      const [next, ...rest] = this.extra;
+      this.selected = next ?? null;
+      this.extra = new Set(rest);
+    }
     this.notify(changed);
   }
 
