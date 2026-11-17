@@ -194,19 +194,37 @@ fn markup(mark: MarkKind, area: Area) -> Element {
     })
 }
 
-/// Pixel le plus sombre de la zone (une lettre) et un pixel du fond.
-fn darkest_and_background(page: &Bitmap, area: Area) -> ([u8; 3], [u8; 3]) {
+/// Pixels de la zone surlignée (bord d'un pixel exclu).
+fn area_pixels(page: &Bitmap, area: Area) -> Vec<[u8; 3]> {
     let rect = area.rect();
     let (x0, x1) = (rect.min().x as u32 + 1, rect.max().x as u32 - 1);
     let (y0, y1) = (rect.min().y as u32 + 1, rect.max().y as u32 - 1);
-    let pixels: Vec<[u8; 3]> = (x0..x1)
+    (x0..x1)
         .flat_map(|x| (y0..y1).map(move |y| (x, y)))
         .map(|(x, y)| color_at(page, x, y))
-        .collect();
-    let sum = |p: &[u8; 3]| p.iter().map(|&v| u32::from(v)).sum::<u32>();
-    let darkest = *pixels.iter().min_by_key(|p| sum(p)).expect("pixels");
-    let brightest = *pixels.iter().max_by_key(|p| sum(p)).expect("pixels");
-    (darkest, brightest)
+        .collect()
+}
+
+/// Le fond de la zone est jaune, les lettres restent sombres. `step` dit
+/// quelle étape échoue, avec la part de pixels restés blancs.
+fn assert_highlighted(page: &Bitmap, area: Area, step: &str) {
+    let pixels = area_pixels(page, area);
+    let white = pixels.iter().filter(|p| p.iter().all(|&v| v > 240)).count();
+    assert_eq!(
+        white,
+        0,
+        "{step} : {white} pixels blancs sur {} dans la zone {:?}",
+        pixels.len(),
+        area.rect()
+    );
+    let sum = |p: &&[u8; 3]| p.iter().map(|&v| u32::from(v)).sum::<u32>();
+    let darkest = pixels.iter().min_by_key(sum).expect("pixels");
+    let brightest = pixels.iter().max_by_key(sum).expect("pixels");
+    assert_near(*brightest, [0xff, 0xd5, 0x4a], 6);
+    assert!(
+        darkest.iter().all(|&v| v < 90),
+        "{step} : texte éclairci {darkest:?}"
+    );
 }
 
 #[test]
@@ -214,23 +232,13 @@ fn highlight_colours_the_background_and_keeps_text_dark() {
     let doc = open_simple();
     let area = word_area(doc.id);
     place(doc.id, vec![markup(MarkKind::Highlight, area)]);
-    let (darkest, background) = darkest_and_background(&render(doc.id, 0), area);
-    assert_near(background, [0xff, 0xd5, 0x4a], 6);
-    assert!(
-        darkest.iter().all(|&v| v < 90),
-        "texte éclairci : {darkest:?}"
-    );
+    assert_highlighted(&render(doc.id, 0), area, "avant enregistrement");
 
     // Toujours vrai après enregistrement (mode de fusion écrit dans le PDF).
     let bytes = engine().save(doc.id).expect("enregistrement");
     engine().close(doc.id);
     let saved = engine().open(bytes, None).expect("réouverture");
-    let (darkest, background) = darkest_and_background(&render(saved.id, 0), area);
-    assert_near(background, [0xff, 0xd5, 0x4a], 6);
-    assert!(
-        darkest.iter().all(|&v| v < 90),
-        "après enregistrement : {darkest:?}"
-    );
+    assert_highlighted(&render(saved.id, 0), area, "après enregistrement");
     engine().close(saved.id);
 }
 
