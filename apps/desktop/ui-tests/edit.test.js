@@ -224,7 +224,7 @@ test("Ctrl+S enregistre et la pastille « modifié » disparaît", async () => {
   }
 });
 
-test("Enregistrer sous propose le nom du fichier et affiche le nouveau nom", async () => {
+test("Enregistrer sous : le nouveau nom s'affiche", async () => {
   const app = await openInEditMode({
     edit_view: [{ ok: view() }, { ok: view({ dirty: false }) }],
     save_document_as: [{ ok: { path: "/docs/copie.pdf", file_name: "copie.pdf" } }],
@@ -232,7 +232,8 @@ test("Enregistrer sous propose le nom du fichier et affiche le nouveau nom", asy
   try {
     await app.page.keyboard.press("Control+Shift+S");
     await app.page.locator("#doc-name", { hasText: "copie.pdf" }).waitFor();
-    assert.deepEqual(await app.callsTo("save_document_as"), [{ id: 1, suggestedName: "contrat.pdf" }]);
+    // Nom et dossier proposés par Rust (réglage Fichiers) : seul le document est envoyé.
+    assert.deepEqual(await app.callsTo("save_document_as"), [{ id: 1 }]);
   } finally {
     await app.close();
   }

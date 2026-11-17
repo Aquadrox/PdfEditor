@@ -11,6 +11,7 @@ use pde_core::settings::Settings;
 
 use crate::edit_view::SavedView;
 use crate::error::AppError;
+use crate::files::copy_name;
 use crate::recent::{RecentFiles, RecentView};
 use crate::recovery::RecoveryStore;
 use crate::settings_store::{SettingsStore, SettingsView};
@@ -104,6 +105,23 @@ impl App {
         Ok(saved)
     }
 
+    /// Dossier des dialogues Ouvrir et Ajouter une image (réglage), s'il existe.
+    pub fn dialog_dir(&self) -> Option<PathBuf> {
+        let dir = PathBuf::from(self.settings.get().files.default_dir);
+        (!dir.as_os_str().is_empty() && dir.is_dir()).then_some(dir)
+    }
+
+    /// « Enregistrer sous » : dossier du document et nom de copie proposé.
+    pub fn save_as_proposal(&self, id: u64) -> Result<(Option<PathBuf>, String), AppError> {
+        let path = self.viewer.document_path(id)?;
+        let file_name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let name = copy_name(&file_name, &self.settings.get().files.copy_suffix);
+        Ok((path.parent().map(Path::to_path_buf), name))
+    }
+
     pub fn recent_files(&self) -> Vec<RecentView> {
         self.recent
             .list(self.settings.get().general.recent_files as usize)
@@ -195,5 +213,29 @@ mod tests {
         std::fs::write(&path, b"texte").unwrap();
         assert!(f.app.open_document(&path, None).is_err());
         assert!(f.app.recent_files().is_empty());
+    }
+
+    #[test]
+    fn save_as_proposes_a_copy_next_to_the_document() {
+        let f = Fixture::new("copie", "[files]\ncopy_suffix = \" - relu\"\n");
+        let pdf = f.pdf("contrat.pdf");
+        let id = f.app.open_document(&pdf, None).unwrap().id;
+        let (dir, name) = f.app.save_as_proposal(id).unwrap();
+        assert_eq!(dir.as_deref(), pdf.parent());
+        assert_eq!(name, "contrat - relu.pdf");
+        assert!(f.app.save_as_proposal(999).is_err());
+    }
+
+    #[test]
+    fn dialog_dir_only_when_it_exists() {
+        let f = Fixture::new("dossier", "");
+        assert_eq!(f.app.dialog_dir(), None);
+        let existing = Fixture::new(
+            "dossier-ok",
+            &format!("[files]\ndefault_dir = {:?}\n", f.dir.display().to_string()),
+        );
+        assert_eq!(existing.app.dialog_dir().as_deref(), Some(f.dir.as_path()));
+        let missing = Fixture::new("dossier-absent", "[files]\ndefault_dir = \"/nulle/part\"\n");
+        assert_eq!(missing.app.dialog_dir(), None);
     }
 }

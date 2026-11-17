@@ -18,7 +18,9 @@
     "grid_mm": 0.0
   },
   "files": {
-    "autosave_seconds": 60
+    "autosave_seconds": 60,
+    "default_dir": "",
+    "copy_suffix": " (modifié)"
   },
   "shortcuts": {
     "open": "Ctrl+O",

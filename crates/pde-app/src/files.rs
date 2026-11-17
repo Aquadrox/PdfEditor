@@ -25,9 +25,42 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), AppError> {
     fs::rename(temporary, path).map_err(failed)
 }
 
+/// Nom proposé pour une copie : « contrat.pdf » + « (modifié) » →
+/// « contrat (modifié).pdf ». Une copie de copie ne reprend pas le suffixe.
+pub fn copy_name(file_name: &str, suffix: &str) -> String {
+    let stem = match file_name.rsplit_once('.') {
+        Some((stem, ext)) if ext.eq_ignore_ascii_case("pdf") && !stem.is_empty() => stem,
+        _ => file_name,
+    };
+    if suffix.is_empty() || stem.ends_with(suffix) {
+        format!("{stem}.pdf")
+    } else {
+        format!("{stem}{suffix}.pdf")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn copy_names() {
+        assert_eq!(
+            copy_name("contrat.pdf", " (modifié)"),
+            "contrat (modifié).pdf"
+        );
+        assert_eq!(copy_name("Contrat.PDF", "-v2"), "Contrat-v2.pdf");
+        assert_eq!(
+            copy_name("contrat (modifié).pdf", " (modifié)"),
+            "contrat (modifié).pdf"
+        );
+        assert_eq!(copy_name("devis.2026.pdf", ""), "devis.2026.pdf");
+        assert_eq!(
+            copy_name("sans-extension", " copie"),
+            "sans-extension copie.pdf"
+        );
+        assert_eq!(copy_name(".pdf", " copie"), ".pdf copie.pdf");
+    }
 
     #[test]
     fn replaces_the_file_and_leaves_no_temporary() {

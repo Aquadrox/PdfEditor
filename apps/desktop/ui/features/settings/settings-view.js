@@ -99,6 +99,14 @@ export function attachSettings(hooks) {
   });
   byId("settings-back").addEventListener("click", () => hooks.onClose());
   byId("open-logs").addEventListener("click", () => invoke("open_logs_folder").catch(() => {}));
+  // Dossier par défaut : choisi dans le dialogue du système.
+  byId("pick-default-dir").addEventListener("click", async () => {
+    const folder = await invoke("pick_folder").catch(() => null);
+    if (!folder) return;
+    const input = byId("set-default-dir");
+    input.value = folder;
+    input.dispatchEvent(new Event("change"));
+  });
 
   return {
     /** Réglages lus au démarrage (SettingsView de pde-app). */

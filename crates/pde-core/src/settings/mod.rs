@@ -91,7 +91,17 @@ pub struct Files {
     /// Intervalle de la sauvegarde automatique des modifications (F-02),
     /// en secondes ; 0 : désactivée.
     pub autosave_seconds: u32,
+    /// Dossier proposé par les dialogues Ouvrir et Ajouter une image
+    /// (vide : celui que choisit le système).
+    pub default_dir: String,
+    /// Ajouté au nom proposé par « Enregistrer sous » (« contrat (modifié).pdf »).
+    pub copy_suffix: String,
 }
+
+/// Caractères refusés dans un nom de fichier (Windows comme Linux).
+const FORBIDDEN_IN_NAMES: &[char] = &['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
+/// Longueur maximale du suffixe des copies.
+pub const MAX_COPY_SUFFIX_CHARS: usize = 40;
 
 pub const AUTOSAVE_SECONDS_RANGE: std::ops::RangeInclusive<u32> = 0..=3600;
 /// En dessous, une sauvegarde automatique écrirait sans cesse.
@@ -101,6 +111,8 @@ impl Default for Files {
     fn default() -> Self {
         Self {
             autosave_seconds: 60,
+            default_dir: String::new(),
+            copy_suffix: " (modifié)".into(),
         }
     }
 }
@@ -213,6 +225,20 @@ impl Settings {
             ));
             s.files.autosave_seconds = MIN_AUTOSAVE_SECONDS;
         }
+        let suffix: String = s
+            .files
+            .copy_suffix
+            .chars()
+            .filter(|c| !c.is_control() && !FORBIDDEN_IN_NAMES.contains(c))
+            .take(MAX_COPY_SUFFIX_CHARS)
+            .collect();
+        if suffix != s.files.copy_suffix {
+            warnings.push(format!(
+                "files.copy_suffix : caractères interdits dans un nom de fichier ou plus de {MAX_COPY_SUFFIX_CHARS} caractères, retirés"
+            ));
+            s.files.copy_suffix = suffix;
+        }
+        s.files.default_dir = s.files.default_dir.trim().to_owned();
         s.shortcuts = self.shortcuts.validated(warnings)?;
         Ok(s)
     }
@@ -289,6 +315,22 @@ mod tests {
         let mut ui = Settings::default();
         ui.files.autosave_seconds = 5;
         assert!(ui.validated().is_err());
+    }
+
+    #[test]
+    fn copy_suffix_keeps_only_valid_file_name_characters() {
+        let loaded = Settings::from_toml("[files]\ncopy_suffix = \" - copie/2?\"\n");
+        assert_eq!(loaded.settings.files.copy_suffix, " - copie2");
+        assert_eq!(loaded.warnings.len(), 1);
+        let long = format!("[files]\ncopy_suffix = \"{}\"\n", "x".repeat(60));
+        assert_eq!(
+            Settings::from_toml(&long).settings.files.copy_suffix.len(),
+            MAX_COPY_SUFFIX_CHARS
+        );
+        assert_eq!(Settings::default().files.copy_suffix, " (modifié)");
+        let dir = Settings::from_toml("[files]\ndefault_dir = \"  /home/moi/Documents \"\n");
+        assert_eq!(dir.settings.files.default_dir, "/home/moi/Documents");
+        assert!(dir.warnings.is_empty());
     }
 
     #[test]

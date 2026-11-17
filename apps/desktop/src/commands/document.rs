@@ -59,6 +59,12 @@ pub fn pick_pdf(handle: AppHandle) -> Result<Option<String>, AppError> {
         .file()
         .set_title("Ouvrir un PDF")
         .add_filter("Documents PDF", &["pdf"]);
+    if let Some(dir) = handle
+        .state::<std::sync::Arc<pde_app::app::App>>()
+        .dialog_dir()
+    {
+        dialog = dialog.set_directory(dir);
+    }
     if let Some(window) = handle.get_webview_window("main") {
         dialog = dialog.set_parent(&window);
     }

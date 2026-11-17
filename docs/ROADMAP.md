@@ -34,7 +34,7 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ✅ Mises à jour automatiques (repris de VoiceToText) : vérification au démarrage puis toutes les 6 h (réglable), bandeau avec nouveautés, installation sur clic après vérification de la signature minisign et de la version signée ; release publiée par la CI avec `latest.json`
 - ✅ Clé de signature des mises à jour : générée par le propriétaire (identifiant `D6F1230550475C66`), clé publique dans `tauri.conf.json`, clé privée dans les secrets GitHub
 
-## v0.2 — Édition : ajouts 🚧
+## v0.2 — Édition : ajouts ✅
 
 - ✅ Garde-fou Android dans la CI : `pde-core`, `pde-app`, `pde-pdf` et `pde-platform` compilent pour Android (aarch64), pour ne jamais fermer la porte à la v1.1
 - ✅ Tests de rendu comparés à des images de référence (`crates/pde-pdf/tests/fixtures/expected/`, `PDE_UPDATE_EXPECTED=1` pour les régénérer)
@@ -46,7 +46,7 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ✅ Sélection, déplacement, alignement, magnétisme (E-03) : Maj+clic, Ctrl+A (page), Tab / Maj+Tab ; déplacer, décaler aux flèches, dupliquer, supprimer toute la sélection en une opération (`Operation::Batch`, une annulation) ; aligner (bords, centres) et répartir ; magnétisme sur les bords et centres des autres éléments et de la page, grille réglable, repères affichés, Alt pour s'en passer
 - ✅ Annotations et formes (E-04) : surligner, souligner, barrer le texte sélectionné ; dessin à main levée ; rectangle, ellipse, trait, flèche (Maj : carré, cercle, 45°) ; couleur, épaisseur, remplissage ; poignées ; tracés dans le contenu de la page (même rendu partout), image de référence `annotations.png` ; notes = vraies annotations PDF « Texte » (commentaire, auteur, icône) lisibles dans les autres lecteurs
 - ✅ Enregistrer / Enregistrer sous (F-01) : contenu relu avant d'écrire, remplacement atomique, mot de passe conservé ; question avant de fermer le document ou la fenêtre, ou d'en ouvrir un autre, avec des modifications
-- 🚧 Réglages Édition et Fichiers (R-03, R-04) : nom d'auteur des notes, police, taille et couleur des nouvelles zones de texte, couleur de surlignage, intervalle de la sauvegarde automatique faits, magnétisme et grille faits ; restent dossier par défaut, suffixe des copies
+- ✅ Réglages Édition et Fichiers (R-03, R-04) : nom d'auteur des notes, police, taille et couleur des nouvelles zones de texte, couleur de surlignage, magnétisme et grille ; intervalle de la sauvegarde automatique, dossier proposé par les dialogues Ouvrir et Image, suffixe des copies (« Enregistrer sous » propose « contrat (modifié).pdf » à côté de l'original). Le comportement à l'enregistrement d'un document signé viendra avec la signature (v0.4)
 
 ## v0.3 — Contenu existant et pages
 
