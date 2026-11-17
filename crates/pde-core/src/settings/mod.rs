@@ -4,10 +4,12 @@
 //! produit un avertissement affiché à l'utilisateur ; un fichier illisible
 //! donne les réglages par défaut. Une rubrique = une section TOML.
 
+mod edit;
 mod shortcuts;
 
 use serde::{Deserialize, Serialize};
 
+pub use edit::Edit;
 pub use shortcuts::{Action, Shortcuts, normalize as normalize_shortcut};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -128,6 +130,7 @@ pub struct Diagnostic {
 pub struct Settings {
     pub general: General,
     pub display: Display,
+    pub edit: Edit,
     pub files: Files,
     pub shortcuts: Shortcuts,
     pub updates: Updates,
@@ -196,6 +199,7 @@ impl Settings {
             "display.page_cache_mb",
             warnings,
         );
+        s.edit = self.edit.checked(warnings);
         clamp(
             &mut s.files.autosave_seconds,
             AUTOSAVE_SECONDS_RANGE,
@@ -250,6 +254,9 @@ mod tests {
         settings.display.default_zoom = DefaultZoom::FitPage;
         settings.diagnostic.log_level = LogLevel::Debug;
         settings.updates.check = false;
+        settings.edit.author = "Camille Martin".into();
+        settings.edit.font_size = 12.5;
+        settings.edit.highlight_color = "#a0e0ff".into();
         let loaded = Settings::from_toml(&settings.to_toml());
         assert_eq!(loaded.settings, settings);
         assert!(loaded.warnings.is_empty());

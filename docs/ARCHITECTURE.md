@@ -107,7 +107,9 @@ surlignage en mode de fusion « produit » pour garder le texte noir). Le
 calcul des tracés (pointe de flèche, ellipse en courbes de Bézier, bandes
 de soulignement) est dans `pde-core`, testé sans moteur. Dans l'interface,
 le marquage suit la couche texte : début et fin pris au caractère sous la
-souris, bandes calées sur les boîtes du PDF.
+souris, bandes calées sur les boîtes du PDF. Les notes (`NoteBox`) sont,
+elles, de vraies annotations PDF « Texte » (commentaire, auteur `T`,
+couleur), recréées à chaque pose comme le reste.
 
 Sauvegarde automatique (F-02, `pde-app::recovery`) : chaque lancement écrit
 dans `recovery/<session>/doc-<n>/` (dossier de données) un `manifest.json`

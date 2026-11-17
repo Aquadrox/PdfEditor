@@ -9,7 +9,7 @@ import { el } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
 import { percentBox } from "../viewer/text-geometry.js";
 import { moved, newTextBox, pagePoint, pointsFromPixels, resized, withText } from "./edit-state.js";
-import { annotationResized, bboxOf, handlesOf, isAnnotation } from "./annotation-state.js";
+import { annotationResized, bboxOf, handlesOf, isAnnotation, newNote } from "./annotation-state.js";
 import { startDrawing } from "./draw-tool.js";
 import { resizedFrame } from "./image-state.js";
 import { openTextEditor } from "./text-editor.js";
@@ -37,7 +37,7 @@ function resizedBy(element, edge, dx, dy, page) {
 /** Libellé lu par les lecteurs d'écran pour un élément. */
 function labelOf(element) {
   if (element.kind === "shape") return `edit.shape.${element.shape}`;
-  return { text: "edit.textBox", image: "edit.imageBox", ink: "edit.inkBox", markup: `edit.mark.${element.mark}` }[element.kind];
+  return { text: "edit.textBox", image: "edit.imageBox", ink: "edit.inkBox", note: "edit.noteBox", markup: `edit.mark.${element.mark}` }[element.kind];
 }
 
 /** Le moteur arrive en premier dans un cadre vidé : couche au-dessus de tout. */
@@ -54,6 +54,10 @@ export class EditLayer {
     this.tool = "text";
     /** Style de l'outil Dessin ou Forme en cours (donné par EditMode). */
     this.toolStyle = () => null;
+    /** Note posée : EditMode l'ajoute et ouvre son commentaire. */
+    this.onNote = () => {};
+    /** Double-clic sur une note : son commentaire dans le panneau. */
+    this.onNoteOpen = () => {};
     this.editing = null;
   }
 
@@ -114,6 +118,7 @@ export class EditLayer {
       if (item.element.kind === "text") {
         box.addEventListener("dblclick", () => this.editText(box.parentElement, item.id, index));
       }
+      if (item.element.kind === "note") box.addEventListener("dblclick", () => this.onNoteOpen());
       if (selected) {
         for (const edge of handles(item.element)) {
           const handle = el("span", { class: `handle ${edge}`, "aria-hidden": "true" });
@@ -133,6 +138,12 @@ export class EditLayer {
     if (this.editing) return this.editing.commit();
     this.session.select(null);
     const page = this.viewer.doc.pages[index];
+    if (this.tool === "note") {
+      const rect = layer.getBoundingClientRect();
+      const point = pagePoint(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height, page);
+      this.onNote(newNote(index, point, page, this.toolStyle(), ""));
+      return;
+    }
     if (this.tool === "ink" || this.tool === "shape") {
       startDrawing(event, layer, index, page, this.tool, this.toolStyle(), (element) => {
         if (element) this.session.add(element).catch(fail);

@@ -9,6 +9,7 @@ import { t } from "../../lib/i18n.js";
 import { invoke, invokeBytes } from "../../lib/ipc.js";
 import { attachAnnotationControls, renderAnnotationSwatches } from "./annotation-controls.js";
 import { TOOL_DEFAULTS, isAnnotation, withAnnotationStyle } from "./annotation-state.js";
+import { colorFromHex } from "./edit-state.js";
 import { EditLayer } from "./edit-layer.js";
 import { EditSession } from "./edit-session.js";
 import { duplicated, nudged, pagePoint, withStyle } from "./edit-state.js";
@@ -20,7 +21,7 @@ import { attachStyleControls } from "./style-controls.js";
 const fail = (error) => toast(t("edit.failed", { message: error?.message ?? String(error) }), "error");
 
 /** Outils qui se choisissent (l'image est une action) ; annotations : style par outil. */
-const TOOLS = ["text", "markup", "ink", "shape"];
+const TOOLS = ["text", "markup", "ink", "shape", "note"];
 
 export class EditMode {
   /**
@@ -35,6 +36,10 @@ export class EditMode {
     this.tool = "text";
     this.toolStyles = structuredClone(TOOL_DEFAULTS);
     this.layer.toolStyle = () => this.toolStyles[this.tool];
+    /** Auteur des notes (réglage Édition). */
+    this.author = "";
+    this.layer.onNote = (note) => this.addNote(note);
+    this.layer.onNoteOpen = () => byId("prop-note").focus();
     const pages = () => viewer.doc?.pages ?? [];
     renderSwatches();
     renderAnnotationSwatches(document);
@@ -111,6 +116,33 @@ export class EditMode {
     for (const group of document.querySelectorAll("[data-tool-options]")) {
       group.hidden = group.dataset.toolOptions !== tool;
     }
+    this.toolControls.refresh();
+  }
+
+  /** Note posée : auteur du réglage, commentaire à écrire tout de suite. */
+  async addNote(note) {
+    try {
+      await this.session.add({ ...note, author: this.author });
+      byId("prop-note").focus();
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  /** Réglages Édition : style des prochaines zones de texte, surlignage, auteur. */
+  applySettings(settings) {
+    if (!settings) return;
+    this.author = settings.author ?? "";
+    const text = colorFromHex(settings.text_color);
+    this.session.style = {
+      ...this.session.style,
+      font: settings.font,
+      size: settings.font_size,
+      ...(text && { color: text }),
+    };
+    const highlight = colorFromHex(settings.highlight_color);
+    if (highlight) this.toolStyles.markup.color = highlight;
+    this.styles.refresh();
     this.toolControls.refresh();
   }
 

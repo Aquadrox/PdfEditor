@@ -178,6 +178,7 @@ function applySettings(saved) {
   applyTheme(saved.general.theme);
   viewer.defaultZoom = saved.display.default_zoom;
   shortcuts = keymap(saved.shortcuts);
+  edit.applySettings(saved.edit);
   for (const kbd of document.querySelectorAll("kbd[data-shortcut]")) {
     kbd.textContent = shortcutLabel(saved.shortcuts[kbd.dataset.shortcut] ?? "");
   }

@@ -4,6 +4,11 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.10 — 2026-11-17
+
+- Notes : cliquez sur la page avec l'outil Note pour y laisser un commentaire ; c'est une vraie note PDF, avec votre nom, que les autres lecteurs affichent aussi.
+- Nouvelle rubrique Édition dans les réglages : votre nom d'auteur, la police, la taille et la couleur des nouvelles zones de texte, et la couleur de surlignage.
+
 ## 0.0.9 — 2026-11-17
 
 - Annotations en mode Éditer : surligner, souligner ou barrer du texte en le sélectionnant à la souris.

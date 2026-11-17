@@ -10,14 +10,18 @@ mod element;
 mod history;
 mod image;
 mod layout;
+mod note;
 
 pub use annotation::{
     Area, FILL_OPACITY, InkBox, MAX_INK_POINTS, MAX_MARKUP_AREAS, MarkKind, MarkupBox,
     STROKE_WIDTH_RANGE, ShapeBox, ShapeKind, ellipse_curves,
 };
-pub use element::{Align, Color, Element, ElementId, StandardFont, TextBox, TextStyle};
+pub use element::{
+    Align, Color, Element, ElementId, FONT_SIZE_RANGE, StandardFont, TextBox, TextStyle,
+};
 pub use history::{Change, Edits, Operation};
 pub use image::{
     ImageAsset, ImageBox, ImageData, ImageId, Images, MIN_IMAGE_SIDE, OPACITY_RANGE, Placement,
 };
 pub use layout::{leading, wrap};
+pub use note::{MAX_AUTHOR_CHARS, MAX_NOTE_CHARS, NOTE_SIZE, NoteBox};

@@ -18,9 +18,12 @@ export const TOOL_DEFAULTS = {
   markup: { mark: "highlight", color: { r: 0xff, g: 0xd5, b: 0x4a } },
   ink: { color: { r: 0xc6, g: 0x28, b: 0x28 }, width: 2 },
   shape: { shape: "rectangle", color: { r: 0xc6, g: 0x28, b: 0x28 }, width: 2, filled: false },
+  note: { color: { r: 0xff, g: 0xd5, b: 0x4a } },
 };
 
-export const ANNOTATION_KINDS = ["shape", "ink", "markup"];
+export const ANNOTATION_KINDS = ["shape", "ink", "markup", "note"];
+/** Côté de l'icône d'une note (pde-core : NOTE_SIZE). */
+export const NOTE_SIZE = 20;
 /** En dessous (points), un glisser est un clic : pas de forme. */
 export const MIN_SHAPE_SIZE = 3;
 /** Distance minimale entre deux points gardés d'un trait à main levée. */
@@ -106,8 +109,22 @@ export function newMarkup(pageIndex, rects, style) {
   };
 }
 
+/** Note posée au point cliqué (icône centrée dessus), gardée dans la page. */
+export function newNote(pageIndex, point, page, style, author) {
+  const half = NOTE_SIZE / 2;
+  return {
+    kind: "note",
+    page: pageIndex,
+    top_left: { x: clamp(point.x - half, 0, page.width - NOTE_SIZE), y: clamp(point.y - half, 0, page.height - NOTE_SIZE) },
+    text: "",
+    author: author ?? "",
+    color: { ...style.color },
+  };
+}
+
 /** Points qui définissent l'annotation. */
 function pointsOf(element) {
+  if (element.kind === "note") return [element.top_left, { x: element.top_left.x + NOTE_SIZE, y: element.top_left.y + NOTE_SIZE }];
   if (element.kind === "shape") return [element.start, element.end];
   if (element.kind === "ink") return element.points;
   return element.areas.flatMap((a) => [a.top_left, { x: a.top_left.x + a.width, y: a.top_left.y + a.height }]);
@@ -124,6 +141,7 @@ export function bboxOf(element) {
 }
 
 function mapPoints(element, f) {
+  if (element.kind === "note") return { ...element, top_left: f(element.top_left) };
   if (element.kind === "shape") return { ...element, start: f(element.start), end: f(element.end) };
   if (element.kind === "ink") return { ...element, points: element.points.map(f) };
   return { ...element, areas: element.areas.map((a) => ({ ...a, top_left: f(a.top_left) })) };
@@ -146,7 +164,7 @@ export function reframed(element, from, to) {
 
 /** Poignées d'une annotation : extrémités d'un trait, coins sinon, aucune pour un marquage. */
 export function handlesOf(element) {
-  if (element.kind === "markup") return [];
+  if (element.kind === "markup" || element.kind === "note") return [];
   if (element.kind === "shape" && (element.shape === "line" || element.shape === "arrow")) return ["start", "end"];
   return ["nw", "ne", "sw", "se"];
 }
@@ -172,7 +190,7 @@ export function annotationResized(element, edge, dx, dy, page) {
 
 /** Position (x, y) ou taille (width, height) saisie, en points ; null si impossible. */
 export function annotationWithGeometry(element, field, value, page) {
-  if (element.kind === "markup" && (field === "width" || field === "height")) return null;
+  if ((element.kind === "markup" || element.kind === "note") && (field === "width" || field === "height")) return null;
   const box = bboxOf(element);
   if (field === "x") return translated(element, value - box.x, 0, page);
   if (field === "y") return translated(element, 0, value - box.y, page);
@@ -182,7 +200,7 @@ export function annotationWithGeometry(element, field, value, page) {
 
 /** Style changé : couleur, épaisseur, remplissage, forme ou marquage. */
 export function withAnnotationStyle(element, changes) {
-  const allowed = { shape: ["color", "width", "filled", "shape"], ink: ["color", "width"], markup: ["color", "mark"] }[element.kind];
+  const allowed = { shape: ["color", "width", "filled", "shape"], ink: ["color", "width"], markup: ["color", "mark"], note: ["color"] }[element.kind];
   const kept = Object.fromEntries(Object.entries(changes).filter(([key]) => allowed.includes(key)));
   return { ...element, ...kept };
 }
