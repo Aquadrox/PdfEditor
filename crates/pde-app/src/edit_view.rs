@@ -55,6 +55,10 @@ pub fn flip(element: &Element, page: PageSize) -> Element {
             }
             Element::ExistingImage(image)
         }
+        Element::OriginalText(mut block) => {
+            block.original.top_left = flip_point(block.original.top_left, page);
+            Element::OriginalText(block)
+        }
     }
 }
 
@@ -72,6 +76,8 @@ pub struct ElementView {
     /// Caractères d'une zone de texte qu'aucune police ne sait écrire
     /// (chinois, arabe… : signalés, prévus plus tard) ; vide sinon.
     pub missing_chars: String,
+    /// Texte d'origine récrit avec une police de remplacement (E-05).
+    pub replaced_font: bool,
 }
 
 impl ElementView {
@@ -92,6 +98,7 @@ impl ElementView {
             element: flip(element, page),
             bounds: BoxView::new(bounds, page),
             missing_chars,
+            replaced_font: false,
         }
     }
 }

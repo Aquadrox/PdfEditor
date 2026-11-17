@@ -111,6 +111,7 @@ fn main() {
             commands::form::document_metadata,
             commands::form::set_metadata,
             commands::edit::page_images,
+            commands::edit::page_text_blocks,
             commands::edit::undo_edit,
             commands::edit::redo_edit,
             commands::edit::save_document,

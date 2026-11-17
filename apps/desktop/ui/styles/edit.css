@@ -294,6 +294,25 @@
   overflow-wrap: break-word;
 }
 
+/* Ligne de texte d'origine (E-05) : fond blanc qui cache l'ancien texte,
+   une seule ligne. */
+.text-editor.opaque {
+  background: #fff;
+  white-space: pre;
+}
+
+/* Outil Texte du document : chaque ligne de la page se propose. */
+.edit-layer .text-block {
+  cursor: text;
+  border-radius: 2px;
+}
+
+.edit-layer .text-block:hover {
+  outline: 1.5px dashed var(--on-paper-accent);
+  outline-offset: 1px;
+  background: rgb(37 99 235 / 6%);
+}
+
 /* Panneau Propriétés, à droite de la table. */
 .properties {
   display: flex;

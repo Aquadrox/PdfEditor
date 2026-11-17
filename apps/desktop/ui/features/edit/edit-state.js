@@ -8,6 +8,7 @@
 
 import { annotationWithGeometry, bboxOf, isAnnotation, translated } from "./annotation-state.js";
 import { asImage, isExisting, withFrame } from "./existing-image.js";
+import { isOriginalText } from "./original-text.js";
 import { withSize } from "./image-state.js";
 
 export const PT_PER_MM = 72 / 25.4;
@@ -62,6 +63,8 @@ function keptHeight(element) {
 
 /** Élément déplacé de (dx, dy) points, sans sortir de la page. */
 export function moved(element, dx, dy, page) {
+  // Le texte d'origine reste à sa place.
+  if (isOriginalText(element)) return element;
   if (isAnnotation(element)) return translated(element, dx, dy, page);
   if (isExisting(element)) return withFrame(element, moved(asImage(element), dx, dy, page));
   return {
@@ -90,7 +93,7 @@ export function nudged(element, key, shift, page) {
   const step = shift ? 10 : 1;
   const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
   const move = moves[key];
-  return move ? moved(element, move[0], move[1], page) : null;
+  return move && !isOriginalText(element) ? moved(element, move[0], move[1], page) : null;
 }
 
 export function withStyle(element, changes) {

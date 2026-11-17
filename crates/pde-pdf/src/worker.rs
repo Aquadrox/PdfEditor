@@ -125,6 +125,17 @@ fn handle<'a>(
                 .and_then(|arranged| writer::page_images(&arranged, page));
             let _ = reply.send(result);
         }
+        Command::PageTextBlocks {
+            doc,
+            edition,
+            page,
+            reply,
+        } => {
+            let result = slot(docs, doc)
+                .and_then(|s| arranged(pdfium, s, &edition))
+                .and_then(|arranged| writer::page_text_blocks(&arranged, page));
+            let _ = reply.send(result);
+        }
         Command::Save { doc, reply } => {
             let result = slot(docs, doc).and_then(|s| s.current.save_to_bytes().map_err(internal));
             let _ = reply.send(result);

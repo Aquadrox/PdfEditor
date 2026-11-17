@@ -166,7 +166,7 @@ impl Viewer {
             flatten: open.edits.flatten(),
         };
         let placed = self.engine.apply_edits(doc, edition)?;
-        open.placed = placed.into_iter().map(|p| (p.id, p.bounds)).collect();
+        open.placed = placed.into_iter().map(|p| (p.id, p)).collect();
         if change.layout {
             self.relayout(open, doc);
             return Ok(());
@@ -207,8 +207,10 @@ pub(super) fn view(open: &OpenDocument) -> EditView {
         .elements()
         .filter_map(|(id, element)| {
             let size = open.info.page_size(element.page()).ok()?;
-            let bounds = open.placed.get(&id)?;
-            Some(ElementView::new(id, element, bounds, size))
+            let placed = open.placed.get(&id)?;
+            let mut view = ElementView::new(id, element, &placed.bounds, size);
+            view.replaced_font = placed.replaced_font;
+            Some(view)
         })
         .collect();
     EditView {

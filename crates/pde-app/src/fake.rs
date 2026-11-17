@@ -7,7 +7,9 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use pde_core::document::{DocumentId, DocumentInfo, PageIndex, PageSize};
 use pde_core::edit::{Element, FieldKind, FormField, PageSources, Widget, leading};
-use pde_core::engine::{Edition, EngineError, OpenedDocument, PageImage, PdfEngine, Placed};
+use pde_core::engine::{
+    Edition, EngineError, OpenedDocument, PageImage, PageTextBlock, PdfEngine, Placed,
+};
 use pde_core::geometry::{Point, Rect};
 use pde_core::render::{Bitmap, RenderRequest, pixel_size};
 use pde_core::text::{PageText, TextChar};
@@ -38,6 +40,7 @@ pub struct FakeEngine {
     renders: AtomicUsize,
     text_reads: AtomicUsize,
     page_image_reads: AtomicUsize,
+    page_text_block_reads: AtomicUsize,
     closed: Mutex<Vec<u64>>,
     /// Taille des pages de chaque document : à l'ouverture, puis selon le
     /// dernier plan appliqué.
@@ -54,6 +57,10 @@ impl FakeEngine {
 
     pub fn page_image_reads(&self) -> usize {
         self.page_image_reads.load(Ordering::SeqCst)
+    }
+
+    pub fn page_text_block_reads(&self) -> usize {
+        self.page_text_block_reads.load(Ordering::SeqCst)
     }
 
     pub fn text_reads(&self) -> usize {
@@ -220,48 +227,35 @@ impl PdfEngine for FakeEngine {
         edition
             .elements
             .into_iter()
-            .map(|(id, element)| match element {
-                Element::Text(text) if text.text == UNWRITABLE => {
-                    Err(EngineError::Internal("écriture impossible".into()))
-                }
-                Element::Image(image) => Ok(Placed {
-                    id,
-                    bounds: image.bounds(),
-                }),
-                Element::Shape(shape) => Ok(Placed {
-                    id,
-                    bounds: shape.bounds(),
-                }),
-                Element::Ink(ink) => Ok(Placed {
-                    id,
-                    bounds: ink.bounds(),
-                }),
-                Element::Markup(markup) => Ok(Placed {
-                    id,
-                    bounds: markup.bounds(),
-                }),
-                Element::Note(note) => Ok(Placed {
-                    id,
-                    bounds: note.bounds(),
-                }),
-                Element::Redact(redact) => Ok(Placed {
-                    id,
-                    bounds: redact.bounds(),
-                }),
-                Element::ExistingImage(image) => Ok(Placed {
-                    id,
-                    bounds: image.bounds(),
-                }),
-                Element::Text(text) => {
-                    let height = leading(&text.style);
-                    Ok(Placed {
-                        id,
-                        bounds: Rect::from_corners(
+            .map(|(id, element)| {
+                let bounds = match &element {
+                    Element::Text(text) if text.text == UNWRITABLE => {
+                        return Err(EngineError::Internal("écriture impossible".into()));
+                    }
+                    Element::Image(image) => image.bounds(),
+                    Element::Shape(shape) => shape.bounds(),
+                    Element::Ink(ink) => ink.bounds(),
+                    Element::Markup(markup) => markup.bounds(),
+                    Element::Note(note) => note.bounds(),
+                    Element::Redact(redact) => redact.bounds(),
+                    Element::ExistingImage(image) => image.bounds(),
+                    // Police d'origine : Latin-1 seulement.
+                    Element::OriginalText(block) => {
+                        let replaced = block.text.chars().any(|c| u32::from(c) > 0xff);
+                        return Ok(Placed {
+                            replaced_font: replaced,
+                            ..Placed::new(id, block.bounds())
+                        });
+                    }
+                    Element::Text(text) => {
+                        let height = leading(&text.style);
+                        Rect::from_corners(
                             Point::new(text.top_left.x, text.top_left.y - height),
                             Point::new(text.top_left.x + text.width, text.top_left.y),
-                        ),
-                    })
-                }
+                        )
+                    }
+                };
+                Ok(Placed::new(id, bounds))
             })
             .collect()
     }
@@ -282,6 +276,36 @@ impl PdfEngine for FakeEngine {
 
     /// Une image d'origine sur la première page d'origine, de (100, 600) à
     /// (300, 700) (rang 2) ; aucune ailleurs.
+    /// Sur la première page d'origine, un bloc « Bonjour PdfEditor » de
+    /// (72, 755) à (290, 780), objets 0 et 1 ; aucun ailleurs.
+    fn page_text_blocks(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+    ) -> Result<Vec<PageTextBlock>, EngineError> {
+        self.page_text_block_reads.fetch_add(1, Ordering::SeqCst);
+        self.arranged(doc, &edition)?;
+        let first = matches!(
+            edition.plan.pages().get(page).map(|p| p.source),
+            Some(pde_core::edit::PageSource::Original { index: 0 })
+        );
+        Ok(if first {
+            vec![PageTextBlock {
+                objects: vec![0, 1],
+                bounds: Rect::from_corners(Point::new(72.0, 755.0), Point::new(290.0, 780.0)),
+                text: "Bonjour PdfEditor".into(),
+                font_name: "Helvetica".into(),
+                style: pde_core::edit::TextStyle {
+                    size: 24.0,
+                    ..Default::default()
+                },
+            }]
+        } else {
+            Vec::new()
+        })
+    }
+
     fn page_images(
         &self,
         doc: DocumentId,

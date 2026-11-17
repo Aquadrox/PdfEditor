@@ -14,6 +14,7 @@ import { startDrawing } from "./draw-tool.js";
 import { snapped, union } from "./selection-state.js";
 import { resizedFrame } from "./image-state.js";
 import { asImage, isExisting, withFrame } from "./existing-image.js";
+import { editorBox, isOriginalText, withNewText } from "./original-text.js";
 import { openTextEditor } from "./text-editor.js";
 
 /** En dessous (pixels), un appui sur un élément est un clic, pas un déplacement. */
@@ -28,6 +29,8 @@ function fail(error) {
 /** Poignées : largeur d'une zone de texte, coins d'une image, voir handlesOf. */
 function handles(element) {
   if (element.kind === "text") return ["left", "right"];
+  // Le texte d'origine garde sa place et sa taille.
+  if (isOriginalText(element)) return [];
   if (element.kind === "image" || isExisting(element)) return ["nw", "ne", "sw", "se"];
   return handlesOf(element);
 }
@@ -49,6 +52,7 @@ function labelOf(element) {
     note: "edit.noteBox",
     redact: "edit.redactBox",
     existing_image: "edit.existingImage",
+    original_text: "edit.originalText",
     markup: `edit.mark.${element.mark}`,
   }[element.kind];
 }
@@ -113,15 +117,31 @@ export class EditLayer {
     const page = this.viewer.doc.pages[index];
     // Images d'origine de la page : demandées une fois, la couche est
     // redessinée à leur arrivée.
-    if (this.active) {
-      this.session.loadPageImages(index).then((loaded) => loaded && this.render(frame, index), () => {});
-    }
+    const redraw = (loaded) => loaded && this.render(frame, index);
+    if (this.active) this.session.loadPageImages(index).then(redraw, () => {});
+    // Outil Texte du document : les lignes de la page se proposent.
+    const retext = this.active && this.tool === "retext";
+    if (retext) this.session.loadPageTextBlocks(index).then(redraw, () => {});
     const boxes = this.session
       .itemsOn(index)
       .filter((e) => e.id !== this.editing?.id)
       .map((item) => this.box(item, page, index));
+    const blocks = retext ? this.session.blocksOn(index).filter((b) => b.id !== this.editing?.id).map((b) => this.blockBox(b, page, index)) : [];
     layer.querySelectorAll(".element").forEach((node) => node.remove());
-    layer.prepend(...boxes);
+    layer.prepend(...boxes, ...blocks);
+  }
+
+  /** Ligne de texte d'origine proposée : un clic l'ouvre à la saisie. */
+  blockBox(item, page, index) {
+    const box = el("div", { class: "element text-block", "data-id": item.id, role: "button", "aria-label": t("edit.originalBlock") });
+    Object.assign(box.style, percentBox(item.bounds, page));
+    box.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.editOriginal(box.parentElement, item, index);
+    });
+    return box;
   }
 
   box(item, page, index) {
@@ -142,6 +162,9 @@ export class EditLayer {
         box.addEventListener("dblclick", () => this.editText(box.parentElement, item.id, index));
       }
       if (item.element.kind === "note") box.addEventListener("dblclick", () => this.onNoteOpen());
+      if (isOriginalText(item.element)) {
+        box.addEventListener("dblclick", () => this.editOriginal(box.parentElement, item, index));
+      }
       if (single) {
         for (const edge of handles(item.element)) {
           const handle = el("span", { class: `handle ${edge}`, "aria-hidden": "true" });
@@ -204,6 +227,8 @@ export class EditLayer {
     // contours, et `box` n'est alors plus dans la page.
     const layer = box.parentElement;
     if (!this.session.isSelected(item.id)) this.session.select(item.id);
+    // Le texte d'origine reste à sa place : sélection seulement.
+    if (isOriginalText(item.element)) return;
     if (edge) return this.resizeFrom(event, layer, item, page, edge);
     return this.moveSelection(event, layer, item, page);
   }
@@ -236,7 +261,9 @@ export class EditLayer {
    */
   moveSelection(event, layer, item, page) {
     const ratio = page.width / layer.getBoundingClientRect().width;
-    const group = this.session.selection.map((id) => this.session.element(id)).filter(Boolean);
+    const group = this.session.selection
+      .map((id) => this.session.element(id))
+      .filter((g) => g && !isOriginalText(g.element));
     const pageIndex = item.element.page;
     const frame = union(group.filter((g) => g.element.page === pageIndex).map((g) => g.bounds));
     const others = this.session.view.elements
@@ -309,9 +336,32 @@ export class EditLayer {
   /** Entrée sur la zone sélectionnée : modifier son texte. */
   editSelected() {
     const item = this.session.element(this.session.selected);
-    if (item?.element.kind !== "text") return;
-    const frame = this.viewer.frames[item.element.page];
-    if (frame && layerOf(frame)) this.editText(layerOf(frame), item.id, item.element.page);
+    const kind = item?.element.kind;
+    const frame = item && this.viewer.frames[item.element.page];
+    if (!frame || !layerOf(frame)) return;
+    if (kind === "text") this.editText(layerOf(frame), item.id, item.element.page);
+    else if (isOriginalText(item.element)) this.editOriginal(layerOf(frame), item, item.element.page);
+  }
+
+  /**
+   * Saisie d'une ligne de texte d'origine, à sa place (fond opaque : le
+   * texte d'origine ne se voit pas dessous). Bloc pas encore modifié : son
+   * élément est créé à la validation, seulement si le texte change.
+   */
+  editOriginal(layer, item, index) {
+    if (!layer) return;
+    this.editing?.commit();
+    const page = this.viewer.doc.pages[index];
+    const fresh = typeof item.id === "string";
+    const editor = openTextEditor(layer, editorBox(item.element, page), page, async (text) => {
+      this.editing = null;
+      const element = text === null ? null : withNewText(item.element, text);
+      if (!element || element.text === item.element.text) return this.render(layer.parentElement, index);
+      const done = fresh ? this.session.add(element) : this.session.change(item.id, element);
+      return done.catch((error) => this.failed(error));
+    }, { opaque: true, singleLine: true });
+    this.editing = { ...editor, id: item.id };
+    this.render(layer.parentElement, index);
   }
 
   /** Double-clic ou Entrée : modifier le texte d'une zone existante. */

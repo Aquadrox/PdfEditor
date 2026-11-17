@@ -9,6 +9,7 @@ import { isAnnotation } from "./annotation-state.js";
 import { samePage } from "./selection-state.js";
 import { geometryInMm, SWATCHES, withGeometryMm, withText } from "./edit-state.js";
 import { rotated, withOpacity } from "./image-state.js";
+import { withNewText } from "./original-text.js";
 
 /** Pastilles de couleur et « Autre couleur » ; avant attachStyleControls. */
 export function renderSwatches() {
@@ -71,6 +72,14 @@ export function attachProperties(session, pages, actions) {
     if (text.value.trim()) actions.change(item.id, withText(item.element, text.value));
     else actions.remove(item.id);
   });
+  // Texte d'origine : une ligne ; vide, il est supprimé.
+  const originalText = byId("prop-original-text");
+  originalText.addEventListener("change", () => {
+    const item = selected();
+    if (item?.element.kind !== "original_text" || originalText.value === item.element.text) return;
+    if (originalText.value.trim()) actions.change(item.id, withNewText(item.element, originalText.value));
+    else actions.remove(item.id);
+  });
   noteText.addEventListener("change", () => {
     const item = selected();
     if (item?.element.kind === "note" && noteText.value !== item.element.text) {
@@ -110,7 +119,8 @@ export function attachProperties(session, pages, actions) {
     byId("prop-fields").hidden = !item;
     byId("prop-close").hidden = !item;
     byId("prop-arrange-fields").hidden = !many;
-    byId("prop-geometry").hidden = many;
+    // Le texte d'origine reste à sa place : ni position ni taille.
+    byId("prop-geometry").hidden = many || kind === "original_text";
     if (many) {
       const items = session.selection.map((id) => session.element(id)).filter(Boolean);
       const together = samePage(items);
@@ -122,6 +132,13 @@ export function attachProperties(session, pages, actions) {
     byId("prop-text-fields").hidden = kind !== "text";
     byId("prop-image-fields").hidden = kind !== "image";
     byId("prop-note-fields").hidden = kind !== "note";
+    byId("prop-original-fields").hidden = kind !== "original_text";
+    if (kind === "original_text") {
+      if (document.activeElement !== originalText) originalText.value = item.element.text;
+      const font = byId("prop-original-font");
+      font.textContent = t(item.replaced_font ? "props.originalReplaced" : "props.originalKept", { font: t(`font.${item.element.style.font}`) });
+      font.classList.toggle("notice", Boolean(item.replaced_font));
+    }
     if (kind === "note") {
       if (document.activeElement !== noteText) noteText.value = item.element.text;
       byId("prop-note-author").textContent = item.element.author ? t("props.noteAuthor", { author: item.element.author }) : t("props.noteNoAuthor");
@@ -138,12 +155,13 @@ export function attachProperties(session, pages, actions) {
       note: "props.noteTitle",
       redact: "props.redactTitle",
       existing_image: "props.existingTitle",
+      original_text: "props.originalTitle",
     };
     // Image d'origine : remplacée plutôt que dupliquée.
     byId("prop-replace").hidden = many || kind !== "existing_image";
-    byId("prop-duplicate").hidden = !many && kind === "existing_image";
+    byId("prop-duplicate").hidden = !many && (kind === "existing_image" || kind === "original_text");
     byId("properties-title").textContent = many ? t("props.manyTitle", { count }) : t(!item ? "props.panel" : (titles[kind] ?? "props.title"));
-    if (!visible || !item || many) return;
+    if (!visible || !item || many || kind === "original_text") return;
     const values = geometryInMm(item.element, item.bounds);
     if (kind === "text" && document.activeElement !== text) text.value = item.element.text;
     // Caractères qu'aucune police embarquée ne couvre (pde-fonts).

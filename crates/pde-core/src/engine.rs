@@ -45,6 +45,34 @@ pub struct OpenedDocument {
 pub struct Placed {
     pub id: ElementId,
     pub bounds: Rect,
+    /// Texte d'origine récrit avec une police de remplacement (E-05) : la
+    /// police du document ne savait pas écrire le nouveau texte.
+    pub replaced_font: bool,
+}
+
+impl Placed {
+    pub fn new(id: ElementId, bounds: Rect) -> Self {
+        Self {
+            id,
+            bounds,
+            replaced_font: false,
+        }
+    }
+}
+
+/// Bloc de texte d'origine d'une page (E-05) : objets texte d'une même
+/// ligne, de même police, corps et couleur.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PageTextBlock {
+    /// Rangs des objets parmi les objets de la page arrangée, croissants.
+    pub objects: Vec<u32>,
+    /// Place sur la page affichée.
+    pub bounds: Rect,
+    pub text: String,
+    /// Nom de la police d'origine (sans le préfixe de sous-ensemble).
+    pub font_name: String,
+    /// Police standard la plus proche, corps et couleur du bloc.
+    pub style: crate::edit::TextStyle,
 }
 
 /// Image d'origine d'une page (E-06) : son rang parmi les objets de la
@@ -121,6 +149,15 @@ pub trait PdfEngine: Send + Sync {
         page: PageIndex,
     ) -> Result<Vec<PageImage>, EngineError>;
 
+    /// Blocs de texte d'origine de la page `page` du document arrangé selon
+    /// le plan de `edition` (ses éléments ne sont pas posés).
+    fn page_text_blocks(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+    ) -> Result<Vec<PageTextBlock>, EngineError>;
+
     /// Contenu du document dans son état actuel, prêt à écrire.
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError>;
 
@@ -169,6 +206,15 @@ impl<T: PdfEngine + ?Sized> PdfEngine for &T {
         edition: Edition,
     ) -> Result<Vec<FormField>, EngineError> {
         (**self).form_fields(doc, edition)
+    }
+
+    fn page_text_blocks(
+        &self,
+        doc: DocumentId,
+        edition: Edition,
+        page: PageIndex,
+    ) -> Result<Vec<PageTextBlock>, EngineError> {
+        (**self).page_text_blocks(doc, edition, page)
     }
 
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError> {
