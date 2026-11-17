@@ -5,6 +5,7 @@
 
 import { byId, el } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
+import { isAnnotation } from "./annotation-state.js";
 import { geometryInMm, SWATCHES, withGeometryMm, withText } from "./edit-state.js";
 import { rotated, withOpacity } from "./image-state.js";
 
@@ -24,6 +25,15 @@ export function renderSwatches() {
   });
   const other = el("input", { class: "color-input", type: "color", "data-style": "color", "aria-label": t("edit.otherColor"), title: t("edit.otherColor") });
   byId("prop-swatches").replaceChildren(...swatches, other);
+}
+
+/** Champs propres au genre d'annotation (`data-annot-only` : genres, ou « fillable »). */
+function showAnnotationFields(element) {
+  const fillable = element.kind === "shape" && (element.shape === "rectangle" || element.shape === "ellipse");
+  for (const field of byId("prop-annot-fields").querySelectorAll("[data-annot-only]")) {
+    const kinds = field.dataset.annotOnly.split(" ");
+    field.hidden = !(kinds.includes(element.kind) || (fillable && kinds.includes("fillable")));
+  }
 }
 
 /**
@@ -86,12 +96,17 @@ export function attachProperties(session, pages, actions) {
     byId("prop-close").hidden = !item;
     byId("prop-text-fields").hidden = kind !== "text";
     byId("prop-image-fields").hidden = kind !== "image";
-    byId("properties-title").textContent = t(!item ? "props.panel" : kind === "image" ? "props.imageTitle" : "props.title");
+    byId("prop-annot-fields").hidden = !isAnnotation(item?.element);
+    if (isAnnotation(item?.element)) showAnnotationFields(item.element);
+    const titles = { image: "props.imageTitle", shape: "props.shapeTitle", ink: "props.inkTitle", markup: "props.markupTitle" };
+    byId("properties-title").textContent = t(!item ? "props.panel" : (titles[kind] ?? "props.title"));
     if (!visible || !item) return;
     const values = geometryInMm(item.element, item.bounds);
     if (kind === "text" && document.activeElement !== text) text.value = item.element.text;
-    // Hauteur d'un texte : donnée par ses lignes, pas saisissable.
-    geometry.height.readOnly = kind === "text";
+    // Hauteur d'un texte : donnée par ses lignes ; taille d'un marquage :
+    // celle du texte marqué. Ni l'une ni l'autre ne se saisit.
+    geometry.height.readOnly = kind === "text" || kind === "markup";
+    geometry.width.readOnly = kind === "markup";
     for (const [field, input] of Object.entries(geometry)) {
       if (document.activeElement !== input) input.value = String(values[field]).replace(".", ",");
     }

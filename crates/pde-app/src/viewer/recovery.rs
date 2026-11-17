@@ -56,7 +56,7 @@ impl Viewer {
                         .images
                         .get(&image.image)
                         .map(|asset| (image.image, Arc::clone(asset))),
-                    Element::Text(_) => None,
+                    _ => None,
                 })
                 .collect();
             let file_name = open

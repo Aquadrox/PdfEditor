@@ -21,7 +21,28 @@ pub fn flip(element: &Element, page: PageSize) -> Element {
             image.top_left = Point::new(image.top_left.x, page.height - image.top_left.y);
             Element::Image(image)
         }
+        Element::Shape(mut shape) => {
+            shape.start = flip_point(shape.start, page);
+            shape.end = flip_point(shape.end, page);
+            Element::Shape(shape)
+        }
+        Element::Ink(mut ink) => {
+            ink.points
+                .iter_mut()
+                .for_each(|p| *p = flip_point(*p, page));
+            Element::Ink(ink)
+        }
+        Element::Markup(mut markup) => {
+            for area in &mut markup.areas {
+                area.top_left = flip_point(area.top_left, page);
+            }
+            Element::Markup(markup)
+        }
     }
+}
+
+fn flip_point(p: Point, page: PageSize) -> Point {
+    Point::new(p.x, page.height - p.y)
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -92,5 +113,62 @@ mod tests {
         };
         assert_eq!(text.top_left, Point::new(72.0, 142.0));
         assert_eq!(flip(&flipped, page), element);
+    }
+
+    #[test]
+    fn annotations_flip_every_point() {
+        use pde_core::edit::{Area, Color, InkBox, MarkKind, MarkupBox, ShapeBox, ShapeKind};
+        let page = PageSize::new(595.0, 842.0);
+        let red = Color { r: 200, g: 0, b: 0 };
+        let elements = [
+            Element::Shape(ShapeBox {
+                page: 0,
+                shape: ShapeKind::Arrow,
+                start: Point::new(10.0, 20.0),
+                end: Point::new(30.0, 40.0),
+                color: red,
+                width: 2.0,
+                filled: false,
+            }),
+            Element::Ink(InkBox {
+                page: 0,
+                points: vec![Point::new(1.0, 2.0), Point::new(3.0, 800.0)],
+                color: red,
+                width: 2.0,
+            }),
+            Element::Markup(MarkupBox {
+                page: 0,
+                mark: MarkKind::Highlight,
+                areas: vec![Area {
+                    top_left: Point::new(50.0, 100.0),
+                    width: 80.0,
+                    height: 12.0,
+                }],
+                color: red,
+            }),
+        ];
+        for element in elements {
+            let flipped = flip(&element, page);
+            assert_ne!(flipped, element);
+            assert_eq!(flip(&flipped, page), element);
+        }
+        let Element::Shape(shape) = flip(
+            &Element::Shape(ShapeBox {
+                page: 0,
+                shape: ShapeKind::Line,
+                start: Point::new(10.0, 20.0),
+                end: Point::new(30.0, 40.0),
+                color: red,
+                width: 2.0,
+                filled: false,
+            }),
+            page,
+        ) else {
+            panic!("forme attendue");
+        };
+        assert_eq!(
+            (shape.start, shape.end),
+            (Point::new(10.0, 822.0), Point::new(30.0, 802.0))
+        );
     }
 }

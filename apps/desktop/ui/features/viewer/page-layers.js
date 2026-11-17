@@ -30,6 +30,12 @@ export function textLayer(view, page) {
     previous = run;
     const span = el("span", {}, run.text);
     place(span, run, page);
+    // Largeur donnée par le texte étiré, pas par la boîte : fixée ici, elle
+    // serait étirée une seconde fois et recouvrirait les segments voisins
+    // (sélection et surlignage partaient alors trop loin).
+    span.style.width = "";
+    // Largeur dans le PDF, gardée pour caler un marquage sur le texte exact.
+    span.dataset.width = percentBox(run, page).width;
     // Corps = hauteur de la boîte, en points × échelle de la page (--scale).
     span.style.fontSize = `calc(var(--scale) * ${run.height}px)`;
     span.style.fontFamily = MEASURE_FONT;

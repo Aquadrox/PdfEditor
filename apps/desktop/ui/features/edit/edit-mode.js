@@ -1,20 +1,26 @@
 // Mode Éditer : assemble la session d'édition, la couche posée sur les
-// pages, la barre d'outils et le panneau Propriétés ; touches propres au
-// mode (Suppr, flèches, Entrée, Échap) ; images choisies, collées ou
-// déposées.
+// pages, la barre d'outils (outils et leurs options) et le panneau
+// Propriétés ; touches propres au mode (Suppr, flèches, Entrée, Échap) ;
+// images choisies, collées ou déposées ; marquage du texte sélectionné.
 
 import { toast } from "../../components/toast.js";
 import { byId } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
 import { invoke, invokeBytes } from "../../lib/ipc.js";
+import { attachAnnotationControls, renderAnnotationSwatches } from "./annotation-controls.js";
+import { TOOL_DEFAULTS, isAnnotation, withAnnotationStyle } from "./annotation-state.js";
 import { EditLayer } from "./edit-layer.js";
 import { EditSession } from "./edit-session.js";
 import { duplicated, nudged, pagePoint, withStyle } from "./edit-state.js";
 import { newImageBox } from "./image-state.js";
+import { attachMarkupTool } from "./markup-tool.js";
 import { attachProperties, renderSwatches } from "./properties.js";
 import { attachStyleControls } from "./style-controls.js";
 
 const fail = (error) => toast(t("edit.failed", { message: error?.message ?? String(error) }), "error");
+
+/** Outils qui se choisissent (l'image est une action) ; annotations : style par outil. */
+const TOOLS = ["text", "markup", "ink", "shape"];
 
 export class EditMode {
   /**
@@ -26,8 +32,24 @@ export class EditMode {
     this.session = new EditSession();
     this.layer = new EditLayer(this.session, viewer);
     this.active = false;
+    this.tool = "text";
+    this.toolStyles = structuredClone(TOOL_DEFAULTS);
+    this.layer.toolStyle = () => this.toolStyles[this.tool];
     const pages = () => viewer.doc?.pages ?? [];
     renderSwatches();
+    renderAnnotationSwatches(document);
+    // Barre d'outils : style de l'outil en cours (et de l'annotation
+    // sélectionnée du même genre) ; panneau : annotation sélectionnée.
+    this.toolControls = attachAnnotationControls(
+      byId("edit-toolbar"),
+      () => this.toolStyles[this.tool] ?? null,
+      (changes) => this.applyToolStyle(changes),
+    );
+    this.annotationControls = attachAnnotationControls(
+      byId("properties"),
+      () => this.selectedAnnotation()?.element ?? null,
+      (changes) => this.applyAnnotationStyle(changes),
+    );
     this.styles = attachStyleControls(
       document,
       () => this.session.element(this.session.selected)?.element.style ?? this.session.style,
@@ -39,15 +61,22 @@ export class EditMode {
       duplicate: (item) => this.session.add(duplicated(item.element, pages()[item.element.page])).catch(fail),
       close: () => this.session.select(null),
     });
-    byId("tool-text").addEventListener("click", () => {
-      this.layer.tool = "text";
-    });
+    for (const tool of TOOLS) byId(`tool-${tool}`).addEventListener("click", () => this.setTool(tool));
+    // Outil Surligner : le texte glissé devient un marquage au relâchement.
+    attachMarkupTool(
+      viewer,
+      () => this.active && this.tool === "markup",
+      () => this.toolStyles.markup,
+      (markup) => this.session.add(markup).catch(fail),
+    );
     byId("tool-image").addEventListener("click", () => this.pickImage());
     this.session.subscribe((view, changed) => {
       if (changed.length > 0) viewer.setRevisions(view.revisions, changed);
       this.layer.refresh();
       this.styles.refresh();
       this.properties.refresh(this.active);
+      this.toolControls.refresh();
+      this.annotationControls.refresh();
       byId("edit-undo").disabled = !view.can_undo;
       byId("edit-redo").disabled = !view.can_redo;
       onChange(view, changed);
@@ -65,6 +94,51 @@ export class EditMode {
     if (!active) this.session.select(null);
     this.layer.setActive(active);
     this.properties.refresh(active);
+  }
+
+  /** Outil choisi : ses options dans la barre, son curseur sur la page. */
+  setTool(tool) {
+    this.layer.commitText();
+    this.tool = tool;
+    this.layer.tool = tool;
+    for (const name of TOOLS) {
+      const button = byId(`tool-${name}`);
+      button.setAttribute("aria-pressed", String(name === tool));
+      button.classList.toggle("on", name === tool);
+      button.classList.toggle("ghost", name !== tool);
+      this.viewer.desk.classList.toggle(`tool-${name}`, name === tool);
+    }
+    for (const group of document.querySelectorAll("[data-tool-options]")) {
+      group.hidden = group.dataset.toolOptions !== tool;
+    }
+    this.toolControls.refresh();
+  }
+
+  selectedAnnotation() {
+    const item = this.session.element(this.session.selected);
+    return item && isAnnotation(item.element) ? item : null;
+  }
+
+  /** Option de l'outil en cours ; s'applique aussi à l'annotation sélectionnée du même genre. */
+  applyToolStyle(changes) {
+    const style = this.toolStyles[this.tool];
+    if (!style) return;
+    Object.assign(style, withAnnotationStyle({ kind: this.tool, ...style }, changes));
+    delete style.kind;
+    const item = this.selectedAnnotation();
+    if (item?.element.kind === this.tool) this.session.change(item.id, withAnnotationStyle(item.element, changes)).catch(fail);
+    else this.toolControls.refresh();
+  }
+
+  /** Style changé dans le panneau : l'annotation, et les prochaines du même genre. */
+  applyAnnotationStyle(changes) {
+    const item = this.selectedAnnotation();
+    if (!item) return;
+    const kind = item.element.kind;
+    const style = this.toolStyles[kind];
+    Object.assign(style, withAnnotationStyle({ kind, ...style }, changes));
+    delete style.kind;
+    this.session.change(item.id, withAnnotationStyle(item.element, changes)).catch(fail);
   }
 
   /** Style choisi : zone sélectionnée, et prochaines zones. */

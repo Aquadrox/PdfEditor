@@ -6,6 +6,7 @@
 // Coordonnées : points de la page affichée, origine en haut à gauche
 // (celles qu'échangent l'interface et pde-app, voir edit_view.rs).
 
+import { annotationWithGeometry, bboxOf, isAnnotation, translated } from "./annotation-state.js";
 import { withSize } from "./image-state.js";
 
 export const PT_PER_MM = 72 / 25.4;
@@ -60,6 +61,7 @@ function keptHeight(element) {
 
 /** Élément déplacé de (dx, dy) points, sans sortir de la page. */
 export function moved(element, dx, dy, page) {
+  if (isAnnotation(element)) return translated(element, dx, dy, page);
   return {
     ...element,
     top_left: {
@@ -139,6 +141,10 @@ export function duplicated(element, page) {
 
 /** Position et largeur affichées en mm (panneau Propriétés). */
 export function geometryInMm(element, bounds) {
+  if (isAnnotation(element)) {
+    const box = bboxOf(element);
+    return { x: mmFromPt(box.x), y: mmFromPt(box.y), width: mmFromPt(box.width), height: mmFromPt(box.height) };
+  }
   return {
     x: mmFromPt(element.top_left.x),
     y: mmFromPt(element.top_left.y),
@@ -152,6 +158,7 @@ export function withGeometryMm(element, field, value, page) {
   const mm = Number.parseFloat(String(value).replace(",", "."));
   if (!Number.isFinite(mm)) return null;
   const pt = ptFromMm(mm);
+  if (isAnnotation(element)) return annotationWithGeometry(element, field, pt, page);
   if (element.kind === "image" && (field === "width" || field === "height")) return withSize(element, field, pt, page);
   if (field === "width") return resized(element, "right", pt - element.width, page);
   const dx = field === "x" ? pt - element.top_left.x : 0;

@@ -100,6 +100,15 @@ inclus tel quel dans le PDF (aucune recompression) ; les autres images sont
 une fois par document (`ImageId`) et partagé par toutes les copies du cadre
 (`ImageBox` : position, taille, quarts de tour, opacité).
 
+Annotations dessinées (E-04, `pde-core::edit::annotation`) : formes,
+traits à main levée et marquages du texte sont des éléments comme les
+autres, tracés par `pde-pdf` dans le contenu de la page (chemins PDFium ;
+surlignage en mode de fusion « produit » pour garder le texte noir). Le
+calcul des tracés (pointe de flèche, ellipse en courbes de Bézier, bandes
+de soulignement) est dans `pde-core`, testé sans moteur. Dans l'interface,
+le marquage suit la couche texte : début et fin pris au caractère sous la
+souris, bandes calées sur les boîtes du PDF.
+
 Sauvegarde automatique (F-02, `pde-app::recovery`) : chaque lancement écrit
 dans `recovery/<session>/doc-<n>/` (dossier de données) un `manifest.json`
 (chemin, empreinte SHA-256 du PDF d'origine, éléments) et ses images ; le
