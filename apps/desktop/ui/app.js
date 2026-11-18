@@ -405,14 +405,26 @@ async function start() {
     },
   });
   if (recovered) return;
-  // Fichier passé en argument (« Ouvrir avec PdfEditor »), sinon le dernier
-  // document si le réglage le demande.
-  const files = await invoke("initial_files").catch(() => []);
+  // Fichier passé en argument (« Ouvrir avec PdfEditor » ; sur Android,
+  // reçu d'une autre application), sinon le dernier document si le réglage
+  // le demande.
+  const files = [
+    ...((await invoke("initial_files").catch(() => null)) ?? []),
+    ...((await invoke("shared_files").catch(() => null)) ?? []),
+  ];
   if (files[0]) return open(files[0]);
   if (settings?.general.reopen_last) {
     const recent = await refreshRecent();
     if (recent[0]?.exists) return open(recent[0].path);
   }
 }
+
+// Android : un document reçu (« Ouvrir avec », « Partager ») pendant que
+// l'application tournait s'ouvre quand elle revient au premier plan.
+document.addEventListener("visibilitychange", async () => {
+  if (document.hidden) return;
+  const files = (await invoke("shared_files").catch(() => null)) ?? [];
+  if (files[0]) open(files[0]);
+});
 
 start();

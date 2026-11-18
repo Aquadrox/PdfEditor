@@ -7,6 +7,8 @@ mod autosave;
 mod closing;
 mod commands;
 mod logging;
+#[cfg(mobile)]
+mod mobile_files;
 mod protocol;
 #[cfg(desktop)]
 mod updates;
@@ -104,6 +106,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init());
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    // Android : lecture et écriture des adresses `content://` (A-02).
+    #[cfg(mobile)]
+    let builder = builder.plugin(tauri_plugin_fs::init());
     let result = builder
         .on_window_event(closing::on_window_event)
         // L'application s'assemble une fois Tauri prêt : sur Android, ses
@@ -113,6 +118,10 @@ pub fn run() {
             let dirs = app_dirs(&handle);
             let (app, news, check_updates) = assemble(&dirs);
             tauri_app.manage(app.clone());
+            #[cfg(mobile)]
+            tauri_app.manage(Arc::new(pde_app::copies::LocalCopies::new(
+                &dirs.data.join("documents"),
+            )));
             tauri_app.manage(dirs);
             tauri_app.manage(news);
             let updates = updates::Updates::new(&handle, check_updates);
@@ -136,6 +145,7 @@ pub fn run() {
             commands::document::clear_recent_files,
             commands::document::pick_pdf,
             commands::document::initial_files,
+            commands::document::shared_files,
             commands::edit::edit_view,
             commands::edit::add_element,
             commands::edit::update_element,
