@@ -1,0 +1,7 @@
+# Faux positifs de gitleaks, un par ligne : commit:fichier:règle:ligne.
+# Ne jamais y mettre un vrai secret : un secret committé se révoque.
+#
+# « DPAPI sous Windows, ChaCha20-Poly1305 » (texte de docs/ARCHITECTURE.md,
+# reformulé depuis) : « API » suivi d'une virgule et d'un nom d'algorithme
+# pris pour une clé par la règle generic-api-key.
+25e9bd5006f31b0755f918b110c2a67b6e838840:docs/ARCHITECTURE.md:generic-api-key:49
