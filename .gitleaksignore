@@ -5,3 +5,5 @@
 # chiffrement de Windows, une virgule puis le nom d'un algorithme, pris pour
 # une clé par la règle generic-api-key.
 25e9bd5006f31b0755f918b110c2a67b6e838840:docs/ARCHITECTURE.md:generic-api-key:49
+# Même faux positif, recopié dans le commentaire de ce fichier.
+5f5b037de9633e6adf097b322e42cfd7f32af02e:.gitleaksignore:generic-api-key:4
