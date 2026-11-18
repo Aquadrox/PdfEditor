@@ -16,7 +16,9 @@ use crate::files::{copy_name, extract_name};
 use crate::recent::{RecentFiles, RecentView};
 use crate::recovery::RecoveryStore;
 use crate::settings_store::{SettingsStore, SettingsView};
-use crate::signing::{IdentityStore, IdentityView, SignRequest};
+use crate::signing::HttpTimestampAuthority;
+use crate::signing::drawings::png_from_base64;
+use crate::signing::{DrawingStore, DrawingView, IdentityStore, IdentityView, SignRequest};
 use crate::view::DocumentView;
 use crate::viewer::Viewer;
 use pde_sign::Subject;
@@ -29,6 +31,8 @@ pub struct App {
     pub(crate) recovery: Option<RecoveryStore>,
     /// Identités de signature ; absentes tant que le dossier n'est pas connu.
     identities: Option<IdentityStore>,
+    /// Signatures manuscrites enregistrées (« Mes signatures »).
+    drawings: Option<DrawingStore>,
 }
 
 fn megabytes(mb: u32) -> usize {
@@ -53,12 +57,14 @@ impl App {
             recent,
             recovery: None,
             identities: None,
+            drawings: None,
         }
     }
 
-    /// Identités de signature rangées dans `store`.
-    pub fn with_identities(mut self, store: IdentityStore) -> Self {
+    /// Identités de signature et signatures manuscrites rangées dans `data_dir`.
+    pub fn with_identities(mut self, store: IdentityStore, drawings: DrawingStore) -> Self {
         self.identities = Some(store);
+        self.drawings = Some(drawings);
         self
     }
 
@@ -162,10 +168,56 @@ impl App {
         self.identity_store()?.delete(id)
     }
 
+    /// Signatures manuscrites enregistrées.
+    pub fn drawings(&self) -> Vec<DrawingView> {
+        self.drawings
+            .as_ref()
+            .map(DrawingStore::list)
+            .unwrap_or_default()
+    }
+
+    /// Enregistre une signature manuscrite (PNG en base64).
+    pub fn save_drawing(&self, png: &str) -> Result<DrawingView, AppError> {
+        let store = self.drawings.as_ref().ok_or_else(|| {
+            AppError::new(
+                ErrorKind::Signature,
+                "signatures enregistrées indisponibles",
+            )
+        })?;
+        store.save(&png_from_base64(png)?)
+    }
+
+    pub fn delete_drawing(&self, id: &str) -> Result<(), AppError> {
+        match &self.drawings {
+            Some(store) => store.delete(id),
+            None => Ok(()),
+        }
+    }
+
     /// Signe le document avec l'identité demandée (S-05, S-06).
     pub fn sign_document(&self, id: u64, request: &SignRequest) -> Result<SavedView, AppError> {
         let identity = self.identity_store()?.load(&request.identity)?;
-        let saved = self.viewer.sign(id, &identity, request, now())?;
+        let tsa = if request.timestamp {
+            let url = self.settings.get().signature.timestamp_url;
+            if url.is_empty() {
+                return Err(AppError::new(
+                    ErrorKind::Signature,
+                    "aucun serveur d'horodatage dans les réglages (rubrique Signature)",
+                ));
+            }
+            Some(HttpTimestampAuthority::new(&url).map_err(|e| {
+                AppError::new(ErrorKind::Signature, format!("serveur d'horodatage : {e}"))
+            })?)
+        } else {
+            None
+        };
+        let saved = self.viewer.sign(
+            id,
+            &identity,
+            request,
+            now(),
+            tsa.as_ref().map(|t| t as &dyn pde_sign::TimestampAuthority),
+        )?;
         if let Some(recovery) = &self.recovery {
             recovery.remove(id);
         }

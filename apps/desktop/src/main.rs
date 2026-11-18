@@ -19,7 +19,7 @@ use pde_app::news::News;
 use pde_app::recent::RecentFiles;
 use pde_app::recovery::RecoveryStore;
 use pde_app::settings_store::SettingsStore;
-use pde_app::signing::IdentityStore;
+use pde_app::signing::{DrawingStore, IdentityStore};
 use pde_app::unavailable::UnavailableEngine;
 use pde_pdf::PdfiumEngine;
 use pde_platform::dirs::AppDirs;
@@ -66,7 +66,7 @@ fn main() {
         Err(e) => log::warn!("sauvegarde automatique désactivée : {e}"),
     }
     let identities = IdentityStore::new(&dirs.data, Arc::new(SystemProtector));
-    let app = Arc::new(app.with_identities(identities));
+    let app = Arc::new(app.with_identities(identities, DrawingStore::new(&dirs.data)));
     let protocol_app = app.clone();
     let autosave_app = app.clone();
     let exit_app = app.clone();
@@ -120,6 +120,9 @@ fn main() {
             commands::sign::pick_certificate,
             commands::sign::document_signatures,
             commands::sign::sign_document,
+            commands::sign::signature_drawings,
+            commands::sign::save_signature_drawing,
+            commands::sign::delete_signature_drawing,
             commands::edit::page_images,
             commands::edit::page_text_blocks,
             commands::edit::undo_edit,

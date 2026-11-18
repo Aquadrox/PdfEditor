@@ -45,6 +45,9 @@ pub struct FakeEngine {
     /// Taille des pages de chaque document : à l'ouverture, puis selon le
     /// dernier plan appliqué.
     pages: Mutex<HashMap<DocumentId, Pages>>,
+    /// Contenu des vrais PDF ouverts (tests de signature) : rendu tel quel
+    /// à l'enregistrement, comme un moteur qui n'y change rien.
+    real: Mutex<HashMap<DocumentId, Vec<u8>>>,
 }
 
 /// Tailles des pages d'un document : à l'ouverture, et telles qu'affichées.
@@ -166,6 +169,9 @@ impl PdfEngine for FakeEngine {
                 .ok_or_else(|| EngineError::InvalidFile("pas un PDF".into()))?,
         };
         let id = DocumentId(self.next_id.fetch_add(1, Ordering::SeqCst) + 1);
+        if bytes.starts_with(b"%PDF-1.") {
+            self.real.lock().unwrap().insert(id, bytes.clone());
+        }
         let info = Self::info(count);
         self.pages
             .lock()
@@ -332,6 +338,9 @@ impl PdfEngine for FakeEngine {
 
     /// Enregistre un PDF reconnu par ce faux moteur, avec le bon nombre de pages.
     fn save(&self, doc: DocumentId) -> Result<Vec<u8>, EngineError> {
+        if let Some(bytes) = self.real.lock().unwrap().get(&doc) {
+            return Ok(bytes.clone());
+        }
         Ok(pdf_with_pages(self.current_sizes(doc).len()))
     }
 

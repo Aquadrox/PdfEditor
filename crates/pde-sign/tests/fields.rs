@@ -4,7 +4,8 @@ mod common;
 
 use common::{NOW, assert_qpdf_accepts, form_fixture, identity, pdfsig, with_empty_field};
 use pde_sign::{
-    Identity, Lock, PrivateKey, SignOptions, SignatureStatus, Subject, Target, sign, signatures,
+    Appearance, Identity, Lock, PrivateKey, SignOptions, SignatureStatus, Subject, Target, sign,
+    signatures,
 };
 
 fn options(identity: &Identity, target: Target) -> SignOptions<'_> {
@@ -15,7 +16,8 @@ fn options(identity: &Identity, target: Target) -> SignOptions<'_> {
         location: None,
         lock: Lock::None,
         time: NOW,
-        appearance: vec!["Hugo Bernard".into()],
+        appearance: Appearance::text(vec!["Hugo Bernard".into()]),
+        timestamp: None,
     }
 }
 

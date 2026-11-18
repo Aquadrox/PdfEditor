@@ -3,13 +3,14 @@
 
 use lopdf::{Dictionary, Object, ObjectId};
 
-use super::appearance;
+use super::appearance::{self, PlacedImage};
 use super::fields::{self, Field};
 use super::geometry::PageFrame;
 use super::incremental::{Body, Update};
 use super::permissions;
 use super::sig_dict::{self, Details, Lock, SigDict};
 use super::source::Source;
+use crate::appearance::Appearance;
 use crate::error::{Result, SignError};
 
 /// Où poser la signature.
@@ -29,8 +30,8 @@ pub enum Target {
 pub(crate) struct Request<'a> {
     pub target: &'a Target,
     pub details: Details<'a>,
-    /// Lignes de l'apparence (vide : rien d'affiché).
-    pub appearance: &'a [String],
+    /// Apparence du cadre (vide : rien d'affiché).
+    pub appearance: &'a Appearance,
 }
 
 pub(crate) struct Prepared {
@@ -39,10 +40,10 @@ pub(crate) struct Prepared {
     pub sig: SigDict,
 }
 
-struct Allocator(u32);
+pub(super) struct Allocator(pub(super) u32);
 
 impl Allocator {
-    fn next(&mut self) -> ObjectId {
+    pub(super) fn next(&mut self) -> ObjectId {
         let id = (self.0, 0);
         self.0 += 1;
         id
@@ -157,7 +158,7 @@ fn sign_existing(
     fields: &[Field],
     name: &str,
     sig_id: ObjectId,
-    appearance: &[String],
+    appearance: &Appearance,
     ids: &mut Allocator,
     update: &mut Update,
 ) -> Result<()> {
@@ -199,22 +200,31 @@ fn sign_existing(
     Ok(())
 }
 
-/// Apparence texte du widget si le cadre a une surface ; vrai si posée.
+/// Apparence du widget si le cadre a une surface ; vrai si posée.
 fn add_appearance(
     widget: &mut Dictionary,
     rect: [f32; 4],
-    lines: &[String],
+    content: &Appearance,
     ids: &mut Allocator,
     update: &mut Update,
 ) -> bool {
     let (width, height) = (rect[2] - rect[0], rect[3] - rect[1]);
-    if width < 1.0 || height < 1.0 || lines.iter().all(|l| l.trim().is_empty()) {
+    if width < 1.0 || height < 1.0 || content.is_empty() {
         return false;
     }
     let font_id = ids.next();
     update.push(font_id, Body::Object(appearance::helvetica()));
+    let image = content.image.as_ref().map(|image| {
+        let id = super::image::push_image(image, ids, update);
+        PlacedImage {
+            id,
+            width: image.width(),
+            height: image.height(),
+        }
+    });
     let stream_id = ids.next();
-    let stream = appearance::text_appearance(lines, width, height, font_id);
+    let stream =
+        appearance::appearance_stream(&content.lines, image.as_ref(), width, height, font_id);
     update.push(stream_id, Body::Object(Object::Stream(stream)));
     let mut ap = Dictionary::new();
     ap.set("N", stream_id);

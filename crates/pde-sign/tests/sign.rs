@@ -4,7 +4,7 @@
 mod common;
 
 use common::{NOW, assert_qpdf_accepts, identity, pdfsig, two_pages};
-use pde_sign::{Lock, SignOptions, SignatureStatus, Target, sign, signatures};
+use pde_sign::{Appearance, Lock, SignOptions, SignatureStatus, Target, sign, signatures};
 
 fn options<'a>(identity: &'a pde_sign::Identity, target: Target, lock: Lock) -> SignOptions<'a> {
     SignOptions {
@@ -14,10 +14,11 @@ fn options<'a>(identity: &'a pde_sign::Identity, target: Target, lock: Lock) -> 
         location: Some("Lyon".into()),
         lock,
         time: NOW,
-        appearance: vec![
+        appearance: Appearance::text(vec![
             "Signé numériquement par Claire Martin".into(),
             "18/11/2026 13:00".into(),
-        ],
+        ]),
+        timestamp: None,
     }
 }
 
@@ -270,4 +271,79 @@ fn frame_follows_crop_box_and_rotation() {
         .map(|v| v.as_float().unwrap())
         .collect();
     assert_eq!(rect, [60.0, 60.0, 160.0, 110.0]);
+}
+
+/// Trait « manuscrit » : une sinusoïde bleu encre sur fond transparent.
+fn handwriting() -> pde_sign::SignatureImage {
+    let (w, h) = (300u32, 90u32);
+    let mut rgba = vec![0u8; (w * h * 4) as usize];
+    for x in 0..w {
+        let y = (45.0 + 30.0 * (x as f32 / 18.0).sin()) as u32;
+        for dy in 0..4 {
+            let i = (((y + dy).min(h - 1) * w + x) * 4) as usize;
+            rgba[i..i + 4].copy_from_slice(&[29, 42, 92, 255]);
+        }
+    }
+    pde_sign::SignatureImage::new(w, h, rgba).expect("données de test")
+}
+
+#[test]
+fn handwritten_appearance_is_embedded_with_transparency() {
+    let signer = identity("Claire Martin");
+    let mut opts = options(
+        &signer,
+        Target::NewField {
+            page: 0,
+            rect: [320.0, 60.0, 540.0, 140.0],
+        },
+        Lock::None,
+    );
+    opts.appearance.image = Some(handwriting());
+    let signed = sign(&two_pages(false), &opts).unwrap();
+    let doc = lopdf::Document::load_mem(&signed).unwrap();
+    let image = doc
+        .objects
+        .values()
+        .filter_map(|o| o.as_stream().ok())
+        .find(|s| {
+            s.dict.get(b"Subtype").and_then(|v| v.as_name()).ok() == Some(b"Image".as_slice())
+                && s.dict.has(b"SMask")
+        })
+        .expect("image avec masque de transparence");
+    assert_eq!(image.dict.get(b"Width").unwrap().as_i64().unwrap(), 300);
+    assert!(image.dict.has(b"Filter"), "image compressée");
+    assert_eq!(
+        signatures(&signed).unwrap()[0]
+            .signature
+            .as_ref()
+            .unwrap()
+            .status,
+        SignatureStatus::Valid
+    );
+    if let Some(report) = pdfsig("handwritten.pdf", &signed) {
+        assert!(report.contains("Signature is Valid"), "{report}");
+    }
+    assert_qpdf_accepts("handwritten.pdf", &signed);
+    if std::env::var_os("PDE_KEEP_SIGNED").is_some() {
+        std::fs::write(std::env::temp_dir().join("pde-handwritten.pdf"), &signed).unwrap();
+    }
+}
+
+#[test]
+fn timestamped_signature_carries_the_server_time() {
+    let tsa_identity = identity("Horodatage de test");
+    let tsa = pde_sign::LocalTimestampAuthority::new(tsa_identity, NOW + 7);
+    let signer = identity("Claire Martin");
+    let mut opts = options(&signer, Target::Invisible, Lock::None);
+    opts.timestamp = Some(&tsa);
+    let signed = sign(&two_pages(false), &opts).unwrap();
+    let info = signatures(&signed).unwrap()[0].signature.clone().unwrap();
+    assert_eq!(info.status, SignatureStatus::Valid);
+    let timestamp = info.timestamp.unwrap();
+    assert_eq!(timestamp.time, Some(NOW + 7));
+    assert_eq!(timestamp.authority.as_deref(), Some("Horodatage de test"));
+    if let Some(report) = pdfsig("timestamped.pdf", &signed) {
+        assert!(report.contains("Signature is Valid"), "{report}");
+    }
+    assert_qpdf_accepts("timestamped.pdf", &signed);
 }

@@ -61,19 +61,20 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 
 ## v0.4 — Signature et verrouillage 🚧
 
-Première livraison : v0.0.19 (signer, verrouiller, vérifier).
+Livraisons : v0.0.19 (signer, verrouiller, vérifier), v0.0.20 (enregistrement des documents signés, signature manuscrite, horodatage).
 
 - ✅ `pde-platform` : protection des clés privées par le système (repris de VoiceToText : DPAPI sous Windows, clé gardée dans le trousseau de la session sous Linux), derrière le trait `DataProtector` de `pde-core`. Le trousseau pour d'autres secrets (clés API) viendra avec l'IA
 - ✅ `pde-sign` (Rust pur, RustCrypto + `lopdf`) : mise à jour incrémentale écrite octet par octet (table `xref` ou flux de références croisées, selon le fichier), signature PAdES B-B (CMS détaché, `signingCertificateV2`, SHA-256, ECDSA P-256 / P-384 ou RSA) (S-05) ; chaque test contre-vérifié par `pdfsig` (Poppler) et `qpdf --check`, exigés par la CI
 - ✅ Identités : certificat auto-signé généré (P-256, 5 ans, usages signature et non-répudiation), import PKCS#12 (RSA, ECDSA) ; clé privée chiffrée par le système dans le dossier de données, jamais en clair (S-01, S-02). Écart assumé : le mot de passe du `.p12` n'est demandé qu'à l'import, la clé est ensuite protégée comme celle d'un certificat généré
-- 🚧 Apparence (S-03) : signature invisible, ou visible dans un cadre tracé sur la page (nom, organisation, date en Helvetica). Restent : signature manuscrite dessinée, tapée ou importée, modèles enregistrés ; texte droit sur une page tournée
+- ✅ Apparence (S-03) : signature invisible, ou visible dans un cadre tracé sur la page : signature manuscrite dessinée (souris, stylet), tapée (Caveat, Dancing Script, Homemade Apple) ou importée (papier clair rendu transparent), détourée, en image PDF avec transparence au-dessus du nom, de l'organisation et de la date ; « Mes signatures » (modèles enregistrés). Reste : texte droit sur une page tournée
 - 🚧 Champs (S-04) : signer un champ de signature vide existant d'un clic ; nouveau champ dans le cadre tracé (CropBox et rotation de la page pris en compte). Reste : placer des champs vides pour d'autres signataires (avec le cycle, v0.8)
 - ✅ Verrouillage DocMDP (S-06) : « Laisser modifiable », « Verrouiller, sauf formulaires et signatures » (`/P 2`), « Verrouiller entièrement » (`/P 1`) ; seule la première signature verrouille ; un document verrouillé passe en lecture (ni Éditer, ni Pages, ni formulaire) et refuse toute nouvelle signature
 - 🚧 Panneau Signatures et sceau (S-07) : chaque champ, signé ou vide ; intégrité des octets signés, signature, certificat désigné, document complété depuis, verrouillage ; sceau de cire dans la barre du haut. Restent : chaîne de confiance (certificats reconnus du système), analyse de ce qui a changé après une signature
-- ⬜ Enregistrement incrémental des documents signés (F-03) : aujourd'hui, modifier puis enregistrer un document signé invalide ses signatures (l'application prévient en passant à Éditer ou Pages)
-- ⬜ Horodatage RFC 3161 (S-08)
-- ⬜ Réglages Signature (R-05) : identité par défaut, verrouillage par défaut, serveur d'horodatage
+- ✅ Enregistrement incrémental des documents signés (F-03) : le document réécrit par PDFium est comparé au fichier signé, objet par objet et sur le fond (ordre des clés, compression ignorés) ; seuls les objets changés sont ajoutés à la fin du fichier ; les dictionnaires de signature ne sont jamais réécrits ; refusé si une signature valide cessait de l'être. Verrou « formulaires » (`/P 2`) : seuls les champs et d'autres signatures restent permis dans l'interface
+- ✅ Horodatage RFC 3161 (S-08, PAdES B-T) : jeton du serveur ajouté au CMS (attribut `timeStampToken`), vérifié à la réception (empreinte, nonce, signature du serveur) et à la lecture ; essayé avec le serveur public de DigiCert. Serveurs en `http://` seulement (le jeton est signé ; pas de pile TLS à embarquer, compilation Android préservée)
+- ✅ Réglages Signature (R-05) : horodatage par défaut, serveur d'horodatage, verrouillage proposé. Reste : identité par défaut (aujourd'hui la dernière utilisée)
 - ⬜ Signature d'un document protégé par mot de passe (refusée avec un message)
+- ⬜ Analyse de ce qui a changé après une signature (permis ou non par DocMDP), chaîne de confiance des certificats
 
 ## v0.5 — IA : socle et analyse
 

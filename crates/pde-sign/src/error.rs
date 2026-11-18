@@ -31,6 +31,9 @@ pub enum SignError {
     /// Erreur d'encodage ASN.1 (ne devrait pas arriver).
     #[error("encodage de la signature impossible : {0}")]
     Encoding(String),
+    /// Horodatage impossible (serveur injoignable, refus, réponse invalide).
+    #[error("horodatage impossible : {0}")]
+    Timestamp(String),
     /// Aléa du système indisponible.
     #[error("générateur aléatoire du système indisponible")]
     Random,

@@ -52,6 +52,16 @@ impl From<Lock> for LockChoice {
     }
 }
 
+/// Horodatage d'une signature (S-08).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TimestampView {
+    /// Heure attestée par le serveur (jeton valide), secondes depuis 1970.
+    pub time: Option<u64>,
+    pub authority: Option<String>,
+    /// Raison du refus d'un jeton invalide.
+    pub problem: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct SignatureView {
     /// Nom du champ.
@@ -75,6 +85,8 @@ pub struct SignatureView {
     pub modified_after: bool,
     /// Signature de certification : verrouillage posé.
     pub lock: Option<LockChoice>,
+    /// Horodatage joint.
+    pub timestamp: Option<TimestampView>,
 }
 
 impl SignatureView {
@@ -106,6 +118,7 @@ impl SignatureView {
             time: None,
             modified_after: false,
             lock: None,
+            timestamp: None,
         };
         if let Some(info) = &field.signature {
             (view.state, view.problem) = match &info.status {
@@ -127,6 +140,11 @@ impl SignatureView {
             view.time = info.time;
             view.modified_after = !info.covers_whole_document;
             view.lock = info.lock.map(LockChoice::from);
+            view.timestamp = info.timestamp.as_ref().map(|t| TimestampView {
+                time: t.time,
+                authority: t.authority.clone(),
+                problem: t.problem.clone(),
+            });
         }
         view
     }
@@ -201,6 +219,12 @@ pub struct SignRequest {
     /// Lignes de l'apparence visible (rédigées par l'interface).
     #[serde(default)]
     pub appearance: Vec<String>,
+    /// Signature manuscrite (PNG en base64), au-dessus des lignes.
+    #[serde(default)]
+    pub image: Option<String>,
+    /// Horodater par le serveur des réglages (S-08).
+    #[serde(default)]
+    pub timestamp: bool,
 }
 
 #[cfg(test)]

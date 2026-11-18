@@ -43,6 +43,11 @@ export class SignMode {
     byId("seal").addEventListener("click", () => hooks.onSeal());
   }
 
+  /** Rubrique Signature des réglages : horodatage et verrouillage proposés. */
+  applySettings(signature) {
+    if (signature) this.dialog.settings = signature;
+  }
+
   get info() {
     return summary(this.signatures);
   }
@@ -87,6 +92,8 @@ export class SignMode {
     const hasEmpty = this.signatures.some((s) => s.state === "empty" && s.bounds);
     byId("sign-hint").textContent = !canSign
       ? t("sign.lockedDocument")
+      : info.lock === "forms"
+        ? t("sign.formsOnly")
       : this.placing
         ? t("sign.placeActive")
         : hasEmpty
@@ -95,16 +102,15 @@ export class SignMode {
     this.viewer.frames.forEach((frame, index) => {
       if (frame.querySelector("img")) this.render(frame, index);
     });
-    // Verrouillé par sa signature : ni Éditer ni Pages.
-    byId("mode-edit").disabled = !this.doc || info.lock === "all";
-    byId("mode-pages").disabled = !this.doc || info.lock === "all";
+    // Verrouillé par sa signature : ni Éditer, ni Pages, ni propriétés
+    // (« formulaires » laisse remplir les champs et signer).
+    for (const id of ["mode-edit", "mode-pages", "menu-properties"]) byId(id).disabled = !this.doc || Boolean(info.lock);
     this.hooks.onState(info);
   }
 
   /**
-   * En passant à Éditer ou Pages sur un document signé : l'enregistrer après
-   * une modification invalidera ses signatures (enregistrement incrémental :
-   * F-03). Dit une fois par document.
+   * En passant à Éditer ou Pages sur un document signé : les modifications
+   * seront ajoutées à la suite des signatures (F-03). Dit une fois par document.
    */
   warnIfSigned(doc) {
     if (!doc || this.warned === doc || this.info.signed === 0) return;
@@ -126,7 +132,7 @@ export class SignMode {
       onField: (signature) => this.signField(signature),
       onFrame: (box) => {
         this.setPlacing(false);
-        this.start({ kind: "new", page: index, ...box });
+        this.start({ kind: "new", page: index, visible: true, ...box });
       },
     });
   }
@@ -138,7 +144,7 @@ export class SignMode {
   }
 
   signField(signature) {
-    return this.start({ kind: "field", name: signature.name, pageNumber: (signature.page ?? 0) + 1 });
+    return this.start({ kind: "field", name: signature.name, pageNumber: (signature.page ?? 0) + 1, visible: Boolean(signature.bounds) });
   }
 
   /** Parcours complet de la signature vers `target`. */
@@ -153,6 +159,11 @@ export class SignMode {
     try {
       if (session.dirty && !(await this.hooks.save())) return;
       const saved = await invoke("sign_document", { id: this.doc.id, request });
+      if (this.dialog.keepDrawing) {
+        await invoke("save_signature_drawing", { png: this.dialog.keepDrawing }).catch((error) =>
+          toast(t("sign.keepFailed", { message: error?.message ?? String(error) }), "error"),
+        );
+      }
       await this.hooks.reopen(saved.path);
       toast(t(request.lock === "none" ? "sign.done" : "sign.doneLocked"));
       pressSeal();

@@ -74,6 +74,13 @@ export function details(signature) {
     const { day, time } = formatTime(signature.time);
     lines.push(page ? ["sig.signedOnPage", { day, time, page }] : ["sig.signedAt", { day, time }]);
   }
+  const stamp = signature.timestamp;
+  if (stamp?.time) {
+    const { day, time } = formatTime(stamp.time);
+    lines.push(["sig.timestamp", { day, time, authority: stamp.authority ?? "?" }]);
+  } else if (stamp?.problem) {
+    lines.push(["sig.timestampInvalid", { problem: stamp.problem }]);
+  }
   if (signature.state === "valid") {
     lines.push(signature.modified_after ? ["sig.modifiedAfter", {}] : ["sig.unchanged", {}]);
   } else if (signature.problem) {

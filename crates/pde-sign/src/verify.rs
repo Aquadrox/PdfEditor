@@ -27,6 +27,17 @@ pub enum SignatureStatus {
     Unsupported(String),
 }
 
+/// Horodatage joint à une signature (S-08).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TimestampInfo {
+    /// Heure attestée par le serveur, secondes depuis 1970 (jeton valide).
+    pub time: Option<u64>,
+    /// Nom du serveur d'horodatage.
+    pub authority: Option<String>,
+    /// Raison du refus d'un jeton invalide.
+    pub problem: Option<String>,
+}
+
 /// Une signature posée dans un champ.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SignatureInfo {
@@ -43,6 +54,8 @@ pub struct SignatureInfo {
     pub covers_whole_document: bool,
     /// Signature de certification : niveau de verrouillage.
     pub lock: Option<Lock>,
+    /// Horodatage joint, s'il y en a un.
+    pub timestamp: Option<TimestampInfo>,
 }
 
 /// Un champ de signature du document, signé ou vide.
@@ -110,33 +123,53 @@ fn signed(
     } else {
         permissions::permission(source, dictionary).map(Lock::from_permission)
     };
-    let (status, signer, cms_time, covers) = check(source.bytes, dictionary);
+    let checked = check(source.bytes, dictionary);
     Some(SignatureInfo {
-        status,
-        signer,
+        status: checked.status,
+        signer: checked.signer,
         name: text(b"Name"),
         reason: text(b"Reason"),
         location: text(b"Location"),
-        time: text(b"M").and_then(|m| date::parse(&m)).or(cms_time),
-        covers_whole_document: covers,
+        time: text(b"M")
+            .and_then(|m| date::parse(&m))
+            .or(checked.cms_time),
+        covers_whole_document: checked.covers,
         lock,
+        timestamp: checked.timestamp,
     })
 }
 
-type Check = (SignatureStatus, Option<CertificateInfo>, Option<u64>, bool);
+/// Résultat de la vérification d'un dictionnaire `/Sig`.
+struct Check {
+    status: SignatureStatus,
+    signer: Option<CertificateInfo>,
+    cms_time: Option<u64>,
+    covers: bool,
+    timestamp: Option<TimestampInfo>,
+}
+
+impl Check {
+    fn failed(status: SignatureStatus, covers: bool) -> Self {
+        Check {
+            status,
+            signer: None,
+            cms_time: None,
+            covers,
+            timestamp: None,
+        }
+    }
+}
 
 fn check(bytes: &[u8], dictionary: &Dictionary) -> Check {
-    let invalid = |reason: &str| (SignatureStatus::Invalid(reason.into()), None, None, false);
+    let invalid = |reason: &str| Check::failed(SignatureStatus::Invalid(reason.into()), false);
     let sub_filter = dictionary
         .get(b"SubFilter")
         .and_then(Object::as_name)
         .unwrap_or_default();
     if !matches!(sub_filter, b"ETSI.CAdES.detached" | b"adbe.pkcs7.detached") {
         let name = String::from_utf8_lossy(sub_filter).into_owned();
-        return (
+        return Check::failed(
             SignatureStatus::Unsupported(format!("format de signature {name}")),
-            None,
-            None,
             false,
         );
     }
@@ -153,15 +186,24 @@ fn check(bytes: &[u8], dictionary: &Dictionary) -> Check {
     };
     let covers = bytes[end..].iter().all(u8::is_ascii_whitespace);
     match cms::verify_detached(contents, &[&bytes[..open], &bytes[close..end]]) {
-        Ok(verified) => {
-            let signer = CertificateInfo::from_der(&verified.certificate).ok();
-            (
-                SignatureStatus::Valid,
-                signer,
-                verified.signing_time,
-                covers,
-            )
-        }
+        Ok(verified) => Check {
+            status: SignatureStatus::Valid,
+            signer: CertificateInfo::from_der(&verified.certificate).ok(),
+            cms_time: verified.signing_time,
+            covers,
+            timestamp: verified.timestamp.map(|check| match check {
+                Ok(token) => TimestampInfo {
+                    time: Some(token.time),
+                    authority: token.authority,
+                    problem: None,
+                },
+                Err(problem) => TimestampInfo {
+                    time: None,
+                    authority: None,
+                    problem: Some(problem),
+                },
+            }),
+        },
         Err(failure) => {
             let status = match failure {
                 CmsFailure::DigestMismatch => {
@@ -178,7 +220,7 @@ fn check(bytes: &[u8], dictionary: &Dictionary) -> Check {
                 }
                 CmsFailure::Unsupported(detail) => SignatureStatus::Unsupported(detail),
             };
-            (status, None, None, covers)
+            Check::failed(status, covers)
         }
     }
 }

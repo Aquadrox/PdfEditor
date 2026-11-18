@@ -6,11 +6,15 @@
 
 mod edit;
 mod shortcuts;
+mod signature;
 
 use serde::{Deserialize, Serialize};
 
 pub use edit::Edit;
 pub use shortcuts::{Action, Shortcuts, normalize as normalize_shortcut};
+pub use signature::{
+    DEFAULT_TIMESTAMP_URL, DefaultLock, Signature, check_url as check_timestamp_url,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -144,6 +148,7 @@ pub struct Settings {
     pub display: Display,
     pub edit: Edit,
     pub files: Files,
+    pub signature: Signature,
     pub shortcuts: Shortcuts,
     pub updates: Updates,
     pub diagnostic: Diagnostic,
@@ -239,6 +244,7 @@ impl Settings {
             s.files.copy_suffix = suffix;
         }
         s.files.default_dir = s.files.default_dir.trim().to_owned();
+        s.signature = self.signature.checked(warnings);
         s.shortcuts = self.shortcuts.validated(warnings)?;
         Ok(s)
     }

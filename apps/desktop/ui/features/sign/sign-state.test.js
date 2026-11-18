@@ -54,6 +54,14 @@ test("Détails du panneau : page, état, motif, certificat", () => {
   assert.equal(broken.length, 2);
 });
 
+test("Horodatage : heure et serveur, ou raison du refus", () => {
+  const stamped = details(valid({ timestamp: { time: 1795003200, authority: "DigiCert", problem: null } }));
+  assert.equal(stamped[1][0], "sig.timestamp");
+  assert.equal(stamped[1][1].authority, "DigiCert");
+  const broken = details(valid({ timestamp: { time: null, authority: null, problem: "autre signature" } }));
+  assert.deepEqual(broken[1], ["sig.timestampInvalid", { problem: "autre signature" }]);
+});
+
 test("Apparence : nom, organisation, date en français", () => {
   const lines = appearanceLines({ name: "Claire Martin", organization: "Atelier Morel" }, new Date(2026, 10, 18, 14, 32));
   assert.deepEqual(lines, ["Signé numériquement par Claire Martin", "Atelier Morel", "le 18/11/2026 à 14:32"]);

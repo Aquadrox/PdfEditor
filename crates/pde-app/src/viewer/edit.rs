@@ -102,6 +102,8 @@ impl Viewer {
         self.with_document(id, |open, doc| {
             let target = target.unwrap_or_else(|| open.path.clone());
             let bytes = self.engine.save(doc)?;
+            // Document signé : les modifications sont ajoutées à la suite (F-03).
+            let bytes = super::signatures::preserve_signatures(open, bytes)?;
             self.verify(&bytes, open)?;
             write_atomic(&target, &bytes)?;
             log::info!("document enregistré : {} Ko", bytes.len() / 1024);
