@@ -19,6 +19,7 @@ use pde_app::ai::{AiService, UsageStore};
 use pde_app::app::App;
 use pde_app::news::News;
 use pde_app::recent::RecentFiles;
+use pde_app::recipes::RecipeStore;
 use pde_app::recovery::RecoveryStore;
 use pde_app::settings_store::SettingsStore;
 use pde_app::signing::{DrawingStore, IdentityStore};
@@ -75,7 +76,8 @@ fn main() {
     );
     let app = Arc::new(
         app.with_identities(identities, DrawingStore::new(&dirs.data))
-            .with_ai(ai),
+            .with_ai(ai)
+            .with_recipes(RecipeStore::new(&dirs.data)),
     );
     let protocol_app = app.clone();
     let autosave_app = app.clone();
@@ -131,6 +133,11 @@ fn main() {
             commands::ai::ai_start,
             commands::ai::ai_cancel,
             commands::ai::assistant_apply,
+            commands::ai::recipes_list,
+            commands::ai::recipe_save,
+            commands::ai::recipe_delete,
+            commands::ai::recipe_import,
+            commands::ai::recipe_export,
             commands::sign::identities,
             commands::sign::create_identity,
             commands::sign::import_identity,

@@ -27,6 +27,7 @@ import { Palette } from "./features/palette/palette.js";
 import { showSidebarTab } from "./features/viewer/sidebar.js";
 import { AiMode } from "./features/ai/ai-mode.js";
 import { attachAiSettings } from "./features/ai/ai-settings.js";
+import { attachRecipesSettings } from "./features/ai/recipes-settings.js";
 import { zoomIn, zoomOut } from "./features/viewer/zoom.js";
 import { byId } from "./lib/dom.js";
 import { t, translate } from "./lib/i18n.js";
@@ -65,6 +66,8 @@ const settingsView = attachSettings({
   onFill: (draft) => aiSettings.fill(draft),
 });
 const aiSettings = attachAiSettings(settingsView);
+// Recettes de l'assistant (IA-16) : rubrique des Réglages, choix dans le mode IA.
+const recipes = attachRecipesSettings((list) => ai.setRecipes(list));
 // IA (v0.5) : panneau Assistant IA en mode IA ; actions acceptées de
 // l'assistant appliquées comme une opération d'édition.
 const ai = new AiMode(viewer, {
@@ -364,6 +367,7 @@ attachKeyboard({ pages, edit, keymap: () => shortcuts, actions });
 
 async function start() {
   palette.load();
+  recipes.refresh();
   invoke("app_info")
     .then((info) => {
       byId("app-version").textContent = t("settings.version", { version: info.version });

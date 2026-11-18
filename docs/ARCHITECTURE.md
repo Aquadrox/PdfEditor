@@ -397,6 +397,12 @@ Sélection (page, zone, texte) + demande de l'utilisateur
 - **Recettes** (IA-16) : fichiers TOML (consigne, actions permises, portée
   par défaut), intégrées en lecture seule et personnelles dans le dossier de
   données ; c'est la forme « compétence sur mesure », sans code exécutable.
+  Format et vérification dans `pde-core::recipe`, rangement dans
+  `pde-app::recipes` (les intégrées sont des fichiers TOML du dépôt, lus au
+  même format). Avec une recette, `app::ai` place sa consigne avant la
+  demande et n'offre au modèle que ses actions ; une proposition hors de
+  ces actions est écartée. Une recette importée reste une consigne
+  d'utilisateur : elle ne peut rien appliquer sans aperçu ni accord.
 - **Serveur MCP** (IA-17, plus tard) : `pdfeditor --mcp` (stdio) ou serveur
   local, désactivé par défaut ; il expose le catalogue tel quel (outils MCP =
   actions) sur le document ouvert. Le retenir comme cœur aurait imposé un

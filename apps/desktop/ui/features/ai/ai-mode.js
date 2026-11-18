@@ -26,6 +26,9 @@ export class AiMode {
     this.assistant = new AssistantView(viewer, hooks);
     /** Champ du bas : question sur le document, ou demande d'action. */
     this.askMode = "question";
+    /** Recettes de l'assistant (IA-16), et celle choisie. */
+    this.recipes = [];
+    byId("ai-recipe").addEventListener("change", () => this.recipeChosen());
     for (const button of document.querySelectorAll("[data-ask]")) {
       button.addEventListener("click", () => this.setAskMode(button.dataset.ask));
     }
@@ -45,8 +48,10 @@ export class AiMode {
     byId("ai-ask").addEventListener("submit", (event) => {
       event.preventDefault();
       const question = byId("ai-question").value.trim();
-      if (!question) return;
-      this.ask({ kind: this.askMode, question });
+      const recipe = this.askMode === "assist" ? this.recipe() : null;
+      // Avec une recette, la demande est facultative (précisions).
+      if (!question && !recipe) return;
+      this.ask({ kind: this.askMode, question }, recipe);
     });
     byId("ai-question").addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !event.shiftKey) {
@@ -102,11 +107,40 @@ export class AiMode {
       button.classList.toggle("ghost", !on);
       button.setAttribute("aria-checked", String(on));
     }
+    byId("ai-recipe").hidden = mode !== "assist";
     const field = byId("ai-question");
-    field.placeholder = t(mode === "assist" ? "assistant.placeholder" : "ai.questionPlaceholder");
+    field.placeholder = t(mode === "assist" ? (this.recipe() ? "recipes.precisions" : "assistant.placeholder") : "ai.questionPlaceholder");
     field.setAttribute("aria-label", t(mode === "assist" ? "assistant.request" : "ai.question"));
     byId("ai-send").textContent = t(mode === "assist" ? "assistant.propose" : "ai.send");
     field.focus();
+  }
+
+  /** Recettes à jour (Réglages) : la liste du choix est refaite. */
+  setRecipes(recipes) {
+    this.recipes = recipes;
+    const select = byId("ai-recipe");
+    const chosen = select.value;
+    select.replaceChildren(
+      el("option", { value: "" }, t("recipes.none")),
+      ...recipes.map((r) => el("option", { value: r.id, title: r.recipe.description }, r.recipe.name)),
+    );
+    select.value = recipes.some((r) => r.id === chosen) ? chosen : "";
+  }
+
+  /** Recette choisie, ou null. */
+  recipe() {
+    const id = byId("ai-recipe").value;
+    return this.recipes.find((r) => r.id === id) ?? null;
+  }
+
+  /** Recette choisie : sa portée est proposée, la demande devient facultative. */
+  recipeChosen() {
+    const recipe = this.recipe();
+    if (recipe) {
+      const scope = recipe.recipe.scope === "selection" && !this.selection ? "document" : recipe.recipe.scope;
+      this.setScope(scope);
+    }
+    byId("ai-question").placeholder = t(recipe ? "recipes.precisions" : "assistant.placeholder");
   }
 
   setScope(scope) {
@@ -153,27 +187,27 @@ export class AiMode {
     return t("ai.scopeText.pages", { count: scope.pages.length });
   }
 
-  /** Estimation, confirmation, puis envoi. */
-  async ask(task) {
+  /** Estimation, confirmation, puis envoi ; `recipe` : recette de l'assistant. */
+  async ask(task, recipe = null) {
     const scope = this.request();
     if (!this.doc || !scope) return toast(t("ai.scope.invalid"), "error");
     let estimate;
     try {
-      estimate = await invoke("ai_estimate", { id: this.doc.id, scope, task });
+      estimate = await invoke("ai_estimate", { id: this.doc.id, scope, task, ...(recipe ? { recipe: recipe.id } : {}) });
     } catch (error) {
       return toast(t("ai.failed", { message: error?.message ?? String(error) }), "error");
     }
     if (estimate.over_cap) return toast(t("ai.overCap", { month: money(estimate.month_cost, estimate.currency) }), "error");
     if (estimate.needs_confirmation && !(await this.confirm(estimate, scope))) return;
-    const entry = this.entry(task, scope);
+    const entry = this.entry(task, scope, recipe);
     entry.task = task;
     entry.scope = scope;
     try {
-      const run = await invoke("ai_start", { id: this.doc.id, scope, task, consent: true });
+      const run = await invoke("ai_start", { id: this.doc.id, scope, task, ...(recipe ? { recipe: recipe.id } : {}), consent: true });
       entry.run = run;
       this.runs.set(run, entry);
       entry.cancel.onclick = () => invoke("ai_cancel", { run }).catch(() => {});
-      if (task.question) byId("ai-question").value = "";
+      byId("ai-question").value = "";
     } catch (error) {
       this.finish(entry, { Err: error });
     }
@@ -207,8 +241,9 @@ export class AiMode {
   }
 
   /** Nouvelle réponse dans le panneau. */
-  entry(task, scope) {
-    const title = task.question ?? t(`ai.task.${task.kind}`);
+  entry(task, scope, recipe = null) {
+    const asked = task.question ?? t(`ai.task.${task.kind}`);
+    const title = recipe ? [recipe.recipe.name, task.question].filter(Boolean).join(" — ") : asked;
     const body = el("div", { class: "ai-body" });
     const status = el("p", { class: "ai-status caption", role: "status" }, t("ai.waiting"));
     const cancel = el("button", { class: "btn ghost small", type: "button" }, t("ai.cancel"));

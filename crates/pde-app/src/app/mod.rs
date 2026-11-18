@@ -6,27 +6,25 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod ai;
+
 use pde_core::engine::PdfEngine;
 use pde_core::settings::Settings;
 
-use crate::actions::assistant::{self, ASSISTANT_ACTIONS, Proposal};
-use crate::ai::{AiEvent, AiService, AiStatus, AnswerView, EstimateView, Scope, TestView};
+use crate::ai::AiService;
 use crate::edit_view::SavedView;
 use crate::error::AppError;
 use crate::error::ErrorKind;
 use crate::files::{copy_name, extract_name};
 use crate::recent::{RecentFiles, RecentView};
+use crate::recipes::RecipeStore;
 use crate::recovery::RecoveryStore;
 use crate::settings_store::{SettingsStore, SettingsView};
 use crate::signing::HttpTimestampAuthority;
 use crate::signing::drawings::png_from_base64;
 use crate::signing::{DrawingStore, DrawingView, IdentityStore, IdentityView, SignRequest};
 use crate::view::DocumentView;
-use crate::viewer::{PagesView, Viewer};
-use pde_ai::tasks::{PageText, Task};
-use pde_core::ai::CancelFlag;
-use pde_core::settings::Provider;
-use pde_core::usage::{UsageSummary, day_of};
+use crate::viewer::Viewer;
 use pde_sign::Subject;
 
 pub struct App {
@@ -41,6 +39,8 @@ pub struct App {
     drawings: Option<DrawingStore>,
     /// IA (v0.5) ; absente tant qu'elle n'est pas branchée.
     ai: Option<AiService>,
+    /// Recettes de l'assistant (IA-16).
+    recipes: Option<RecipeStore>,
 }
 
 fn megabytes(mb: u32) -> usize {
@@ -67,131 +67,8 @@ impl App {
             identities: None,
             drawings: None,
             ai: None,
+            recipes: None,
         }
-    }
-
-    /// Active l'IA.
-    pub fn with_ai(mut self, ai: AiService) -> Self {
-        self.ai = Some(ai);
-        self
-    }
-
-    fn ai_service(&self) -> Result<&AiService, AppError> {
-        self.ai
-            .as_ref()
-            .ok_or_else(|| AppError::new(ErrorKind::Ai, "IA indisponible"))
-    }
-
-    pub fn ai_status(&self) -> Result<AiStatus, AppError> {
-        Ok(self.ai_service()?.status(&self.settings.get().ai))
-    }
-
-    /// Clé API du fournisseur `provider` (vide : retirée).
-    pub fn ai_set_key(&self, provider: &Provider, key: &str) -> Result<(), AppError> {
-        self.ai_service()?.set_key(provider, key)
-    }
-
-    pub fn ai_test(&self, provider: &Provider) -> Result<TestView, AppError> {
-        Ok(self.ai_service()?.test(provider))
-    }
-
-    pub fn ai_usage(&self) -> Result<UsageSummary, AppError> {
-        Ok(self.ai_service()?.usage(&day_of(now())))
-    }
-
-    /// Texte de la portée, page par page.
-    fn ai_pages(&self, id: u64, scope: &Scope) -> Result<Vec<PageText>, AppError> {
-        let pages = match scope {
-            Scope::Selection { text, page } => vec![(*page, text.clone())],
-            Scope::Pages { pages } => self.viewer.plain_text(id, pages)?,
-            Scope::Document => self.viewer.plain_text(id, &[])?,
-        };
-        Ok(pages
-            .into_iter()
-            .map(|(page, text)| PageText { page, text })
-            .collect())
-    }
-
-    pub fn ai_estimate(
-        &self,
-        id: u64,
-        scope: &Scope,
-        task: &Task,
-    ) -> Result<EstimateView, AppError> {
-        let pages = self.ai_pages(id, scope)?;
-        Ok(self
-            .ai_service()?
-            .estimate(&self.settings.get().ai, &pages, task, &day_of(now())))
-    }
-
-    /// Nouvelle action IA : son numéro, pour l'annuler.
-    pub fn ai_start(&self) -> Result<(u64, CancelFlag), AppError> {
-        Ok(self.ai_service()?.start())
-    }
-
-    pub fn ai_cancel(&self, run: u64) {
-        if let Some(ai) = &self.ai {
-            ai.cancel(run);
-        }
-    }
-
-    /// Exécute l'action `run` (bloquant ; `on_event` : avancement et réponse en flux).
-    pub fn ai_run(
-        &self,
-        id: u64,
-        scope: &Scope,
-        task: &Task,
-        run: (u64, CancelFlag),
-        consent: bool,
-        on_event: &mut dyn FnMut(AiEvent),
-    ) -> Result<AnswerView, AppError> {
-        let pages = self.ai_pages(id, scope)?;
-        let settings = self.settings.get().ai;
-        let mut answer = self.ai_service()?.run(
-            &settings,
-            &pages,
-            task,
-            &day_of(now()),
-            run,
-            consent,
-            on_event,
-        )?;
-        // Assistant d'actions : chaque appel d'outil est vérifié sur le
-        // document ; seules les propositions valables sont montrées.
-        if matches!(task, Task::Assist(_)) {
-            let scope = self.scope_pages(id, scope)?;
-            for call in std::mem::take(&mut answer.tool_calls) {
-                match assistant::parse(&call, &ASSISTANT_ACTIONS)
-                    .and_then(|p| self.viewer.preview_proposal(id, p, &scope))
-                {
-                    Ok(view) => answer.proposals.push(view),
-                    Err(reason) => answer.rejected.push(reason),
-                }
-            }
-        }
-        Ok(answer)
-    }
-
-    /// Pages de la portée (rangs à partir de 0).
-    fn scope_pages(&self, id: u64, scope: &Scope) -> Result<Vec<usize>, AppError> {
-        Ok(match scope {
-            Scope::Selection { page, .. } => vec![*page],
-            Scope::Pages { pages } => pages.clone(),
-            Scope::Document => (0..self.viewer.document_view(id)?.pages.len()).collect(),
-        })
-    }
-
-    /// Applique les propositions acceptées de l'assistant, en une opération.
-    pub fn assistant_apply(
-        &self,
-        id: u64,
-        scope: &Scope,
-        proposals: &[Proposal],
-    ) -> Result<PagesView, AppError> {
-        let scope = self.scope_pages(id, scope)?;
-        let author = self.settings.get().edit.author;
-        self.viewer
-            .apply_proposals(id, proposals, &scope, author.trim())
     }
 
     /// Identités de signature et signatures manuscrites rangées dans `data_dir`.

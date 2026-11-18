@@ -406,6 +406,7 @@
               <button class="btn small on" type="button" role="radio" aria-checked="true" data-ask="question" data-i18n="ai.task.question"></button>
               <button class="btn small ghost" type="button" role="radio" aria-checked="false" data-ask="assist" data-i18n="assistant.mode" data-i18n-title="assistant.modeHint"></button>
             </span>
+            <select id="ai-recipe" class="input ai-recipe" data-i18n-aria="recipes.label" hidden></select>
             <textarea id="ai-question" class="input" rows="2" maxlength="2000" data-i18n-placeholder="ai.questionPlaceholder" data-i18n-aria="ai.question"></textarea>
             <button id="ai-send" class="btn primary ai-send" type="submit" data-i18n="ai.send"></button>
           </form>
@@ -452,6 +453,7 @@
           <button class="nav-item" data-section="files" data-i18n="settings.files"></button>
           <button class="nav-item" data-section="signature" data-i18n="settings.signature"></button>
           <button class="nav-item" data-section="ai" data-i18n="settings.ai"></button>
+          <button class="nav-item" data-section="recipes" data-i18n="recipes.title"></button>
           <button class="nav-item" data-section="diagnostic" data-i18n="settings.diagnostic"></button>
         </nav>
         <div class="settings-content">
@@ -672,6 +674,57 @@
             <div class="field ai-prompt"><label for="set-ai-p-entities" data-i18n="ai.task.entities"></label><textarea id="set-ai-p-entities" class="input" rows="3" data-setting="ai.prompts.entities"></textarea></div>
             <div class="field ai-prompt"><label for="set-ai-p-risks" data-i18n="ai.task.risks"></label><textarea id="set-ai-p-risks" class="input" rows="3" data-setting="ai.prompts.risks"></textarea></div>
             <div class="field ai-prompt"><label for="set-ai-p-question" data-i18n="ai.task.question"></label><textarea id="set-ai-p-question" class="input" rows="3" data-setting="ai.prompts.question"></textarea></div>
+          </section>
+
+          <section class="settings-section" data-section="recipes" hidden>
+            <h2 class="settings-section-title" data-i18n="recipes.title"></h2>
+            <p class="hint" data-i18n="recipes.hint"></p>
+            <div class="field">
+              <label for="recipe-pick" data-i18n="recipes.pick"></label>
+              <span class="actions">
+                <select id="recipe-pick" class="input"></select>
+                <button id="recipe-new" class="btn" type="button" data-i18n="recipes.new"></button>
+                <button id="recipe-import" class="btn ghost" type="button" data-i18n="recipes.import"></button>
+              </span>
+            </div>
+            <p id="recipe-builtin" class="notice" data-i18n="recipes.builtin" hidden></p>
+            <form id="recipe-form" class="recipe-form">
+              <div class="field">
+                <label for="recipe-name" data-i18n="recipes.name"></label>
+                <input id="recipe-name" class="input" maxlength="80" required />
+              </div>
+              <div class="field">
+                <label for="recipe-description" data-i18n="recipes.description"></label>
+                <input id="recipe-description" class="input" maxlength="300" />
+              </div>
+              <div class="field ai-prompt">
+                <label for="recipe-instruction"><span data-i18n="recipes.instruction"></span><span class="hint" data-i18n="recipes.instruction.hint"></span></label>
+                <textarea id="recipe-instruction" class="input" rows="5" maxlength="4000" required></textarea>
+              </div>
+              <fieldset class="field recipe-actions">
+                <legend><span data-i18n="recipes.actions"></span><span class="hint" data-i18n="recipes.actions.hint"></span></legend>
+                <label class="checkbox"><input type="checkbox" value="redact" /><span data-i18n="recipes.action.redact"></span></label>
+                <label class="checkbox"><input type="checkbox" value="highlight" /><span data-i18n="recipes.action.highlight"></span></label>
+                <label class="checkbox"><input type="checkbox" value="add_note" /><span data-i18n="recipes.action.add_note"></span></label>
+                <label class="checkbox"><input type="checkbox" value="rotate_pages" /><span data-i18n="recipes.action.rotate_pages"></span></label>
+                <label class="checkbox"><input type="checkbox" value="remove_pages" /><span data-i18n="recipes.action.remove_pages"></span></label>
+              </fieldset>
+              <div class="field">
+                <label for="recipe-scope" data-i18n="recipes.scope"></label>
+                <select id="recipe-scope" class="input">
+                  <option value="document" data-i18n="ai.scope.document"></option>
+                  <option value="page" data-i18n="ai.scope.page"></option>
+                  <option value="selection" data-i18n="ai.scope.selection"></option>
+                </select>
+              </div>
+              <p id="recipe-error" class="field-error" role="alert"></p>
+              <div class="actions recipe-buttons">
+                <button id="recipe-delete" class="btn ghost destructive" type="button" data-i18n="recipes.delete"></button>
+                <button id="recipe-export" class="btn ghost" type="button" data-i18n="recipes.export"></button>
+                <button id="recipe-duplicate" class="btn" type="button" data-i18n="recipes.duplicate"></button>
+                <button id="recipe-save" class="btn primary" type="submit" data-i18n="recipes.save"></button>
+              </div>
+            </form>
           </section>
 
           <section class="settings-section" data-section="diagnostic" hidden>

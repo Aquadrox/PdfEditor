@@ -231,3 +231,27 @@
   border-color: var(--danger);
   background: color-mix(in srgb, var(--danger) 14%, transparent);
 }
+
+/* Recettes (IA-16) : choix dans le panneau, rubrique des Réglages. */
+.ai-recipe {
+  width: 100%;
+}
+
+.recipe-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.recipe-actions legend {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--space-1);
+}
+
+.recipe-buttons {
+  justify-content: flex-end;
+}
