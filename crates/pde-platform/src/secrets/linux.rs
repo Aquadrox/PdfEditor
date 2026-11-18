@@ -66,6 +66,53 @@ fn store_key(key: &[u8; 32]) -> Result<(), String> {
         .map_err(|e| format!("enregistrement dans le trousseau : {e}"))
 }
 
+fn named(name: &str) -> HashMap<&str, &str> {
+    HashMap::from([("application", APPLICATION), ("name", name)])
+}
+
+/// Secret rangé dans le trousseau de la session (libellé `PdfEditor/nom`).
+pub fn store_secret(name: &str, value: &str) -> Result<(), String> {
+    let service = service()?;
+    let collection = service
+        .get_any_collection()
+        .map_err(|e| format!("trousseau sans portefeuille : {e}"))?;
+    collection
+        .ensure_unlocked()
+        .map_err(|e| format!("trousseau verrouillé : {e}"))?;
+    collection
+        .create_item(
+            &format!("PdfEditor/{name}"),
+            named(name),
+            value.as_bytes(),
+            true,
+            "text/plain",
+        )
+        .map(|_| ())
+        .map_err(|e| format!("enregistrement dans le trousseau : {e}"))
+}
+
+pub fn load_secret(name: &str) -> Option<String> {
+    let service = service().ok()?;
+    let found = service.search_items(named(name)).ok()?;
+    let item = found.unlocked.first().or(found.locked.first())?;
+    item.ensure_unlocked().ok()?;
+    String::from_utf8(item.get_secret().ok()?).ok()
+}
+
+pub fn delete_secret(name: &str) -> Result<(), String> {
+    let service = service()?;
+    let found = service
+        .search_items(named(name))
+        .map_err(|e| format!("recherche dans le trousseau : {e}"))?;
+    for item in found.unlocked.iter().chain(&found.locked) {
+        item.ensure_unlocked()
+            .map_err(|e| format!("trousseau verrouillé : {e}"))?;
+        item.delete()
+            .map_err(|e| format!("suppression dans le trousseau : {e}"))?;
+    }
+    Ok(())
+}
+
 /// Clé gardée en mémoire après la première lecture.
 static CACHED: Mutex<Option<[u8; 32]>> = Mutex::new(None);
 

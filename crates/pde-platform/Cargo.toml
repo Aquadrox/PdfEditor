@@ -12,7 +12,7 @@ pde-core = { path = "../pde-core" }
 
 [target.'cfg(windows)'.dependencies]
 # DPAPI : chiffrement des clés privées pour la session de l'utilisateur.
-windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Security_Cryptography"] }
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Security_Cryptography", "Win32_Security_Credentials"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Équivalent de DPAPI : clé aléatoire gardée dans le trousseau de la session.

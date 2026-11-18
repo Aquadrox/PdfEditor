@@ -3498,12 +3498,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pde-ai"
+version = "0.0.21"
+dependencies = [
+ "log",
+ "pde-core",
+ "serde",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
 name = "pde-app"
-version = "0.0.20"
+version = "0.0.21"
 dependencies = [
  "base64 0.23.1",
  "image",
  "log",
+ "pde-ai",
  "pde-core",
  "pde-fonts",
  "pde-sign",
@@ -3518,7 +3530,7 @@ dependencies = [
 
 [[package]]
 name = "pde-core"
-version = "0.0.20"
+version = "0.0.21"
 dependencies = [
  "serde",
  "serde_json",
@@ -3529,7 +3541,7 @@ dependencies = [
 
 [[package]]
 name = "pde-fonts"
-version = "0.0.20"
+version = "0.0.21"
 dependencies = [
  "pde-core",
  "sha2 0.10.9",
@@ -3538,7 +3550,7 @@ dependencies = [
 
 [[package]]
 name = "pde-pdf"
-version = "0.0.20"
+version = "0.0.21"
 dependencies = [
  "image",
  "lopdf",
@@ -3550,7 +3562,7 @@ dependencies = [
 
 [[package]]
 name = "pde-platform"
-version = "0.0.20"
+version = "0.0.21"
 dependencies = [
  "chacha20poly1305",
  "dirs 6.0.0",
@@ -3562,7 +3574,7 @@ dependencies = [
 
 [[package]]
 name = "pde-sign"
-version = "0.0.20"
+version = "0.0.21"
 dependencies = [
  "cms",
  "const-oid",
@@ -3586,9 +3598,10 @@ dependencies = [
 
 [[package]]
 name = "pdfeditor"
-version = "0.0.20"
+version = "0.0.21"
 dependencies = [
  "log",
+ "pde-ai",
  "pde-app",
  "pde-core",
  "pde-pdf",
@@ -4343,6 +4356,7 @@ version = "0.23.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf"
 dependencies = [
+ "log",
  "once_cell",
  "ring",
  "rustls-pki-types",
@@ -6022,10 +6036,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ac5cecf619ca81f66a96482db09687c9f7465af65f4300a8c30cca05bd5a59d"
 dependencies = [
  "base64 0.23.1",
+ "flate2",
  "log",
  "percent-encoding",
+ "rustls",
+ "rustls-pki-types",
  "ureq-proto",
  "utf8-zero",
+ "webpki-roots",
 ]
 
 [[package]]
@@ -6343,6 +6361,15 @@ name = "webpki-root-certs"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "293198dcebfb821155b5092ab94b5a82ff180eddd7241df3bd6e66a4ffd1a585"
+dependencies = [
+ "rustls-pki-types",
+]
+
+[[package]]
+name = "webpki-roots"
+version = "1.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7265c9301c16a8711c992c2d8da90ee77ef54b1ed51482d6dfeb00dc756b1297"
 dependencies = [
  "rustls-pki-types",
 ]

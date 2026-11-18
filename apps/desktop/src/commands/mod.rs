@@ -4,6 +4,7 @@
 //! `async` : exécutées hors du thread de la fenêtre, qui reste fluide
 //! pendant la lecture d'un gros fichier.
 
+pub mod ai;
 pub mod document;
 pub mod edit;
 pub mod form;

@@ -27,6 +27,33 @@
     "timestamp_url": "http://timestamp.digicert.com",
     "default_lock": "none"
   },
+  "ai": {
+    "provider": {
+      "base_url": "",
+      "model": "",
+      "timeout_seconds": 120,
+      "max_input_tokens": 24000,
+      "pricing": {
+        "input_per_million": 0.0,
+        "cached_input_per_million": 0.0,
+        "output_per_million": 0.0,
+        "currency": "USD"
+      },
+      "extra_body": ""
+    },
+    "profiles": [],
+    "fallback": "",
+    "confirm_above": 0.05,
+    "monthly_cap": 0.0,
+    "confirm_each_send": false,
+    "prompts": {
+      "summary": "",
+      "key_points": "",
+      "entities": "",
+      "risks": "",
+      "question": ""
+    }
+  },
   "shortcuts": {
     "open": "Ctrl+O",
     "close": "Ctrl+W",

@@ -1,0 +1,155 @@
+/* Assistant IA : sarcelle = ce que propose l'IA (docs/DESIGN.md). */
+.ai-panel {
+  width: 340px;
+}
+
+.ai-provider {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-controls .segmented {
+  flex-wrap: wrap;
+}
+
+.ai-scope .btn.on {
+  background: var(--ai-soft);
+  color: var(--ai);
+}
+
+.ai-tasks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ai-answers {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  list-style: none;
+  overflow-y: auto;
+}
+
+.ai-answer {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ai);
+  border-radius: var(--radius-control);
+  background: var(--raised);
+}
+
+.ai-answer.failed {
+  border-left-color: var(--danger);
+}
+
+.ai-answer.cancelled {
+  border-left-color: var(--muted);
+}
+
+.ai-answer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.ai-answer-title {
+  overflow-wrap: anywhere;
+}
+
+.ai-body {
+  overflow-wrap: anywhere;
+}
+
+.ai-body h3 {
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: var(--text-body);
+}
+
+.ai-body p {
+  margin: 0 0 var(--space-2);
+}
+
+.ai-list {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-4);
+}
+
+.ai-status {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+}
+
+.ai-answer.failed .ai-status {
+  color: var(--danger);
+}
+
+.ai-cite {
+  padding: 0 2px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--ai-soft);
+  color: var(--ai);
+  font: inherit;
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.ai-cite:hover,
+.ai-cite:focus-visible {
+  outline: 1px solid var(--ai);
+}
+
+.ai-cite.invalid {
+  background: transparent;
+  color: var(--muted);
+  text-decoration: line-through dotted;
+  cursor: help;
+}
+
+.ai-ask {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.ai-ask textarea {
+  flex: 1;
+  min-width: 0;
+  resize: vertical;
+}
+
+.btn.ai-accent {
+  background: var(--ai);
+  border-color: var(--ai);
+  color: var(--raised);
+}
+
+.ai-prices {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.ai-test-result.ok {
+  border-color: var(--ok);
+}
+
+.ai-test-result.failed {
+  border-color: var(--danger);
+}
+
+.ai-prompt {
+  align-items: start;
+}
+
+.settings-subtitle {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-panel);
+}

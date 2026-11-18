@@ -9,7 +9,9 @@ import { countChanges, getPath, setPath } from "./settings-state.js";
 import { renderShortcuts } from "./shortcuts-editor.js";
 
 /**
- * @param {{ onSaved: (settings: object) => void, onClose: () => void }} hooks
+ * @param {{ onSaved: (settings: object) => void, onClose: () => void, onFill?: (draft: object) => void }} hooks
+ * `onFill` : avant chaque remplissage des champs (rubriques qui construisent
+ * leurs listes à partir du brouillon).
  */
 export function attachSettings(hooks) {
   const view = byId("settings-view");
@@ -24,6 +26,7 @@ export function attachSettings(hooks) {
   }
 
   function fill() {
+    hooks.onFill?.(draft);
     for (const field of fields) {
       const value = getPath(draft, field.dataset.setting);
       if (field.type === "checkbox") field.checked = Boolean(value);
@@ -118,9 +121,18 @@ export function attachSettings(hooks) {
       warnings.hidden = settingsView.warnings.length === 0;
       fill();
     },
-    open() {
-      showSection("general");
-      view.querySelector(".settings-nav [data-section]")?.focus();
+    open(section = "general") {
+      showSection(section);
+      view.querySelector(`.settings-nav [data-section="${section}"]`)?.focus();
+    },
+    /** Brouillon en cours (copie). */
+    draft() {
+      return structuredClone(draft);
+    },
+    /** Change une valeur du brouillon et réaffiche les champs. */
+    set(path, value) {
+      draft = setPath(draft, path, value);
+      fill();
     },
   };
 }

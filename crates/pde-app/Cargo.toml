@@ -13,6 +13,8 @@ base64 = "0.23"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 log = "0.4"
 pde-core = { path = "../pde-core" }
+# IA : tâches sur le document, client compatible OpenAI (sans transport réel).
+pde-ai = { path = "../pde-ai" }
 # Caractères qu'aucune police ne couvre (signalés dans l'interface).
 pde-fonts = { path = "../pde-fonts" }
 png = "0.18"
@@ -33,6 +35,7 @@ zeroize = "1"
 [dev-dependencies]
 # Serveur d'horodatage simulé pour les tests de signature.
 pde-sign = { path = "../pde-sign", features = ["testing"] }
+pde-ai = { path = "../pde-ai", features = ["testing"] }
 
 [lints]
 workspace = true

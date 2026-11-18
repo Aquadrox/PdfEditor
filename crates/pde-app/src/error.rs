@@ -22,6 +22,10 @@ pub enum ErrorKind {
     Unsaved,
     /// Identité ou signature.
     Signature,
+    /// Fournisseur d'IA (configuration, réseau, réponse).
+    Ai,
+    /// Action annulée par l'utilisateur.
+    Cancelled,
 }
 
 #[derive(Debug, Clone, PartialEq, Error, Serialize)]

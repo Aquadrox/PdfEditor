@@ -4,6 +4,7 @@
 //! le document et ses modifications, et définit les traits (ports) que les
 //! autres crates implémentent. Tout ce qu'il contient se teste sous Linux.
 
+pub mod ai;
 pub mod changelog;
 pub mod document;
 pub mod edit;
@@ -15,3 +16,4 @@ pub mod secrets;
 pub mod settings;
 pub mod text;
 pub mod units;
+pub mod usage;

@@ -9,6 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use pde_core::engine::PdfEngine;
 use pde_core::settings::Settings;
 
+use crate::ai::{AiEvent, AiService, AiStatus, AnswerView, EstimateView, Scope, TestView};
 use crate::edit_view::SavedView;
 use crate::error::AppError;
 use crate::error::ErrorKind;
@@ -21,6 +22,10 @@ use crate::signing::drawings::png_from_base64;
 use crate::signing::{DrawingStore, DrawingView, IdentityStore, IdentityView, SignRequest};
 use crate::view::DocumentView;
 use crate::viewer::Viewer;
+use pde_ai::tasks::{PageText, Task};
+use pde_core::ai::CancelFlag;
+use pde_core::settings::Provider;
+use pde_core::usage::{UsageSummary, day_of};
 use pde_sign::Subject;
 
 pub struct App {
@@ -33,6 +38,8 @@ pub struct App {
     identities: Option<IdentityStore>,
     /// Signatures manuscrites enregistrées (« Mes signatures »).
     drawings: Option<DrawingStore>,
+    /// IA (v0.5) ; absente tant qu'elle n'est pas branchée.
+    ai: Option<AiService>,
 }
 
 fn megabytes(mb: u32) -> usize {
@@ -58,7 +65,96 @@ impl App {
             recovery: None,
             identities: None,
             drawings: None,
+            ai: None,
         }
+    }
+
+    /// Active l'IA.
+    pub fn with_ai(mut self, ai: AiService) -> Self {
+        self.ai = Some(ai);
+        self
+    }
+
+    fn ai_service(&self) -> Result<&AiService, AppError> {
+        self.ai
+            .as_ref()
+            .ok_or_else(|| AppError::new(ErrorKind::Ai, "IA indisponible"))
+    }
+
+    pub fn ai_status(&self) -> Result<AiStatus, AppError> {
+        Ok(self.ai_service()?.status(&self.settings.get().ai))
+    }
+
+    /// Clé API du fournisseur `provider` (vide : retirée).
+    pub fn ai_set_key(&self, provider: &Provider, key: &str) -> Result<(), AppError> {
+        self.ai_service()?.set_key(provider, key)
+    }
+
+    pub fn ai_test(&self, provider: &Provider) -> Result<TestView, AppError> {
+        Ok(self.ai_service()?.test(provider))
+    }
+
+    pub fn ai_usage(&self) -> Result<UsageSummary, AppError> {
+        Ok(self.ai_service()?.usage(&day_of(now())))
+    }
+
+    /// Texte de la portée, page par page.
+    fn ai_pages(&self, id: u64, scope: &Scope) -> Result<Vec<PageText>, AppError> {
+        let pages = match scope {
+            Scope::Selection { text, page } => vec![(*page, text.clone())],
+            Scope::Pages { pages } => self.viewer.plain_text(id, pages)?,
+            Scope::Document => self.viewer.plain_text(id, &[])?,
+        };
+        Ok(pages
+            .into_iter()
+            .map(|(page, text)| PageText { page, text })
+            .collect())
+    }
+
+    pub fn ai_estimate(
+        &self,
+        id: u64,
+        scope: &Scope,
+        task: &Task,
+    ) -> Result<EstimateView, AppError> {
+        let pages = self.ai_pages(id, scope)?;
+        Ok(self
+            .ai_service()?
+            .estimate(&self.settings.get().ai, &pages, task, &day_of(now())))
+    }
+
+    /// Nouvelle action IA : son numéro, pour l'annuler.
+    pub fn ai_start(&self) -> Result<(u64, CancelFlag), AppError> {
+        Ok(self.ai_service()?.start())
+    }
+
+    pub fn ai_cancel(&self, run: u64) {
+        if let Some(ai) = &self.ai {
+            ai.cancel(run);
+        }
+    }
+
+    /// Exécute l'action `run` (bloquant ; `on_event` : avancement et réponse en flux).
+    pub fn ai_run(
+        &self,
+        id: u64,
+        scope: &Scope,
+        task: &Task,
+        run: (u64, CancelFlag),
+        consent: bool,
+        on_event: &mut dyn FnMut(AiEvent),
+    ) -> Result<AnswerView, AppError> {
+        let pages = self.ai_pages(id, scope)?;
+        let settings = self.settings.get().ai;
+        self.ai_service()?.run(
+            &settings,
+            &pages,
+            task,
+            &day_of(now()),
+            run,
+            consent,
+            on_event,
+        )
     }
 
     /// Identités de signature et signatures manuscrites rangées dans `data_dir`.

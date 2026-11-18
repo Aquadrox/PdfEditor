@@ -4,12 +4,14 @@
 //! produit un avertissement affiché à l'utilisateur ; un fichier illisible
 //! donne les réglages par défaut. Une rubrique = une section TOML.
 
+mod ai;
 mod edit;
 mod shortcuts;
 mod signature;
 
 use serde::{Deserialize, Serialize};
 
+pub use ai::{Ai, Pricing, Profile, Prompts as AiPrompts, Provider};
 pub use edit::Edit;
 pub use shortcuts::{Action, Shortcuts, normalize as normalize_shortcut};
 pub use signature::{
@@ -149,6 +151,7 @@ pub struct Settings {
     pub edit: Edit,
     pub files: Files,
     pub signature: Signature,
+    pub ai: Ai,
     pub shortcuts: Shortcuts,
     pub updates: Updates,
     pub diagnostic: Diagnostic,
@@ -245,6 +248,7 @@ impl Settings {
         }
         s.files.default_dir = s.files.default_dir.trim().to_owned();
         s.signature = self.signature.checked(warnings);
+        s.ai = self.ai.checked(warnings);
         s.shortcuts = self.shortcuts.validated(warnings)?;
         Ok(s)
     }

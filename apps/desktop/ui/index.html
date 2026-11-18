@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="styles/pages.css" />
     <link rel="stylesheet" href="styles/form.css" />
     <link rel="stylesheet" href="styles/sign.css" />
+    <link rel="stylesheet" href="styles/ai.css" />
     <script type="module" src="app.js"></script>
   </head>
   <body>
@@ -100,7 +101,7 @@
           <button id="mode-edit" class="mode" disabled><svg class="icon"><use href="#i-edit" /></svg><span data-i18n="mode.edit"></span></button>
           <button id="mode-pages" class="mode" disabled><svg class="icon"><use href="#i-pages" /></svg><span data-i18n="mode.pages"></span></button>
           <button id="mode-sign" class="mode" disabled><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="mode.sign"></span></button>
-          <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-ai" /></svg><span data-i18n="mode.ai"></span></button>
+          <button id="mode-ai" class="mode" disabled><svg class="icon"><use href="#i-ai" /></svg><span data-i18n="mode.ai"></span></button>
         </nav>
         <button id="seal" class="seal" data-tone="none" hidden>
           <span class="wax" aria-hidden="true"><svg class="icon"><use href="#i-sign" /></svg></span>
@@ -370,6 +371,39 @@
           </div>
           </div>
         </aside>
+        <aside id="ai-panel" class="properties ai-panel" aria-labelledby="ai-title" hidden>
+          <div class="properties-header">
+            <h2 id="ai-title" class="panel-title" data-i18n="ai.title"></h2>
+            <span id="ai-provider" class="caption ai-provider"></span>
+          </div>
+          <div id="ai-unconfigured" class="properties-group" hidden>
+            <p class="notice" data-i18n="ai.unconfigured"></p>
+            <button id="ai-open-settings" class="btn" type="button" data-i18n="ai.openSettings"></button>
+          </div>
+          <div class="properties-group ai-controls">
+            <span class="caption" data-i18n="ai.scope"></span>
+            <div class="segmented ai-scope" role="radiogroup" data-i18n-aria="ai.scope">
+              <button class="btn ghost" type="button" role="radio" data-scope="selection" data-i18n="ai.scope.selection"></button>
+              <button class="btn ghost" type="button" role="radio" data-scope="page" data-i18n="ai.scope.page"></button>
+              <button class="btn ghost" type="button" role="radio" data-scope="pages" data-i18n="ai.scope.pages"></button>
+              <button class="btn ghost" type="button" role="radio" data-scope="document" data-i18n="ai.scope.document"></button>
+            </div>
+            <input id="ai-pages" class="input" inputmode="numeric" data-i18n-placeholder="ai.pagesPlaceholder" data-i18n-aria="ai.scope.pages" hidden />
+            <p id="ai-scope-hint" class="caption" role="status"></p>
+            <div class="ai-tasks">
+              <button class="btn" type="button" data-task="summary" data-i18n="ai.task.summary"></button>
+              <button class="btn" type="button" data-task="key_points" data-i18n="ai.task.key_points"></button>
+              <button class="btn" type="button" data-task="entities" data-i18n="ai.task.entities"></button>
+              <button class="btn" type="button" data-task="risks" data-i18n="ai.task.risks"></button>
+            </div>
+          </div>
+          <ol id="ai-answers" class="ai-answers"></ol>
+          <form id="ai-ask" class="ai-ask">
+            <textarea id="ai-question" class="input" rows="2" maxlength="2000" data-i18n-placeholder="ai.questionPlaceholder" data-i18n-aria="ai.question"></textarea>
+            <button id="ai-send" class="btn primary ai-send" type="submit" data-i18n="ai.send"></button>
+          </form>
+        </aside>
+
         <aside id="signatures-panel" class="properties sign-panel" aria-labelledby="signatures-title" hidden>
           <div class="properties-header">
             <h2 id="signatures-title" class="panel-title" data-i18n="sig.title"></h2>
@@ -410,6 +444,7 @@
           <button class="nav-item" data-section="edit" data-i18n="settings.edit"></button>
           <button class="nav-item" data-section="files" data-i18n="settings.files"></button>
           <button class="nav-item" data-section="signature" data-i18n="settings.signature"></button>
+          <button class="nav-item" data-section="ai" data-i18n="settings.ai"></button>
           <button class="nav-item" data-section="diagnostic" data-i18n="settings.diagnostic"></button>
         </nav>
         <div class="settings-content">
@@ -537,6 +572,99 @@
               <label for="set-timestamp-url"><span data-i18n="settings.timestampUrl"></span><span class="hint" data-i18n="settings.timestampUrl.hint"></span></label>
               <input id="set-timestamp-url" class="input" type="url" maxlength="300" spellcheck="false" data-setting="signature.timestamp_url" />
             </div>
+          </section>
+
+          <section class="settings-section" data-section="ai" hidden>
+            <h2 class="settings-section-title" data-i18n="settings.ai"></h2>
+            <div class="field">
+              <label for="ai-preset"><span data-i18n="settings.ai.preset"></span><span id="ai-preset-note" class="hint"></span></label>
+              <select id="ai-preset" class="input"></select>
+            </div>
+            <div class="field">
+              <label for="set-ai-url"><span data-i18n="settings.ai.url"></span><span class="hint" data-i18n="settings.ai.url.hint"></span></label>
+              <input id="set-ai-url" class="input" type="url" spellcheck="false" data-setting="ai.provider.base_url" />
+            </div>
+            <div class="field">
+              <label for="set-ai-model" data-i18n="settings.ai.model"></label>
+              <input id="set-ai-model" class="input" list="ai-models" spellcheck="false" data-setting="ai.provider.model" />
+              <datalist id="ai-models"></datalist>
+            </div>
+            <div class="field">
+              <label for="ai-key"><span data-i18n="settings.ai.key"></span><span id="ai-key-status" class="hint"></span></label>
+              <span class="actions">
+                <input id="ai-key" class="input" type="password" autocomplete="off" spellcheck="false" />
+                <button id="ai-key-save" class="btn" type="button" data-i18n="settings.ai.keySave"></button>
+              </span>
+            </div>
+            <div class="field">
+              <span><span data-i18n="settings.ai.test"></span><span class="hint" data-i18n="settings.ai.test.hint"></span></span>
+              <span class="actions">
+                <button id="ai-test" class="btn" type="button" data-i18n="settings.ai.testButton"></button>
+              </span>
+            </div>
+            <div id="ai-test-result" class="notice ai-test-result" role="status" hidden></div>
+            <div class="field">
+              <label for="set-ai-timeout" data-i18n="settings.ai.timeout"></label>
+              <input id="set-ai-timeout" class="input num narrow" type="number" min="5" max="900" data-setting="ai.provider.timeout_seconds" data-type="number" />
+            </div>
+            <div class="field">
+              <label for="set-ai-tokens"><span data-i18n="settings.ai.tokens"></span><span class="hint" data-i18n="settings.ai.tokens.hint"></span></label>
+              <input id="set-ai-tokens" class="input num narrow" type="number" min="2000" max="1000000" step="1000" data-setting="ai.provider.max_input_tokens" data-type="number" />
+            </div>
+            <div class="field">
+              <label><span data-i18n="settings.ai.pricing"></span><span class="hint" data-i18n="settings.ai.pricing.hint"></span></label>
+              <span class="ai-prices">
+                <input class="input num" type="number" min="0" step="0.001" data-setting="ai.provider.pricing.input_per_million" data-type="number" data-i18n-aria="settings.ai.price.input" data-i18n-title="settings.ai.price.input" />
+                <input class="input num" type="number" min="0" step="0.001" data-setting="ai.provider.pricing.cached_input_per_million" data-type="number" data-i18n-aria="settings.ai.price.cached" data-i18n-title="settings.ai.price.cached" />
+                <input class="input num" type="number" min="0" step="0.001" data-setting="ai.provider.pricing.output_per_million" data-type="number" data-i18n-aria="settings.ai.price.output" data-i18n-title="settings.ai.price.output" />
+                <input class="input" maxlength="3" data-setting="ai.provider.pricing.currency" data-i18n-aria="settings.ai.currency" data-i18n-title="settings.ai.currency" />
+              </span>
+            </div>
+            <div class="field">
+              <label for="set-ai-extra"><span data-i18n="settings.ai.extra"></span><span class="hint" data-i18n="settings.ai.extra.hint"></span></label>
+              <textarea id="set-ai-extra" class="input" rows="2" spellcheck="false" data-setting="ai.provider.extra_body"></textarea>
+            </div>
+            <div class="field">
+              <label for="ai-profile"><span data-i18n="settings.ai.profiles"></span><span class="hint" data-i18n="settings.ai.profiles.hint"></span></label>
+              <span class="actions">
+                <select id="ai-profile" class="input"></select>
+                <button id="ai-profile-use" class="btn" type="button" data-i18n="settings.ai.profileUse"></button>
+                <button id="ai-profile-delete" class="btn ghost danger" type="button" data-i18n="settings.ai.profileDelete"></button>
+              </span>
+            </div>
+            <div class="field">
+              <label for="ai-profile-name" data-i18n="settings.ai.profileSaveLabel"></label>
+              <span class="actions">
+                <input id="ai-profile-name" class="input" maxlength="60" />
+                <button id="ai-profile-save" class="btn" type="button" data-i18n="settings.ai.profileSave"></button>
+              </span>
+            </div>
+            <div class="field">
+              <label for="set-ai-fallback"><span data-i18n="settings.ai.fallback"></span><span class="hint" data-i18n="settings.ai.fallback.hint"></span></label>
+              <select id="set-ai-fallback" class="input" data-setting="ai.fallback"></select>
+            </div>
+            <div class="field">
+              <label for="set-ai-confirm"><span data-i18n="settings.ai.confirmAbove"></span><span class="hint" data-i18n="settings.ai.confirmAbove.hint"></span></label>
+              <input id="set-ai-confirm" class="input num narrow" type="number" min="0" step="0.01" data-setting="ai.confirm_above" data-type="number" />
+            </div>
+            <div class="field">
+              <label for="set-ai-each"><span data-i18n="settings.ai.confirmEach"></span><span class="hint" data-i18n="settings.ai.confirmEach.hint"></span></label>
+              <input id="set-ai-each" class="switch" type="checkbox" role="switch" data-setting="ai.confirm_each_send" />
+            </div>
+            <div class="field">
+              <label for="set-ai-cap"><span data-i18n="settings.ai.cap"></span><span class="hint" data-i18n="settings.ai.cap.hint"></span></label>
+              <input id="set-ai-cap" class="input num narrow" type="number" min="0" step="0.5" data-setting="ai.monthly_cap" data-type="number" />
+            </div>
+            <div class="field">
+              <span><span data-i18n="settings.ai.usage"></span><span id="ai-usage" class="hint"></span></span>
+            </div>
+            <h3 class="settings-subtitle" data-i18n="settings.ai.prompts"></h3>
+            <p class="hint" data-i18n="settings.ai.prompts.hint"></p>
+            <div class="field ai-prompt"><label for="set-ai-p-summary" data-i18n="ai.task.summary"></label><textarea id="set-ai-p-summary" class="input" rows="3" data-setting="ai.prompts.summary"></textarea></div>
+            <div class="field ai-prompt"><label for="set-ai-p-key" data-i18n="ai.task.key_points"></label><textarea id="set-ai-p-key" class="input" rows="3" data-setting="ai.prompts.key_points"></textarea></div>
+            <div class="field ai-prompt"><label for="set-ai-p-entities" data-i18n="ai.task.entities"></label><textarea id="set-ai-p-entities" class="input" rows="3" data-setting="ai.prompts.entities"></textarea></div>
+            <div class="field ai-prompt"><label for="set-ai-p-risks" data-i18n="ai.task.risks"></label><textarea id="set-ai-p-risks" class="input" rows="3" data-setting="ai.prompts.risks"></textarea></div>
+            <div class="field ai-prompt"><label for="set-ai-p-question" data-i18n="ai.task.question"></label><textarea id="set-ai-p-question" class="input" rows="3" data-setting="ai.prompts.question"></textarea></div>
           </section>
 
           <section class="settings-section" data-section="diagnostic" hidden>
@@ -709,6 +837,18 @@
           <button id="sign-submit" class="btn sealed" type="submit"><svg class="icon"><use href="#i-sign" /></svg><span id="sign-submit-label"></span></button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="ai-confirm-dialog" aria-labelledby="ai-confirm-title">
+      <div class="dialog-body">
+        <h2 id="ai-confirm-title" class="dialog-title" data-i18n="ai.confirm.title"></h2>
+        <p id="ai-confirm-text"></p>
+        <p id="ai-confirm-cost" class="caption"></p>
+      </div>
+      <div class="dialog-actions">
+        <button id="ai-confirm-cancel" class="btn" type="button" data-i18n="ai.confirm.cancel"></button>
+        <button id="ai-confirm-send" class="btn primary ai-accent" type="button" data-i18n="ai.confirm.send"></button>
+      </div>
     </dialog>
 
     <dialog id="identity-dialog" class="identity-dialog" aria-labelledby="identity-title">

@@ -4,6 +4,16 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.21 — 2026-11-18
+
+- Nouveau mode IA : résumé, points clés, entités (personnes, dates, montants…) et risques et clauses d'un document, sur une sélection, des pages choisies ou tout le document.
+- Posez vos questions sur le document : la réponse s'affiche au fil de l'eau et cite ses pages ; un clic sur une citation affiche la page, et une page inexistante est signalée.
+- Fournisseur d'IA au choix (DeepSeek, OpenAI, Mistral, GLM, OpenRouter, Ollama ou LM Studio sur votre PC…), profils et profil de secours ; « Tester » vérifie les réglages et liste les modèles.
+- La clé API est rangée dans le trousseau du système, jamais en clair sur le disque, et n'est envoyée qu'en HTTPS.
+- Avant d'envoyer du texte à un nouveau fournisseur, ou au-delà d'un coût choisi, PdfEditor montre ce qui part, où, et le coût estimé ; un plafond mensuel peut bloquer les envois.
+- La consommation (jour, mois, total) est suivie dans les Réglages ; une action IA en cours peut être annulée.
+- Les consignes de chaque action IA sont modifiables ; un long document est lu par parties puis synthétisé.
+
 ## 0.0.20 — 2026-11-18
 
 - Un document signé s'enregistre sans perdre ses signatures : vos modifications sont ajoutées à la suite, et le panneau Signatures indique que le document a été complété depuis.

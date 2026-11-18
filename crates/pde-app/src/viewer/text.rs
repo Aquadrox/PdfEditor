@@ -32,6 +32,22 @@ impl Viewer {
         Ok(PageTextView::new(self.text(doc, page)?.runs(), size))
     }
 
+    /// Texte brut des pages demandées (rangs à partir de 0), pour l'IA.
+    /// Toutes les pages si `pages` est vide.
+    pub fn plain_text(&self, id: u64, pages: &[usize]) -> Result<Vec<(usize, String)>, AppError> {
+        let doc = DocumentId(id);
+        let count = self.page_sizes(doc)?.len();
+        let wanted: Vec<usize> = if pages.is_empty() {
+            (0..count).collect()
+        } else {
+            pages.iter().copied().filter(|p| *p < count).collect()
+        };
+        wanted
+            .into_iter()
+            .map(|page| Ok((page, self.text(doc, page)?.text())))
+            .collect()
+    }
+
     /// Occurrences de `query` dans tout le document, page par page.
     pub fn search(&self, id: u64, query: &str) -> Result<SearchResults, AppError> {
         let doc = DocumentId(id);
