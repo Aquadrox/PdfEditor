@@ -236,9 +236,16 @@ fn edit() -> Vec<ActionInfo> {
         action("add_text", EDIT, "Ajouter du texte", "Écrire un nouveau texte sur la page : cliquez où il doit commencer.", "#tool-text")
             .mode(Mode::Edit)
             .keywords(&["écrire", "taper", "zone de texte"]),
-        action("edit_text", EDIT, "Modifier le texte du document", "Corriger une ligne de texte existante : cliquez dessus et tapez.", "#tool-retext")
+        action("edit_text", EDIT, "Modifier le texte du document", "Corriger le texte existant : cliquez sur une ligne et tapez, ou donnez une consigne (renommer, corriger les fautes, reformuler) à l'assistant IA, qui propose chaque ligne modifiée.", "#tool-retext")
             .mode(Mode::Edit)
-            .keywords(&["corriger", "remplacer", "faute", "coquille"]),
+            .keywords(&["corriger", "remplacer", "renommer", "faute", "coquille", "reformuler"])
+            .params(object(
+                json!({
+                    "instruction": { "type": "string", "minLength": 1, "description": "Consigne complète de modification, par exemple « Remplace Jean Dupont par Paul Martin »" },
+                    "pages": pages_param("à modifier (toutes celles de la portée si absent)"),
+                }),
+                &["instruction"],
+            )),
         action("add_image", EDIT, "Ajouter une image", "Poser une image (PNG, JPEG, WebP) sur la page ; vous pouvez aussi la coller ou la déposer.", "#tool-image")
             .mode(Mode::Edit)
             .keywords(&["photo", "logo", "tampon", "insérer"]),

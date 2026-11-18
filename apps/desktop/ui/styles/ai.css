@@ -61,7 +61,11 @@
   overflow-y: auto;
 }
 
+/* Réponses sélectionnables (le reste de l'interface ne l'est pas, base.css)
+   pour les copier-coller ; les boutons restent non sélectionnables. */
 .ai-answer {
+  user-select: text;
+  -webkit-user-select: text;
   padding: var(--space-3);
   border: 1px solid var(--line);
   border-left: 3px solid var(--ai);
@@ -86,6 +90,11 @@
 
 .ai-answer-title {
   overflow-wrap: anywhere;
+}
+
+.ai-answer button {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .ai-body {

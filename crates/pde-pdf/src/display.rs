@@ -14,6 +14,21 @@ use crate::convert::internal;
 const SAMPLE_SCALE: f32 = 64.0;
 /// Distance (en points) des points d'échantillonnage à l'origine.
 const SAMPLE_SPAN: f32 = 1000.0;
+/// Écart toléré entre une composante d'axe mesurée et 0 ou ±1 : l'arrondi
+/// au pixel près donne jusqu'à 1/64 000 sur une page de largeur non entière
+/// (A4 de LibreOffice ou Word : 595,28 pt).
+const AXIS_TOLERANCE: f64 = 1e-3;
+
+/// Composante d'axe ramenée à 0, 1 ou -1 : une page ne tourne que par
+/// quarts de tour, l'écart mesuré n'est que de l'arrondi.
+fn snap(value: f64) -> f64 {
+    let rounded = value.round();
+    if (value - rounded).abs() < AXIS_TOLERANCE {
+        rounded
+    } else {
+        value
+    }
+}
 
 /// Transformation affine : affichage = origine + x·ax + y·ay (axe y vers le
 /// bas), puis retournement vertical selon la hauteur affichée.
@@ -55,7 +70,12 @@ impl DisplayTransform {
         let x_end = device(SAMPLE_SPAN, 0.0)?;
         let y_end = device(0.0, SAMPLE_SPAN)?;
         let span = f64::from(SAMPLE_SPAN);
-        let axis = |end: (f64, f64)| ((end.0 - origin.0) / span, (end.1 - origin.1) / span);
+        let axis = |end: (f64, f64)| {
+            (
+                snap((end.0 - origin.0) / span),
+                snap((end.1 - origin.1) / span),
+            )
+        };
         Ok(Self::new(
             origin,
             axis(x_end),
@@ -79,7 +99,7 @@ impl DisplayTransform {
     /// Page sans rotation : axes de la page PDF et de la page affichée
     /// alignés (seule l'origine peut différer).
     pub(crate) fn is_upright(&self) -> bool {
-        let near = |a: f64, b: f64| (a - b).abs() < 1e-6;
+        let near = |a: f64, b: f64| (a - b).abs() < AXIS_TOLERANCE;
         near(self.x_axis.0, 1.0)
             && near(self.x_axis.1, 0.0)
             && near(self.y_axis.0, 0.0)
@@ -123,6 +143,20 @@ mod tests {
 
     fn rect(x0: f64, y0: f64, x1: f64, y1: f64) -> Rect {
         Rect::from_corners(Point::new(x0, y0), Point::new(x1, y1))
+    }
+
+    #[test]
+    fn rounded_axes_snap_to_quarter_turns() {
+        // Bogue : 0,999984 (arrondi au pixel d'une page A4 de 595,28 pt)
+        // faisait passer la page pour tournée.
+        assert_eq!(snap(0.999_984_375), 1.0);
+        assert_eq!(snap(1.000_015_625), 1.0);
+        assert_eq!(snap(-0.000_015), 0.0);
+        assert_eq!(snap(0.5), 0.5);
+        let t = DisplayTransform::new((0.0, 842.0), (0.999_984, 0.0), (0.0, -1.000_02), 842.0);
+        assert!(t.is_upright());
+        let turned = DisplayTransform::new((0.0, 0.0), (0.0, 1.0), (1.0, 0.0), 595.0);
+        assert!(!turned.is_upright());
     }
 
     #[test]

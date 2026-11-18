@@ -10,6 +10,7 @@ import { t } from "../../lib/i18n.js";
 import { invoke, listen } from "../../lib/ipc.js";
 import { blocks, parsePages } from "./ai-text.js";
 import { AssistantView } from "./assistant-view.js";
+import { copyAnswer } from "./answer-copy.js";
 import { RewriteView } from "./rewrite-view.js";
 import { attachPanelResize } from "./panel-resize.js";
 
@@ -25,7 +26,7 @@ export class AiMode {
   constructor(viewer, hooks) {
     this.viewer = viewer;
     this.hooks = hooks;
-    this.assistant = new AssistantView(viewer, hooks);
+    this.assistant = new AssistantView(viewer, { ...hooks, rewrite: (instruction, scope) => this.rewrite(instruction, scope) });
     attachPanelResize(byId("ai-panel"), byId("ai-resizer"), "pde.ai-panel-width");
     this.rewrites = new RewriteView(viewer, hooks);
     byId("ai-anonymize").addEventListener("click", () => this.anonymize());
@@ -142,9 +143,11 @@ export class AiMode {
     await this.launch(task, scope, ["ai_translate_estimate", args], ["ai_translate_start", { ...args, mode }]);
   }
 
-  /** Modification par consigne (IA-09) : propositions ligne par ligne, rien n'est posé. */
-  async rewrite(instruction) {
-    const scope = this.request();
+  /**
+   * Modification par consigne (IA-09) : propositions ligne par ligne, rien
+   * n'est posé. `scope` : celle d'une demande à l'assistant qui la confie ici.
+   */
+  async rewrite(instruction, scope = this.request()) {
     if (!this.doc || !scope) return toast(t("ai.scope.invalid"), "error");
     const task = { kind: "rewrite", question: instruction };
     const args = { id: this.doc.id, scope, instruction };
@@ -330,18 +333,21 @@ export class AiMode {
       "aria-label": t("ai.remove"),
       title: t("ai.remove"),
     }, "×");
+    // Copier le texte de la réponse (Markdown tel que reçu), une fois finie.
+    const copy = el("button", { class: "btn ghost small ai-copy", type: "button", hidden: true, title: t("ai.copyHint") }, t("ai.copy"));
     const item = el(
       "li",
       { class: `ai-answer running ${task.question ? task.kind : "analysis"}` },
-      el("div", { class: "ai-answer-head" }, el("strong", { class: "ai-answer-title" }, title), cancel, remove),
+      el("div", { class: "ai-answer-head" }, el("strong", { class: "ai-answer-title" }, title), cancel, copy, remove),
       el("p", { class: "caption" }, this.describe(scope)),
       body,
       status,
     );
     byId("ai-answers").append(item);
     item.scrollIntoView({ block: "nearest" });
-    const entry = { item, body, status, cancel, remove, text: "", run: null };
+    const entry = { item, body, status, cancel, copy, remove, text: "", run: null };
     remove.addEventListener("click", () => this.removeEntry(entry));
+    copy.addEventListener("click", () => copyAnswer(entry));
     return entry;
   }
 
@@ -377,6 +383,7 @@ export class AiMode {
     entry.remove.hidden = false;
     if (result.Ok) {
       entry.text = result.Ok.text ?? "";
+      entry.copy.hidden = !entry.text.trim();
       this.render(entry);
       const fallback = result.Ok.fallback_used ? ` · ${t("ai.fallbackUsed")}` : "";
       entry.status.textContent = `${result.Ok.model} · ${money(result.Ok.cost, result.Ok.currency)}${fallback}`;

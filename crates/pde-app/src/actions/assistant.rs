@@ -12,7 +12,8 @@ use serde_json::Value;
 use super::catalog;
 
 /// Actions que l'assistant peut proposer.
-pub const ASSISTANT_ACTIONS: [&str; 5] = [
+pub const ASSISTANT_ACTIONS: [&str; 6] = [
+    "edit_text",
     "redact",
     "highlight",
     "add_note",
@@ -62,6 +63,13 @@ pub enum Proposal {
     RemovePages {
         pages: Vec<usize>,
     },
+    /// Modifier le texte selon une consigne : confié à la modification par
+    /// consigne (IA-09), qui propose chaque ligne changée.
+    EditText {
+        instruction: String,
+        #[serde(default)]
+        pages: Vec<usize>,
+    },
 }
 
 /// Outils offerts au modèle : les actions permises du catalogue, avec leur
@@ -105,6 +113,7 @@ impl Proposal {
         let text_ok = |t: &str| !t.trim().is_empty() && t.chars().count() <= MAX_TEXT;
         let ok = match self {
             Proposal::Redact { text, .. } | Proposal::Highlight { text, .. } => text_ok(text),
+            Proposal::EditText { instruction, .. } => text_ok(instruction),
             Proposal::AddNote { text, near, .. } => {
                 text_ok(text)
                     && near
@@ -128,7 +137,8 @@ impl Proposal {
             Proposal::Redact { pages, .. }
             | Proposal::Highlight { pages, .. }
             | Proposal::RotatePages { pages, .. }
-            | Proposal::RemovePages { pages } => pages.clone(),
+            | Proposal::RemovePages { pages }
+            | Proposal::EditText { pages, .. } => pages.clone(),
             Proposal::AddNote { page, .. } => vec![*page],
         }
     }
@@ -154,6 +164,14 @@ impl Proposal {
             }
         }
         Ok(pages)
+    }
+
+    /// Consigne à confier à la modification par consigne, pour `edit_text`.
+    pub fn rewrite_instruction(&self) -> Option<&str> {
+        match self {
+            Proposal::EditText { instruction, .. } => Some(instruction.trim()),
+            _ => None,
+        }
     }
 
     /// La proposition supprime réellement du contenu (confirmation à part).
@@ -195,6 +213,13 @@ impl Proposal {
                 format!("Pivoter{} {side}", on_pages(list))
             }
             Proposal::RemovePages { pages: list } => format!("Supprimer{}", on_pages(list)),
+            Proposal::EditText { instruction, pages } => {
+                format!(
+                    "Modifier le texte : « {} »{}",
+                    short(instruction),
+                    on_pages(pages)
+                )
+            }
         }
     }
 }
@@ -268,6 +293,37 @@ mod tests {
             all,
         );
         assert!(matches!(note, Ok(Proposal::AddNote { page: 1, .. })));
+    }
+
+    #[test]
+    fn text_edits_carry_the_instruction() {
+        let proposal = parse(
+            &call(
+                "edit_text",
+                r#"{"instruction":"Renomme Kaelen Vane en Aquadrox"}"#,
+            ),
+            &ASSISTANT_ACTIONS,
+        )
+        .unwrap();
+        assert_eq!(
+            proposal.rewrite_instruction(),
+            Some("Renomme Kaelen Vane en Aquadrox")
+        );
+        assert_eq!(
+            proposal.summary(),
+            "Modifier le texte : « Renomme Kaelen Vane en Aquadrox »"
+        );
+        assert!(
+            parse(
+                &call("edit_text", r#"{"instruction":" "}"#),
+                &ASSISTANT_ACTIONS
+            )
+            .is_err()
+        );
+        assert_eq!(
+            Proposal::RemovePages { pages: vec![1] }.rewrite_instruction(),
+            None
+        );
     }
 
     #[test]

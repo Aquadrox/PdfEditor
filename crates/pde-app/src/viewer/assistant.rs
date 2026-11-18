@@ -40,6 +40,8 @@ enum Resolved {
     Elements(Vec<Element>),
     Rotate(Vec<usize>, u8),
     Remove(Vec<usize>),
+    /// Confié à la modification par consigne : rien d'appliqué ici.
+    Rewrite(Vec<usize>),
 }
 
 /// Taille de l'icône d'une note, en points.
@@ -165,6 +167,7 @@ impl Viewer {
                 (Resolved::Rotate(pages, turns), Vec::new())
             }
             Proposal::RemovePages { .. } => (Resolved::Remove(pages), Vec::new()),
+            Proposal::EditText { .. } => (Resolved::Rewrite(pages), Vec::new()),
         })
     }
 
@@ -177,7 +180,9 @@ impl Viewer {
     ) -> Result<ProposalView, String> {
         let (resolved, previews) = self.resolve(id, &proposal, scope, "")?;
         let pages = match &resolved {
-            Resolved::Rotate(pages, _) | Resolved::Remove(pages) => pages.clone(),
+            Resolved::Rotate(pages, _) | Resolved::Remove(pages) | Resolved::Rewrite(pages) => {
+                pages.clone()
+            }
             Resolved::Elements(_) => {
                 let mut pages: Vec<usize> = previews.iter().map(|p| p.page).collect();
                 pages.dedup();
@@ -214,6 +219,11 @@ impl Viewer {
                 Resolved::Elements(list) => elements.extend(list),
                 Resolved::Rotate(pages, turns) => rotations.push((pages, turns)),
                 Resolved::Remove(pages) => removed.extend(pages),
+                Resolved::Rewrite(_) => {
+                    return Err(invalid(
+                        "une modification du texte se propose ligne par ligne (« Modifier »)",
+                    ));
+                }
             }
         }
         self.with_document(id, |open, doc| {
@@ -367,6 +377,28 @@ mod tests {
         let undone = viewer.undo(id).unwrap();
         assert!(undone.elements.is_empty() && !undone.can_undo);
         assert_eq!(viewer.document_view(id).unwrap().pages[0].width, 595.0);
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn text_edits_are_previewed_but_never_applied_here() {
+        let (viewer, id, path) = open("edit-text");
+        let edit = Proposal::EditText {
+            instruction: "Remplace monde par Terre".into(),
+            pages: vec![2],
+        };
+        let view = viewer.preview_proposal(id, edit.clone(), &[0, 1]).unwrap();
+        assert_eq!(view.pages, [1]);
+        assert!(view.previews.is_empty() && !view.redaction);
+        assert_eq!(
+            view.proposal.rewrite_instruction(),
+            Some("Remplace monde par Terre")
+        );
+        let error = viewer
+            .apply_proposals(id, &[edit], &[0, 1], "")
+            .unwrap_err();
+        assert!(error.message.contains("ligne par ligne"), "{error}");
+        assert!(!viewer.edit_view(id).unwrap().can_undo);
         std::fs::remove_file(path).unwrap();
     }
 

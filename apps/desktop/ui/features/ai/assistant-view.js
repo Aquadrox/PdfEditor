@@ -9,12 +9,23 @@ import { t } from "../../lib/i18n.js";
 import { invoke } from "../../lib/ipc.js";
 import { percentBox } from "../viewer/text-geometry.js";
 
+/**
+ * Portée d'une modification du texte : les pages nommées par chaque
+ * proposition (rangs à partir de 0), sinon la portée de la demande.
+ */
+export function rewriteScope(edits, scope) {
+  if (edits.some((e) => e.proposal.pages.length === 0)) return scope;
+  const pages = [...new Set(edits.flatMap((e) => e.pages))].sort((a, b) => a - b);
+  return { kind: "pages", pages };
+}
+
 export class AssistantView {
   /**
    * @param {import("../viewer/viewer.js").Viewer} viewer
    * @param {object} hooks
    * @param {(result: object) => Promise<void>} hooks.applied état de l'édition après application
    * @param {(query: string) => void} hooks.howTo « Comment faire ? » sur la demande
+   * @param {(instruction: string, scope: object) => void} hooks.rewrite modification par consigne (IA-09)
    */
   constructor(viewer, hooks) {
     this.viewer = viewer;
@@ -26,10 +37,21 @@ export class AssistantView {
   /** Ajoute les propositions de `answer` sous la réponse `entry`. */
   show(entry, answer, context) {
     this.clear();
-    const proposals = answer.proposals ?? [];
+    // Changer le texte (edit_text) : confié à la modification par consigne,
+    // qui propose chaque ligne modifiée ; le reste s'applique ici.
+    const edits = (answer.proposals ?? []).filter((p) => p.proposal.action === "edit_text");
+    const proposals = (answer.proposals ?? []).filter((p) => p.proposal.action !== "edit_text");
     const rejected = answer.rejected ?? [];
     const box = el("div", { class: "ai-proposals" });
     entry.item.append(box);
+    if (edits.length) {
+      box.append(el("p", { class: "caption ai-handoff", role: "status" }, t("assistant.rewriting")));
+      this.hooks.rewrite(edits.map((e) => e.proposal.instruction.trim()).join("\n"), rewriteScope(edits, context.scope));
+      if (proposals.length === 0) {
+        box.append(this.rejectedList(rejected));
+        return;
+      }
+    }
     if (proposals.length === 0) {
       box.append(el("p", { class: "caption" }, t(rejected.length ? "assistant.noneValid" : "assistant.none")));
       box.append(this.rejectedList(rejected));

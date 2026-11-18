@@ -450,12 +450,14 @@
     "id": "edit_text",
     "group": "Éditer",
     "title": "Modifier le texte du document",
-    "help": "Corriger une ligne de texte existante : cliquez dessus et tapez.",
+    "help": "Corriger le texte existant : cliquez sur une ligne et tapez, ou donnez une consigne (renommer, corriger les fautes, reformuler) à l'assistant IA, qui propose chaque ligne modifiée.",
     "keywords": [
       "corriger",
       "remplacer",
+      "renommer",
       "faute",
-      "coquille"
+      "coquille",
+      "reformuler"
     ],
     "mode": "edit",
     "tool": "#tool-retext",
@@ -463,8 +465,25 @@
     "shortcut": null,
     "params": {
       "additionalProperties": false,
-      "properties": {},
-      "required": [],
+      "properties": {
+        "instruction": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Consigne complète de modification, par exemple « Remplace Jean Dupont par Paul Martin »"
+        },
+        "pages": {
+          "description": "Numéros des pages à modifier (toutes celles de la portée si absent), à partir de 1",
+          "items": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "instruction"
+      ],
       "type": "object"
     }
   },

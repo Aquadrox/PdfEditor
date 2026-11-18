@@ -4,6 +4,13 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]`, `[Linux]` ou `[Android]` devant ce
 qui ne concerne qu'une plateforme.
 
+## 0.0.29 — 2026-11-18
+
+- Mode IA, « Modifier » et traduction : corrige « aucun texte à modifier (page scannée ?) » sur les documents A4 ordinaires (LibreOffice, Word…), dont le texte n'était pas reconnu.
+- Mode IA, « Action » : une demande qui change le texte (« Renomme X en Y », « corrige les fautes ») est confiée à « Modifier », qui propose chaque ligne modifiée à accepter ou refuser.
+- Menu principal : il s'ouvre sous son bouton et entièrement à l'écran ; « Ouvrir », « Enregistrer » et « Fermer » étaient cachés en haut.
+- Mode IA : le texte des réponses se sélectionne à la souris pour le copier-coller, et le bouton « Copier » copie toute la réponse.
+
 ## 0.0.28 — 2026-11-18
 
 - [Android] Ouvrir un PDF depuis le sélecteur de documents du téléphone ; « Enregistrer » le réécrit à son emplacement d'origine, « Enregistrer sous » propose de choisir où.
