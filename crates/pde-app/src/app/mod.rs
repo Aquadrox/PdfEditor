@@ -7,8 +7,9 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod ai;
+mod blocks;
 
-pub use ai::TranslationResult;
+pub use blocks::{AcceptedRewrite, RewriteProposal, RewriteResult, TranslationResult};
 
 use pde_core::engine::PdfEngine;
 use pde_core::settings::Settings;

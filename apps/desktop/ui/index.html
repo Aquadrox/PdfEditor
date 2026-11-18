@@ -398,6 +398,7 @@
               <button class="btn" type="button" data-task="key_points" data-i18n="ai.task.key_points"></button>
               <button class="btn" type="button" data-task="entities" data-i18n="ai.task.entities"></button>
               <button class="btn" type="button" data-task="risks" data-i18n="ai.task.risks"></button>
+              <button id="ai-anonymize" class="btn" type="button" data-i18n="anonymize.button" data-i18n-title="anonymize.hint"></button>
             </div>
             <div class="ai-translate">
               <input id="ai-language" class="input" list="ai-languages" maxlength="40" data-i18n-aria="translate.language" data-i18n-placeholder="translate.language" />
@@ -421,6 +422,7 @@
             <span class="segmented ai-ask-mode" role="radiogroup" data-i18n-aria="assistant.askMode">
               <button class="btn small on" type="button" role="radio" aria-checked="true" data-ask="question" data-i18n="ai.task.question"></button>
               <button class="btn small ghost" type="button" role="radio" aria-checked="false" data-ask="assist" data-i18n="assistant.mode" data-i18n-title="assistant.modeHint"></button>
+              <button class="btn small ghost" type="button" role="radio" aria-checked="false" data-ask="rewrite" data-i18n="rewrite.mode" data-i18n-title="rewrite.modeHint"></button>
             </span>
             <select id="ai-recipe" class="input ai-recipe" data-i18n-aria="recipes.label" hidden></select>
             <textarea id="ai-question" class="input" rows="2" maxlength="2000" data-i18n-placeholder="ai.questionPlaceholder" data-i18n-aria="ai.question"></textarea>

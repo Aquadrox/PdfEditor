@@ -421,5 +421,32 @@ fn ai() -> Vec<ActionInfo> {
             "#ai-question",
             &["question", "demander"],
         ),
+        task(
+            "ai_translate",
+            "Traduire",
+            "Traduire la sélection, des pages ou le document : texte remplacé à sa place, document bilingue ou texte seul.",
+            "#ai-translate",
+            &["traduction", "langue", "anglais", "bilingue"],
+        ),
+        task(
+            "ai_rewrite",
+            "Modifier le texte avec l'IA",
+            "Corriger, reformuler ou mettre à jour le texte selon une consigne ; chaque ligne changée est proposée, à accepter.",
+            "[data-ask=\"rewrite\"]",
+            &[
+                "reformuler",
+                "corriger",
+                "fautes",
+                "orthographe",
+                "réécrire",
+            ],
+        ),
+        task(
+            "ai_anonymize",
+            "Anonymiser",
+            "Repérer les données personnelles et proposer de les caviarder, en aperçu, avant de les supprimer réellement.",
+            "#ai-anonymize",
+            &["rgpd", "données personnelles", "anonymisation"],
+        ),
     ]
 }

@@ -1138,5 +1138,71 @@
       "required": [],
       "type": "object"
     }
+  },
+  {
+    "id": "ai_translate",
+    "group": "IA",
+    "title": "Traduire",
+    "help": "Traduire la sélection, des pages ou le document : texte remplacé à sa place, document bilingue ou texte seul.",
+    "keywords": [
+      "traduction",
+      "langue",
+      "anglais",
+      "bilingue"
+    ],
+    "mode": "ai",
+    "tool": "#ai-translate",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "ai_rewrite",
+    "group": "IA",
+    "title": "Modifier le texte avec l'IA",
+    "help": "Corriger, reformuler ou mettre à jour le texte selon une consigne ; chaque ligne changée est proposée, à accepter.",
+    "keywords": [
+      "reformuler",
+      "corriger",
+      "fautes",
+      "orthographe",
+      "réécrire"
+    ],
+    "mode": "ai",
+    "tool": "[data-ask=\"rewrite\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "ai_anonymize",
+    "group": "IA",
+    "title": "Anonymiser",
+    "help": "Repérer les données personnelles et proposer de les caviarder, en aperçu, avant de les supprimer réellement.",
+    "keywords": [
+      "rgpd",
+      "données personnelles",
+      "anonymisation"
+    ],
+    "mode": "ai",
+    "tool": "#ai-anonymize",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
   }
 ]

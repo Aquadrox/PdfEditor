@@ -10,6 +10,7 @@ import { t } from "../../lib/i18n.js";
 import { invoke, listen } from "../../lib/ipc.js";
 import { blocks, parsePages } from "./ai-text.js";
 import { AssistantView } from "./assistant-view.js";
+import { RewriteView } from "./rewrite-view.js";
 
 function money(value, currency) {
   return `${Number(value ?? 0).toFixed(value >= 1 ? 2 : 4)} ${currency}`;
@@ -24,6 +25,8 @@ export class AiMode {
     this.viewer = viewer;
     this.hooks = hooks;
     this.assistant = new AssistantView(viewer, hooks);
+    this.rewrites = new RewriteView(viewer, hooks);
+    byId("ai-anonymize").addEventListener("click", () => this.anonymize());
     /** Champ du bas : question sur le document, ou demande d'action. */
     this.askMode = "question";
     /** Recettes de l'assistant (IA-16), et celle choisie. */
@@ -52,6 +55,7 @@ export class AiMode {
       const recipe = this.askMode === "assist" ? this.recipe() : null;
       // Avec une recette, la demande est facultative (précisions).
       if (!question && !recipe) return;
+      if (this.askMode === "rewrite") return this.rewrite(question);
       this.ask({ kind: this.askMode, question }, recipe);
     });
     byId("ai-question").addEventListener("keydown", (event) => {
@@ -71,6 +75,7 @@ export class AiMode {
     this.doc = doc;
     this.selection = null;
     this.assistant.clear();
+    this.rewrites.clear();
     byId("ai-answers").replaceChildren();
     this.showScope();
   }
@@ -85,7 +90,7 @@ export class AiMode {
     const configured = Boolean(status?.configured);
     byId("ai-unconfigured").hidden = configured;
     byId("ai-provider").textContent = configured ? status.label : "";
-    for (const button of document.querySelectorAll("[data-task], #ai-send, #ai-translate")) button.disabled = !configured || !this.doc;
+    for (const button of document.querySelectorAll("[data-task], #ai-send, #ai-translate, #ai-anonymize")) button.disabled = !configured || !this.doc;
   }
 
   captureSelection() {
@@ -110,9 +115,10 @@ export class AiMode {
     }
     byId("ai-recipe").hidden = mode !== "assist";
     const field = byId("ai-question");
-    field.placeholder = t(mode === "assist" ? (this.recipe() ? "recipes.precisions" : "assistant.placeholder") : "ai.questionPlaceholder");
-    field.setAttribute("aria-label", t(mode === "assist" ? "assistant.request" : "ai.question"));
-    byId("ai-send").textContent = t(mode === "assist" ? "assistant.propose" : "ai.send");
+    const placeholders = { assist: this.recipe() ? "recipes.precisions" : "assistant.placeholder", rewrite: "rewrite.placeholder" };
+    field.placeholder = t(placeholders[mode] ?? "ai.questionPlaceholder");
+    field.setAttribute("aria-label", t({ assist: "assistant.request", rewrite: "rewrite.request" }[mode] ?? "ai.question"));
+    byId("ai-send").textContent = t(mode === "question" ? "ai.send" : "assistant.propose");
     field.focus();
   }
 
@@ -129,25 +135,19 @@ export class AiMode {
     if (!this.doc || !scope) return toast(t("ai.scope.invalid"), "error");
     if (!language) return toast(t("translate.noLanguage"), "error");
     const mode = byId("ai-translate-mode").value;
-    let estimate;
-    try {
-      estimate = await invoke("ai_translate_estimate", { id: this.doc.id, scope, language });
-    } catch (error) {
-      return toast(t("ai.failed", { message: error?.message ?? String(error) }), "error");
-    }
-    if (estimate.over_cap) return toast(t("ai.overCap", { month: money(estimate.month_cost, estimate.currency) }), "error");
-    if (estimate.needs_confirmation && !(await this.confirm(estimate, scope))) return;
     const task = { kind: "translate", question: t("translate.title", { language }), mode };
-    const entry = this.entry(task, scope);
-    entry.task = task;
-    try {
-      const run = await invoke("ai_translate_start", { id: this.doc.id, scope, language, mode, consent: true });
-      entry.run = run;
-      this.runs.set(run, entry);
-      entry.cancel.onclick = () => invoke("ai_cancel", { run }).catch(() => {});
-    } catch (error) {
-      this.finish(entry, { Err: error });
-    }
+    const args = { id: this.doc.id, scope, language };
+    await this.launch(task, scope, ["ai_translate_estimate", args], ["ai_translate_start", { ...args, mode }]);
+  }
+
+  /** Modification par consigne (IA-09) : propositions ligne par ligne, rien n'est posé. */
+  async rewrite(instruction) {
+    const scope = this.request();
+    if (!this.doc || !scope) return toast(t("ai.scope.invalid"), "error");
+    const task = { kind: "rewrite", question: instruction };
+    const args = { id: this.doc.id, scope, instruction };
+    const entry = await this.launch(task, scope, ["ai_rewrite_estimate", args], ["ai_rewrite_start", args]);
+    if (entry) byId("ai-question").value = "";
   }
 
   /** Traduction terminée : posée sur le document (sauf texte seul), et ce qu'il faut vérifier. */
@@ -161,6 +161,16 @@ export class AiMode {
     }
     if (result.missing) notes.push(t("translate.missing", { count: result.missing }));
     for (const note of notes) entry.item.append(el("p", { class: "caption ai-translate-note", role: "status" }, note));
+  }
+
+  /** Anonymisation assistée (IA-10) : l'assistant avec la recette RGPD, en aperçu. */
+  anonymize() {
+    const recipe = this.recipes.find((r) => r.id === "integree-rgpd");
+    if (!recipe) return toast(t("ai.failed", { message: t("anonymize.missing") }), "error");
+    this.setAskMode("assist");
+    byId("ai-recipe").value = recipe.id;
+    this.recipeChosen();
+    return this.ask({ kind: "assist", question: "" }, recipe);
   }
 
   /** Recettes à jour (Réglages) : la liste du choix est refaite. */
@@ -239,26 +249,41 @@ export class AiMode {
   async ask(task, recipe = null) {
     const scope = this.request();
     if (!this.doc || !scope) return toast(t("ai.scope.invalid"), "error");
+    const args = { id: this.doc.id, scope, task, ...(recipe ? { recipe: recipe.id } : {}) };
+    const entry = await this.launch(task, scope, ["ai_estimate", args], ["ai_start", args], recipe);
+    if (entry) byId("ai-question").value = "";
+  }
+
+  /**
+   * Estimation, confirmation si demandée, puis envoi : `estimate` et
+   * `start` sont [commande, arguments] ; renvoie la réponse affichée, ou
+   * null si rien n'est parti.
+   */
+  async launch(task, scope, [estimateCommand, args], [startCommand, startArgs], recipe = null) {
     let estimate;
     try {
-      estimate = await invoke("ai_estimate", { id: this.doc.id, scope, task, ...(recipe ? { recipe: recipe.id } : {}) });
+      estimate = await invoke(estimateCommand, args);
     } catch (error) {
-      return toast(t("ai.failed", { message: error?.message ?? String(error) }), "error");
+      toast(t("ai.failed", { message: error?.message ?? String(error) }), "error");
+      return null;
     }
-    if (estimate.over_cap) return toast(t("ai.overCap", { month: money(estimate.month_cost, estimate.currency) }), "error");
-    if (estimate.needs_confirmation && !(await this.confirm(estimate, scope))) return;
+    if (estimate.over_cap) {
+      toast(t("ai.overCap", { month: money(estimate.month_cost, estimate.currency) }), "error");
+      return null;
+    }
+    if (estimate.needs_confirmation && !(await this.confirm(estimate, scope))) return null;
     const entry = this.entry(task, scope, recipe);
     entry.task = task;
     entry.scope = scope;
     try {
-      const run = await invoke("ai_start", { id: this.doc.id, scope, task, ...(recipe ? { recipe: recipe.id } : {}), consent: true });
+      const run = await invoke(startCommand, { ...startArgs, consent: true });
       entry.run = run;
       this.runs.set(run, entry);
       entry.cancel.onclick = () => invoke("ai_cancel", { run }).catch(() => {});
-      byId("ai-question").value = "";
     } catch (error) {
       this.finish(entry, { Err: error });
     }
+    return entry;
   }
 
   confirm(estimate, scope) {
@@ -331,11 +356,12 @@ export class AiMode {
     entry.item.classList.remove("running");
     entry.cancel.remove();
     if (result.Ok) {
-      entry.text = result.Ok.text;
+      entry.text = result.Ok.text ?? "";
       this.render(entry);
       const fallback = result.Ok.fallback_used ? ` · ${t("ai.fallbackUsed")}` : "";
       entry.status.textContent = `${result.Ok.model} · ${money(result.Ok.cost, result.Ok.currency)}${fallback}`;
       if (entry.task?.kind === "translate") this.translated(entry, result.Ok);
+      if (entry.task?.kind === "rewrite") this.rewrites.show(entry, result.Ok, this.doc.id);
       if (entry.task?.kind === "assist") {
         this.assistant.show(entry, result.Ok, { id: this.doc.id, scope: entry.scope, request: entry.task.question });
       }

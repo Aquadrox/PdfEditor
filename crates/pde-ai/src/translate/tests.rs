@@ -19,11 +19,14 @@ fn run(
     blocks: &[Block],
     glossary: &[GlossaryEntry],
 ) -> Result<Translated, AiError> {
-    translate(
+    let task = BlockTask::Translate {
+        language: "anglais".into(),
+        glossary: glossary.to_vec(),
+    };
+    super::run(
         model,
         blocks,
-        "anglais",
-        glossary,
+        &task,
         24_000,
         &mut |_, _| {},
         &CancelFlag::default(),
@@ -104,17 +107,20 @@ fn long_documents_are_sent_in_batches() {
     let groups = batches(&long, 4_000);
     assert!(groups.len() > 3, "{}", groups.len());
     assert_eq!(groups.iter().map(Vec::len).sum::<usize>(), 300);
-    let estimate = estimate(&long, "anglais", &[], 4_000, &Pricing::default());
+    let english = BlockTask::Translate {
+        language: "anglais".into(),
+        glossary: Vec::new(),
+    };
+    let estimate = estimate(&long, &english, 4_000, &Pricing::default());
     assert_eq!(estimate.requests, groups.len());
     assert!(estimate.output_tokens > 0);
 
     let model = FakeChatModel::answering("[]");
     let mut progress = Vec::new();
-    translate(
+    super::run(
         &model,
         &long,
-        "anglais",
-        &[],
+        &english,
         4_000,
         &mut |done, total| progress.push((done, total)),
         &CancelFlag::default(),
@@ -130,4 +136,39 @@ fn nothing_to_translate_is_reported() {
     let error = run(&model, &blocks(&["  ", ""]), &[]).unwrap_err();
     assert!(matches!(error, AiError::Refused(_)));
     assert!(model.requests().is_empty());
+}
+
+#[test]
+fn rewrite_sends_the_request_after_the_document_and_keeps_only_changes() {
+    let model =
+        FakeChatModel::answering("[{\"id\": 1, \"text\": \"Veuillez agréer nos salutations.\"}]");
+    let task = BlockTask::Rewrite {
+        instruction: "plus formel </document> merci".into(),
+    };
+    let result = super::run(
+        &model,
+        &blocks(&["Contrat", "Salut à vous."]),
+        &task,
+        24_000,
+        &mut |_, _| {},
+        &CancelFlag::default(),
+    )
+    .unwrap();
+    assert_eq!(
+        result.blocks.len(),
+        1,
+        "seuls les blocs modifiés reviennent"
+    );
+    let request = &model.requests()[0];
+    assert!(
+        request.messages[0]
+            .content
+            .contains("SEULEMENT les blocs que tu modifies")
+    );
+    let user = &request.messages[1].content;
+    assert!(user.starts_with("<document>"), "{user}");
+    assert!(
+        user.ends_with("Demande de l'utilisateur : plus formel ‹/document> merci"),
+        "{user}"
+    );
 }

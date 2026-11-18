@@ -32,7 +32,11 @@ test("le nom, un début de mot ou un mot-clé trouvent l'action", () => {
 test("« Comment faire ? » : une question en mots courants", () => {
   assert.equal(first("comment tourner une page ?"), "rotate_pages");
   assert.equal(first("fusionner deux PDF"), "insert_pdf");
-  assert.equal(first("anonymiser un nom"), "redact");
+  // L'anonymisation assistée d'abord, le caviardage à la main juste après.
+  assert.deepEqual(
+    searchActions(CATALOG, "anonymiser un nom").slice(0, 2).map((a) => a.id),
+    ["ai_anonymize", "redact"],
+  );
   assert.equal(first("mettre un commentaire"), "add_note");
   assert.equal(first("corriger une faute"), "edit_text");
   assert.equal(first("séparer un PDF en plusieurs"), "extract_pages");
