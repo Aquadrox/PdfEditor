@@ -2,6 +2,7 @@
 //! la fenêtre qui l'affiche. Le moteur PDF est reçu par le trait
 //! [`pde_core::engine::PdfEngine`] : les tests utilisent un faux moteur.
 
+pub mod ai;
 pub mod app;
 pub mod autosave;
 pub mod cache;

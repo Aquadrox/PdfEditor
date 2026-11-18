@@ -45,7 +45,7 @@ adaptateur (il passe par un trait de `pde-core`) ; seul `apps/desktop` connaît 
 | `pde-fonts` | Polices Noto embarquées (Sans, Serif, Sans Mono : latin étendu, grec, cyrillique ; OFL), caractères couverts, métriques | `skrifa` | v0.2 |
 | `pde-sign` | Signature PAdES, vérification, identités (PKCS#12, auto-signé), DocMDP (plus tard FieldMDP, horodatage RFC 3161), écriture incrémentale ; ni PDFium ni système | `lopdf`, RustCrypto (`cms`, `x509-cert`, `x509-tsp`, `rsa`, `p256`, `p384`, `sha2`), `p12-keystore` | v0.4 |
 | `pde-workflow` | Cycle de signature : plan, machine à états, manifeste embarqué, journal d'audit chaîné | `pde-core`, `serde_json`, `sha2` | v0.8 |
-| `pde-ai` | Client LLM compatible OpenAI (repris de VoiceToText), profils, prompts, découpage du document, tâches analyse / traduction / modification, coûts | `ureq`, `serde_json` | v0.5 |
+| `pde-ai` | Client LLM compatible OpenAI (repris de VoiceToText), réponses en flux, transport HTTP abstrait (`ureq` en option `http`, pour l'application seulement), prompts, découpage du document, tâches analyse / questions (plus tard traduction, modification), estimation des coûts | `serde_json`, `ureq` (option) | v0.5 |
 | `pde-platform` | Dossiers de l'application, protection des données par le système (`DataProtector`) : DPAPI de Windows ; sous Linux, chiffrement authentifié (ChaCha20-Poly1305) avec une clé gardée dans le trousseau Secret Service ; plus tard le trousseau pour les clés API | `windows`, `secret-service`, `chacha20poly1305` | v0.1 |
 | `pde-app` | Cas d'usage testables sans interface : `DocumentSession` (document + historique + sauvegarde auto), services signature, cycle, IA | tous les crates ci-dessus | v0.1 |
 | `apps/desktop` | Tauri : commandes, événements, fenêtres, protocole `pde://` pour les images de pages, mises à jour | `tauri` | v0.1 |
@@ -317,6 +317,18 @@ Portée (sélection | pages | tout)
   → opérations EditText / Redact ajoutées à l'historique (annulables)
 ```
 
+- **Transport** : `pde-ai` ne parle qu'au trait `Transport` ; le transport
+  `ureq` (HTTPS par rustls) est une option (`http`) activée par
+  l'application de bureau. Le cœur (`pde-app`, `pde-ai` sans option) reste
+  sans code C, donc compilable pour Android ; les tests rejouent des
+  réponses HTTP écrites à la main (`FakeTransport`).
+- **Service** (`pde-app::ai`) : clé par fournisseur au trousseau
+  (`SecretStore` de `pde-core`, `ai-key/<hôte>`), estimation avant l'envoi,
+  accord gardé par fournisseur et seuil de coût, plafond mensuel,
+  consommation dans `ai-usage.json` (compteurs et noms d'hôtes seulement),
+  profil de secours si le fournisseur échoue. L'action tourne sur un fil à
+  part ; la réponse arrive à l'interface par des événements (`ai-event`,
+  `ai-done`) et s'annule (`CancelFlag`).
 - **Analyse / questions** : réduction par lots (résumé de chaque lot, puis
   synthèse) ; chaque lot porte ses numéros de page, les citations de la
   réponse sont vérifiées (page existante) avant d'être affichées comme liens.

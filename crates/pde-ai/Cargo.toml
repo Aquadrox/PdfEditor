@@ -1,0 +1,25 @@
+[package]
+name = "pde-ai"
+description = "IA : client compatible OpenAI (repris de VoiceToText), analyse et questions sur le document"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+log = "0.4"
+pde-core = { path = "../pde-core" }
+serde.workspace = true
+serde_json = "1"
+# Client HTTPS (fonction `http`, activée par l'application de bureau) : la
+# pile TLS compile du C, que la vérification Android du cœur évite ainsi.
+ureq = { version = "3", optional = true }
+
+[features]
+# Transport HTTP réel (ureq, rustls).
+http = ["dep:ureq"]
+# Faux modèle et faux transport, pour les tests des autres crates.
+testing = []
+
+[lints]
+workspace = true

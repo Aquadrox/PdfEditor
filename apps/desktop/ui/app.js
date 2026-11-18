@@ -22,6 +22,9 @@ import { attachStatusbar } from "./features/viewer/statusbar.js";
 import { Thumbnails } from "./features/viewer/thumbnails.js";
 import { Viewer } from "./features/viewer/viewer.js";
 import { attachDeskInput, isEditable } from "./features/viewer/desk-input.js";
+import { showSidebarTab } from "./features/viewer/sidebar.js";
+import { AiMode } from "./features/ai/ai-mode.js";
+import { attachAiSettings } from "./features/ai/ai-settings.js";
 import { zoomIn, zoomOut } from "./features/viewer/zoom.js";
 import { byId } from "./lib/dom.js";
 import { t, translate } from "./lib/i18n.js";
@@ -54,7 +57,14 @@ const viewer = new Viewer(byId("desk"), {
 const statusbar = attachStatusbar(viewer);
 const search = attachSearch(viewer);
 const thumbnails = new Thumbnails(byId("thumbs"), byId("sidebar-body"), (page) => viewer.goToPage(page));
-const settingsView = attachSettings({ onSaved: applySettings, onClose: closeSettings });
+const settingsView = attachSettings({
+  onSaved: applySettings,
+  onClose: closeSettings,
+  onFill: (draft) => aiSettings.fill(draft),
+});
+const aiSettings = attachAiSettings(settingsView);
+// IA (v0.5) : panneau Assistant IA en mode IA.
+const ai = new AiMode(viewer, { openSettings: () => openSettings("ai") });
 const edit = new EditMode(viewer, (view, changed) => {
   if (changed.length > 0) thumbnails.setRevisions(view.revisions, changed);
   showSaveState(view.dirty);
@@ -123,17 +133,18 @@ function showSaveState(dirty) {
   byId("save-state").textContent = current ? t(state, { time }) : "";
 }
 
-/** Lire, Éditer, Pages ou Signer ; le mode IA arrive avec sa version. */
+/** Lire, Éditer, Pages, Signer ou IA. */
 function setMode(next) {
   const previous = mode;
   mode = current ? next : "read";
-  for (const name of ["read", "edit", "pages", "sign"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
+  for (const name of ["read", "edit", "pages", "sign", "ai"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
   byId(`mode-${mode}`).setAttribute("aria-current", "page");
-  byId("save-button").hidden = mode === "read" || mode === "sign";
+  byId("save-button").hidden = mode === "read" || mode === "sign" || mode === "ai";
   if (mode !== "edit") edit.layer.commitText();
   edit.setActive(mode === "edit");
   pages.setActive(mode === "pages", viewer.page);
   sign.setActive(mode === "sign");
+  ai.setActive(mode === "ai");
   form.setActive(mode === "read" && sign.info.lock !== "all");
   if (mode === "edit" || mode === "pages") sign.warnIfSigned(current);
   // En quittant la grille, la page choisie est affichée.
@@ -153,6 +164,8 @@ function show(doc) {
   byId("mode-edit").disabled = !doc;
   byId("mode-pages").disabled = !doc;
   byId("mode-sign").disabled = !doc;
+  byId("mode-ai").disabled = !doc;
+  ai.load(doc);
   byId("menu-properties").disabled = !doc;
   statusbar.setDocument(doc);
   setWindowTitle(doc ? `${doc.title} – PdfEditor` : "PdfEditor").catch(() => {});
@@ -238,17 +251,6 @@ async function refreshRecent() {
   return files;
 }
 
-function showSidebarTab(tab) {
-  const outline = tab === "outline";
-  for (const [id, selected] of [["tab-pages", !outline], ["tab-outline", outline]]) {
-    byId(id).classList.toggle("on", selected);
-    byId(id).classList.toggle("ghost", !selected);
-    byId(id).setAttribute("aria-selected", String(selected));
-  }
-  byId("thumbs").hidden = outline;
-  byId("outline").hidden = !outline;
-}
-
 /** Réglages appliqués à chaud : thème, zoom d'ouverture, raccourcis. */
 function applySettings(saved) {
   settings = saved;
@@ -271,11 +273,11 @@ function applySettings(saved) {
   if (!current) refreshRecent();
 }
 
-function openSettings() {
+function openSettings(section = "general") {
   byId("main-menu").hidden = true;
   document.querySelector(".app").hidden = true;
   byId("settings-view").hidden = false;
-  settingsView.open();
+  settingsView.open(section);
 }
 
 function closeSettings() {
@@ -299,8 +301,6 @@ const actions = {
   save_as: saveAs,
 };
 
-byId("tab-pages").addEventListener("click", () => showSidebarTab("pages"));
-byId("tab-outline").addEventListener("click", () => showSidebarTab("outline"));
 byId("home-open").addEventListener("click", chooseAndOpen);
 byId("menu-open").addEventListener("click", chooseAndOpen);
 byId("menu-close").addEventListener("click", close);
@@ -313,7 +313,8 @@ byId("mode-read").addEventListener("click", () => setMode("read"));
 byId("mode-edit").addEventListener("click", () => setMode("edit"));
 byId("mode-pages").addEventListener("click", () => setMode("pages"));
 byId("mode-sign").addEventListener("click", () => setMode("sign"));
-byId("menu-settings").addEventListener("click", openSettings);
+byId("mode-ai").addEventListener("click", () => setMode("ai"));
+byId("menu-settings").addEventListener("click", () => openSettings());
 byId("recent-clear").addEventListener("click", async () => {
   await invoke("clear_recent_files").catch((e) => toast(e?.message ?? String(e), "error"));
   refreshRecent();

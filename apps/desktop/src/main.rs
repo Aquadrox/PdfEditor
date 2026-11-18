@@ -14,6 +14,8 @@ mod updates;
 
 use std::sync::Arc;
 
+use pde_ai::http::UreqTransport;
+use pde_app::ai::{AiService, UsageStore};
 use pde_app::app::App;
 use pde_app::news::News;
 use pde_app::recent::RecentFiles;
@@ -23,7 +25,7 @@ use pde_app::signing::{DrawingStore, IdentityStore};
 use pde_app::unavailable::UnavailableEngine;
 use pde_pdf::PdfiumEngine;
 use pde_platform::dirs::AppDirs;
-use pde_platform::secrets::SystemProtector;
+use pde_platform::secrets::{SystemProtector, SystemSecrets};
 use tauri::Manager;
 
 /// Moteur PDFium, ou moteur de remplacement qui explique pourquoi il manque.
@@ -66,7 +68,15 @@ fn main() {
         Err(e) => log::warn!("sauvegarde automatique désactivée : {e}"),
     }
     let identities = IdentityStore::new(&dirs.data, Arc::new(SystemProtector));
-    let app = Arc::new(app.with_identities(identities, DrawingStore::new(&dirs.data)));
+    let ai = AiService::new(
+        Arc::new(SystemSecrets),
+        Arc::new(UreqTransport),
+        UsageStore::open(&dirs.data),
+    );
+    let app = Arc::new(
+        app.with_identities(identities, DrawingStore::new(&dirs.data))
+            .with_ai(ai),
+    );
     let protocol_app = app.clone();
     let autosave_app = app.clone();
     let exit_app = app.clone();
@@ -113,6 +123,13 @@ fn main() {
             commands::form::set_flatten,
             commands::form::document_metadata,
             commands::form::set_metadata,
+            commands::ai::ai_status,
+            commands::ai::ai_set_key,
+            commands::ai::ai_test,
+            commands::ai::ai_usage,
+            commands::ai::ai_estimate,
+            commands::ai::ai_start,
+            commands::ai::ai_cancel,
             commands::sign::identities,
             commands::sign::create_identity,
             commands::sign::import_identity,

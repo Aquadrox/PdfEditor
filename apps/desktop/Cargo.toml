@@ -11,6 +11,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 log = "0.4"
+pde-ai = { path = "../../crates/pde-ai", features = ["http"] }
 pde-app = { path = "../../crates/pde-app" }
 pde-core = { path = "../../crates/pde-core" }
 pde-pdf = { path = "../../crates/pde-pdf" }

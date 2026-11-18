@@ -1,13 +1,14 @@
 //! Protection des données par le système (repris de VoiceToText) :
 //! DPAPI sous Windows, clé gardée dans le trousseau de la session sous
-//! Linux. Ailleurs (Android avant la v1.1), indisponible.
+//! Linux ; et le trousseau du système pour les secrets courts (clés API).
+//! Ailleurs (Android avant la v1.1), indisponible.
 
 #[cfg(target_os = "linux")]
 mod linux;
 #[cfg(windows)]
 mod windows;
 
-use pde_core::secrets::DataProtector;
+use pde_core::secrets::{DataProtector, SecretStore};
 
 /// Protection fournie par le système d'exploitation.
 #[derive(Debug, Default, Clone, Copy)]
@@ -35,6 +36,48 @@ impl DataProtector for SystemProtector {
         {
             let _ = data;
             Err(UNAVAILABLE.into())
+        }
+    }
+}
+
+/// Trousseau du système (Gestionnaire d'identifiants, Secret Service).
+#[derive(Debug, Default, Clone, Copy)]
+pub struct SystemSecrets;
+
+impl SecretStore for SystemSecrets {
+    fn load(&self, name: &str) -> Option<String> {
+        #[cfg(windows)]
+        return windows::load_secret(name);
+        #[cfg(target_os = "linux")]
+        return linux::load_secret(name);
+        #[cfg(not(any(windows, target_os = "linux")))]
+        {
+            let _ = name;
+            None
+        }
+    }
+
+    fn store(&self, name: &str, value: &str) -> Result<(), String> {
+        #[cfg(windows)]
+        return windows::store_secret(name, value);
+        #[cfg(target_os = "linux")]
+        return linux::store_secret(name, value);
+        #[cfg(not(any(windows, target_os = "linux")))]
+        {
+            let _ = (name, value);
+            Err(UNAVAILABLE.into())
+        }
+    }
+
+    fn delete(&self, name: &str) -> Result<(), String> {
+        #[cfg(windows)]
+        return windows::delete_secret(name);
+        #[cfg(target_os = "linux")]
+        return linux::delete_secret(name);
+        #[cfg(not(any(windows, target_os = "linux")))]
+        {
+            let _ = name;
+            Ok(())
         }
     }
 }
