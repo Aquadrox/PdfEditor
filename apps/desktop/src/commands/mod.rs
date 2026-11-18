@@ -11,6 +11,7 @@ pub mod image;
 pub mod pages;
 pub mod recovery;
 pub mod settings;
+pub mod sign;
 pub mod updates;
 
 use std::sync::Arc;

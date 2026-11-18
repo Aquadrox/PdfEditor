@@ -40,13 +40,13 @@ adaptateur (il passe par un trait de `pde-core`) ; seul `apps/desktop` connaît 
 
 | Crate | Rôle | Dépendances principales | Arrive en |
 |---|---|---|---|
-| `pde-core` | Géométrie, unités, modèle du document (pages, blocs de texte, éléments), opérations d'édition, historique annuler / rétablir, réglages (TOML + validation), traits `PdfEngine`, `ChatModel`, `SecretStore`, `Clock` | `serde`, `toml`, `thiserror` | v0.0 |
+| `pde-core` | Géométrie, unités, modèle du document (pages, blocs de texte, éléments), opérations d'édition, historique annuler / rétablir, réglages (TOML + validation), traits `PdfEngine`, `DataProtector`, plus tard `ChatModel`, `Clock` | `serde`, `toml`, `thiserror` | v0.0 |
 | `pde-pdf` | Moteur PDF : ouverture, rendu, extraction du texte avec positions, application des opérations, formulaires et propriétés, enregistrement complet ou incrémental | `pdfium-render` (PDFium), `lopdf` (structure du formulaire, valeurs, dictionnaire d'information) | v0.1 |
 | `pde-fonts` | Polices Noto embarquées (Sans, Serif, Sans Mono : latin étendu, grec, cyrillique ; OFL), caractères couverts, métriques | `skrifa` | v0.2 |
-| `pde-sign` | Signature PAdES, vérification, certificats (PKCS#12, auto-signé), DocMDP / FieldMDP, horodatage RFC 3161, écriture incrémentale | `lopdf`, RustCrypto (`cms`, `x509-cert`, `rsa`, `p256`, `sha2`, `p12-keystore`) | v0.4 |
+| `pde-sign` | Signature PAdES, vérification, identités (PKCS#12, auto-signé), DocMDP (plus tard FieldMDP, horodatage RFC 3161), écriture incrémentale ; ni PDFium ni système | `lopdf`, RustCrypto (`cms`, `x509-cert`, `rsa`, `p256`, `p384`, `sha2`), `p12-keystore` | v0.4 |
 | `pde-workflow` | Cycle de signature : plan, machine à états, manifeste embarqué, journal d'audit chaîné | `pde-core`, `serde_json`, `sha2` | v0.8 |
 | `pde-ai` | Client LLM compatible OpenAI (repris de VoiceToText), profils, prompts, découpage du document, tâches analyse / traduction / modification, coûts | `ureq`, `serde_json` | v0.5 |
-| `pde-platform` | Trousseau (Gestionnaire d'identifiants Windows, Secret Service Linux), chiffrement local (DPAPI / ChaCha20-Poly1305), dossiers de l'application | `windows`, `secret-service` | v0.1 |
+| `pde-platform` | Dossiers de l'application, protection des données par le système (`DataProtector` : DPAPI sous Windows, ChaCha20-Poly1305 avec une clé gardée dans le trousseau Secret Service sous Linux) ; plus tard le trousseau pour les clés API | `windows`, `secret-service`, `chacha20poly1305` | v0.1 |
 | `pde-app` | Cas d'usage testables sans interface : `DocumentSession` (document + historique + sauvegarde auto), services signature, cycle, IA | tous les crates ci-dessus | v0.1 |
 | `apps/desktop` | Tauri : commandes, événements, fenêtres, protocole `pde://` pour les images de pages, mises à jour | `tauri` | v0.1 |
 
@@ -198,22 +198,60 @@ signatures, l'enregistrement est **incrémental** (F-03) ; s'il est verrouillé
 
 ## Signature et verrouillage
 
-1. Le document (avec les modifications en cours) est enregistré.
-2. `pde-sign` ajoute une mise à jour incrémentale : champ de signature,
-   apparence (XObject), dictionnaire `/Sig` avec `/Contents` réservé et
-   `/ByteRange` ; pour le verrouillage, référence `/DocMDP` (`/P 1` aucune
-   modification, `/P 2` formulaires et signatures).
-3. Empreinte SHA-256 des octets couverts par `/ByteRange` → CMS SignedData
-   détaché (attributs signés PAdES : `signingCertificateV2`, `messageDigest`),
-   jeton d'horodatage RFC 3161 en attribut non signé si configuré.
-4. Le CMS est écrit dans `/Contents` ; le fichier est relu et la signature
-   **vérifiée** avant d'être présenté comme signé.
+On signe le **fichier enregistré**, jamais l'état en mémoire : le document
+ne doit pas avoir de modifications en attente (l'interface propose de les
+enregistrer d'abord), et le fichier sur le disque doit avoir l'empreinte de
+la dernière ouverture, du dernier enregistrement ou de la dernière signature.
 
-Clés privées : certificat auto-signé généré → clé chiffrée par le système
-(DPAPI / trousseau) ; PKCS#12 → le fichier reste où il est, le mot de passe
-est demandé ou mémorisé dans le trousseau sur demande. Jamais de clé dans
-les journaux, jamais de clé de test réelle dans le dépôt (clés de test
-générées à l'exécution des tests).
+1. `pde-sign` lit la structure avec `lopdf` (catalogue, formulaire, pages,
+   champs existants) puis écrit une **mise à jour incrémentale** à la fin du
+   fichier (`pdf/incremental.rs`) : les objets modifiés (page, `/AcroForm`,
+   catalogue) et nouveaux (widget, dictionnaire `/Sig`, apparence), puis une
+   section de références croisées du même style que le fichier (table
+   `xref`, ou flux de références croisées) et un `trailer` avec `/Prev`.
+   Aucun octet existant ne bouge : les signatures précédentes restent valides.
+2. Le dictionnaire `/Sig` (`/SubFilter /ETSI.CAdES.detached`) est écrit à
+   la main avec deux trous de taille fixe : `/ByteRange` et `/Contents`
+   (place pour le CMS : certificats + 3 Ko). Pour verrouiller (DocMDP), il
+   porte un `/Reference` (`/P 1` aucune modification, `/P 2` formulaires et
+   signatures) et le catalogue reçoit `/Perms /DocMDP` ; seule la première
+   signature d'un document peut verrouiller.
+3. Empreinte (SHA-256, SHA-384 pour P-384) de tout le fichier sauf `<…>` de
+   `/Contents` → CMS `SignedData` détaché (`cms/build.rs`) : attributs
+   signés `contentType`, `messageDigest`, `signingCertificateV2` ; heure de
+   signature dans `/M` (PAdES B-B). Pas encore d'horodatage (S-08).
+4. Le CMS est écrit en hexadécimal dans `/Contents`. `pde-app` relit le
+   fichier : notre vérificateur doit trouver la nouvelle signature valide et
+   couvrant tout le fichier, et PDFium doit l'ouvrir ; alors seulement le
+   fichier est remplacé (écriture atomique) et l'interface le rouvre.
+
+Cadre d'une signature visible : l'interface envoie un cadre en points de la
+page affichée (origine en haut à gauche), `pde-app` le ramène en bas à
+gauche, `pde-sign` le place dans l'espace du PDF selon la `/CropBox` et
+`/Rotate` de la page (`pdf/geometry.rs`). L'apparence est un XObject de
+texte (Helvetica, WinAnsi) rédigé par l'interface (nom, organisation, date
+locale) ; l'apparence manuscrite viendra avec S-03.
+
+Vérification (`verify.rs`) : pour chaque champ `/FT /Sig` du formulaire,
+`/ByteRange` cohérent (commence à 0, le trou ne contient que de
+l'hexadécimal), empreinte, signature des attributs (RSA PKCS#1 v1.5, ECDSA
+P-256 / P-384), certificat désigné par `signingCertificateV2` ; « document
+complété depuis » si des octets suivent la révision signée. La confiance
+dans l'émetteur (magasin de certificats du système) n'est pas encore
+vérifiée : un certificat auto-signé est présenté comme « personnel ».
+Les signatures sont lues à l'ouverture et après chaque enregistrement.
+
+Identités (`pde-app::signing::identities`) : un fichier JSON par identité
+dans `identities/` du dossier de données (certificats, clé PKCS#8 chiffrée
+par `DataProtector`) ; jamais de clé en clair sur le disque ni dans les
+journaux (`PrivateKey` n'affiche que son algorithme). Le mot de passe d'un
+PKCS#12 ne sert qu'à l'import. Les tests génèrent leurs clés et certificats
+à l'exécution (aucun dans le dépôt).
+
+Limites connues : modifier puis enregistrer un document signé le réécrit
+entièrement et invalide ses signatures (l'enregistrement incrémental, F-03,
+est la prochaine étape) ; un document protégé par mot de passe ne peut pas
+encore être signé.
 
 ## Cycle de signature
 
@@ -320,7 +358,7 @@ Code **copié puis adapté** (pas de dépendance entre les dépôts : chacun év
 | `crates/vtt-llm/src/lib.rs` (client, erreurs HTTP, pistes de correction, `/models`, désamorçage des balises, lecture de l'`usage`) | `pde-ai` (découpé : `client`, `errors`, `hints`, `models`, `sanitize`) | Prompts de dictée retirés ; ajout du flux SSE et du JSON strict |
 | `vtt-core::config` (`LlmConfig`, `LlmProfile`, `Pricing`, `PromptPreset`, contrôle de l'adresse, envoi de la clé seulement en HTTPS ou vers ce PC) | `pde-core::settings::ai` | Prompts par action IA |
 | `vtt-core::usage` (jetons, coût par jour) | `pde-core::usage` | Plafond mensuel |
-| `vtt-platform` `secrets_windows.rs`, `secrets_linux.rs` | `pde-platform::secrets` | Préfixe `PdfEditor/` |
+| `vtt-platform` `secrets_windows.rs`, `secrets_linux.rs` | `pde-platform::secrets` | `protect` / `unprotect` derrière `DataProtector` (v0.4) ; trousseau des clés API avec l'IA, préfixe `PdfEditor/` |
 | `apps/desktop/ui/settings.js` (préréglages fournisseurs, test des réglages), `prompts.js` | `apps/desktop/ui/settings/ai/` | Découpé en modules |
 | `logging.rs`, `crash.rs`, `paths.rs`, `updates.rs` | `apps/desktop/src/` | Noms de dossiers |
 | `release.sh`, `.github/scripts/changelog.py`, jobs de release de la CI | mêmes emplacements | Plateformes Windows / Linux |

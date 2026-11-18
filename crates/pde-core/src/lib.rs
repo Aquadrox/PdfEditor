@@ -11,6 +11,7 @@ pub mod engine;
 pub mod geometry;
 pub mod render;
 pub mod search;
+pub mod secrets;
 pub mod settings;
 pub mod text;
 pub mod units;

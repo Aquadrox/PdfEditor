@@ -9,6 +9,10 @@
   /* Sur la page (toujours blanche) : ne changent pas avec le thème. */
   --on-paper-accent: #2747b8;
   --on-paper-accent-soft: rgb(39 71 184 / 8%);
+  --on-paper-seal: #8a1c2b;
+  --on-paper-seal-soft: rgb(138 28 43 / 7%);
+  --on-paper-ok: #1e7344;
+  --on-paper-danger: #b3261e;
   --paper: #ffffff;
   --ink: #1c2430;
   --muted: #566170;

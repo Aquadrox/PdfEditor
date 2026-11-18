@@ -1,0 +1,37 @@
+[package]
+name = "pde-sign"
+description = "Signature numérique PAdES : identités, CMS, mise à jour incrémentale, vérification"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+# Rust pur (RustCrypto) : rien à livrer en plus de l'exécutable, testable sous
+# Linux comme sous Windows, compilable pour Android. Ni PDFium ni système ici :
+# le PDF est lu avec `lopdf`, la signature ajoutée par une mise à jour
+# incrémentale écrite octet par octet.
+[dependencies]
+thiserror.workspace = true
+# Structure du PDF (catalogue, pages, formulaire) et écriture des objets.
+lopdf = { version = "0.47", default-features = false }
+# ASN.1 / DER, certificats X.509, CMS (RFC 5652).
+der = { version = "0.8", features = ["alloc", "derive", "oid", "zeroize"] }
+spki = { version = "0.8", features = ["alloc"] }
+x509-cert = { version = "0.3", default-features = false, features = ["builder"] }
+cms = { version = "0.3.0-rc.2", default-features = false }
+const-oid = { version = "0.10", features = ["db"] }
+# Clés : ECDSA P-256 / P-384 et RSA (PKCS#1 v1.5), empreintes SHA-2.
+p256 = { version = "0.14", features = ["ecdsa", "pkcs8"] }
+p384 = { version = "0.14", features = ["ecdsa", "pkcs8"] }
+rsa = { version = "0.10", features = ["pkcs1v15"] }
+sha2 = { version = "0.11", features = ["oid"] }
+signature = "3"
+pkcs8 = { version = "0.11", features = ["alloc"] }
+# Certificats PKCS#12 (.p12 / .pfx) importés.
+p12-keystore = "0.4"
+# Aléa du système (numéros de série, clés).
+getrandom = { version = "0.4", features = ["sys_rng"] }
+zeroize = "1"
+
+[lints]
+workspace = true

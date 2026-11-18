@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="styles/edit.css" />
     <link rel="stylesheet" href="styles/pages.css" />
     <link rel="stylesheet" href="styles/form.css" />
+    <link rel="stylesheet" href="styles/sign.css" />
     <script type="module" src="app.js"></script>
   </head>
   <body>
@@ -69,6 +70,11 @@
       <symbol id="i-redact" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="6" rx="1" fill="currentColor" /><path d="M3 5h8M14 5h7M3 19h5M11 19h10" /></symbol>
       <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" /></symbol>
       <symbol id="i-file-up" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3" /></symbol>
+      <symbol id="i-frame" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1" stroke-dasharray="3 2" /><path d="M7 14c1.5-1.5 2.5-4 3.5-4s-.5 4 1 4 1.5-2 2.5-2 1 1.5 2 1.5" /></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4M12 17h.01" /></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></symbol>
     </svg>
 
     <div class="app">
@@ -93,9 +99,13 @@
           <button id="mode-read" class="mode" aria-current="page"><svg class="icon"><use href="#i-read" /></svg><span data-i18n="mode.read"></span></button>
           <button id="mode-edit" class="mode" disabled><svg class="icon"><use href="#i-edit" /></svg><span data-i18n="mode.edit"></span></button>
           <button id="mode-pages" class="mode" disabled><svg class="icon"><use href="#i-pages" /></svg><span data-i18n="mode.pages"></span></button>
-          <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="mode.sign"></span></button>
+          <button id="mode-sign" class="mode" disabled><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="mode.sign"></span></button>
           <button class="mode" disabled data-i18n-title="mode.soon"><svg class="icon"><use href="#i-ai" /></svg><span data-i18n="mode.ai"></span></button>
         </nav>
+        <button id="seal" class="seal" data-tone="none" hidden>
+          <span class="wax" aria-hidden="true"><svg class="icon"><use href="#i-sign" /></svg></span>
+          <span id="seal-label"></span>
+        </button>
         <button id="search-button" class="btn ghost icon" disabled data-i18n-label="search.open" data-shortcut-hint="search">
           <svg class="icon"><use href="#i-search" /></svg>
         </button>
@@ -181,6 +191,15 @@
         <span class="pages-hint" data-i18n="pages.hint"></span>
         <button id="pages-undo" class="btn ghost icon" disabled data-i18n-label="edit.undo" data-shortcut-hint="undo"><svg class="icon"><use href="#i-undo" /></svg></button>
         <button id="pages-redo" class="btn ghost icon" disabled data-i18n-label="edit.redo" data-shortcut-hint="redo"><svg class="icon"><use href="#i-redo" /></svg></button>
+      </div>
+
+      <div id="sign-toolbar" class="edit-toolbar" role="toolbar" data-i18n-aria="sign.toolbar" hidden>
+        <button id="sign-start" class="btn sealed" data-i18n-title="sign.startHint"><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="sign.start"></span></button>
+        <button id="sign-place" class="btn ghost" aria-pressed="false" data-i18n-title="sign.placeHint"><svg class="icon"><use href="#i-frame" /></svg><span data-i18n="sign.place"></span></button>
+        <span id="sign-hint" class="tool-hint" role="status"></span>
+        <span class="spacer"></span>
+        <span id="sign-identity" class="sign-identity caption"></span>
+        <button id="sign-identities" class="btn ghost"><svg class="icon"><use href="#i-user" /></svg><span data-i18n="sign.identities"></span></button>
       </div>
 
       <div id="update-banner" class="banner" role="status" hidden>
@@ -350,6 +369,13 @@
             <button id="prop-delete" class="btn ghost danger" data-i18n="props.delete"></button>
           </div>
           </div>
+        </aside>
+        <aside id="signatures-panel" class="properties sign-panel" aria-labelledby="signatures-title" hidden>
+          <div class="properties-header">
+            <h2 id="signatures-title" class="panel-title" data-i18n="sig.title"></h2>
+          </div>
+          <p id="signatures-empty" class="properties-empty" data-i18n="sig.none"></p>
+          <ul id="signatures-list" class="sig-list"></ul>
         </aside>
       </div>
 
@@ -601,6 +627,73 @@
         <button id="recovery-later" class="btn" type="button" data-i18n="recovery.later"></button>
         <button id="recovery-restore" class="btn primary" type="button" data-i18n="recovery.restore"></button>
       </div>
+    </dialog>
+
+    <dialog id="sign-dialog" class="sign-dialog" aria-labelledby="sign-title">
+      <form id="sign-form">
+        <div class="dialog-body">
+          <h2 id="sign-title" class="dialog-title" data-i18n="sign.title"></h2>
+          <p id="sign-where" class="caption"></p>
+          <label><span data-i18n="sign.identity"></span>
+            <span class="actions">
+              <select id="sign-identity-select" class="input"></select>
+              <button id="sign-new-identity" class="btn" type="button" data-i18n="sign.manageIdentities"></button>
+            </span>
+          </label>
+          <p id="sign-no-identity" class="notice" data-i18n="sign.noIdentity" hidden></p>
+          <div class="row2">
+            <label><span data-i18n="sign.reason"></span><input id="sign-reason" class="input" maxlength="200" data-i18n-placeholder="sign.reasonPlaceholder" /></label>
+            <label><span data-i18n="sign.location"></span><input id="sign-location" class="input" maxlength="200" /></label>
+          </div>
+          <fieldset class="lock-choices">
+            <legend data-i18n="sign.after"></legend>
+            <label class="radio-card"><input type="radio" name="sign-lock" value="none" checked /><span><strong data-i18n="sign.lock.none"></strong><span class="caption" data-i18n="sign.lock.noneHint"></span></span></label>
+            <label class="radio-card"><input type="radio" name="sign-lock" value="forms" /><span><strong data-i18n="sign.lock.forms"></strong><span class="caption" data-i18n="sign.lock.formsHint"></span></span></label>
+            <label class="radio-card"><input type="radio" name="sign-lock" value="all" /><span><strong data-i18n="sign.lock.all"></strong><span class="caption" data-i18n="sign.lock.allHint"></span></span></label>
+            <p id="sign-lock-note" class="caption" data-i18n="sign.lock.alreadySigned" hidden></p>
+          </fieldset>
+          <p id="sign-unsaved" class="notice" data-i18n="sign.unsavedNote" hidden></p>
+          <p id="sign-error" class="dialog-error" role="alert" hidden></p>
+        </div>
+        <div class="dialog-actions">
+          <button id="sign-cancel" class="btn" type="button" data-i18n="sign.cancel"></button>
+          <button id="sign-submit" class="btn sealed" type="submit"><svg class="icon"><use href="#i-sign" /></svg><span id="sign-submit-label"></span></button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="identity-dialog" class="identity-dialog" aria-labelledby="identity-title">
+      <form id="identity-form">
+        <div class="dialog-body">
+          <h2 id="identity-title" class="dialog-title" data-i18n="identity.title"></h2>
+          <ul id="identity-list" class="identity-list"></ul>
+          <div class="segmented" role="tablist">
+            <button id="identity-tab-create" class="btn on" type="button" role="tab" aria-selected="true" data-i18n="identity.create"></button>
+            <button id="identity-tab-import" class="btn ghost" type="button" role="tab" aria-selected="false" data-i18n="identity.import"></button>
+          </div>
+          <div id="identity-create" class="identity-pane">
+            <label><span data-i18n="identity.name"></span><input id="identity-name" class="input" maxlength="200" autocomplete="name" /></label>
+            <label><span data-i18n="identity.email"></span><input id="identity-email" class="input" type="email" maxlength="200" autocomplete="email" /></label>
+            <label><span data-i18n="identity.organization"></span><input id="identity-organization" class="input" maxlength="200" autocomplete="organization" /></label>
+            <p class="caption" data-i18n="identity.createHint"></p>
+          </div>
+          <div id="identity-import" class="identity-pane" hidden>
+            <label><span data-i18n="identity.file"></span>
+              <span class="actions">
+                <input id="identity-file" class="input" readonly />
+                <button id="identity-pick" class="btn" type="button" data-i18n="identity.pick"></button>
+              </span>
+            </label>
+            <label><span data-i18n="identity.password"></span><input id="identity-password" class="input" type="password" autocomplete="off" /></label>
+            <p class="caption" data-i18n="identity.importHint"></p>
+          </div>
+          <p id="identity-error" class="dialog-error" role="alert" hidden></p>
+        </div>
+        <div class="dialog-actions">
+          <button id="identity-close" class="btn" type="button" data-i18n="identity.close"></button>
+          <button id="identity-submit" class="btn primary" type="submit" data-i18n="identity.submitCreate"></button>
+        </div>
+      </form>
     </dialog>
 
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

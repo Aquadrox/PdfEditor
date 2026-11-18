@@ -1,6 +1,6 @@
 [package]
 name = "pde-platform"
-description = "Intégration au système : dossiers de l'application (plus tard : trousseau, chiffrement local)"
+description = "Intégration au système : dossiers de l'application, protection des clés"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
@@ -8,6 +8,18 @@ license.workspace = true
 
 [dependencies]
 dirs = "6"
+pde-core = { path = "../pde-core" }
+
+[target.'cfg(windows)'.dependencies]
+# DPAPI : chiffrement des clés privées pour la session de l'utilisateur.
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Security_Cryptography"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Équivalent de DPAPI : clé aléatoire gardée dans le trousseau de la session.
+chacha20poly1305 = "0.10"
+getrandom = "0.4"
+# Trousseau de la session (KWallet, GNOME Keyring) via D-Bus, en Rust pur.
+secret-service = { version = "5", features = ["rt-async-io-crypto-rust"] }
 
 [lints]
 workspace = true

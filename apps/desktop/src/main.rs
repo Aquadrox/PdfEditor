@@ -19,9 +19,11 @@ use pde_app::news::News;
 use pde_app::recent::RecentFiles;
 use pde_app::recovery::RecoveryStore;
 use pde_app::settings_store::SettingsStore;
+use pde_app::signing::IdentityStore;
 use pde_app::unavailable::UnavailableEngine;
 use pde_pdf::PdfiumEngine;
 use pde_platform::dirs::AppDirs;
+use pde_platform::secrets::SystemProtector;
 use tauri::Manager;
 
 /// Moteur PDFium, ou moteur de remplacement qui explique pourquoi il manque.
@@ -63,7 +65,8 @@ fn main() {
         Ok(store) => app = app.with_recovery(store),
         Err(e) => log::warn!("sauvegarde automatique désactivée : {e}"),
     }
-    let app = Arc::new(app);
+    let identities = IdentityStore::new(&dirs.data, Arc::new(SystemProtector));
+    let app = Arc::new(app.with_identities(identities));
     let protocol_app = app.clone();
     let autosave_app = app.clone();
     let exit_app = app.clone();
@@ -110,6 +113,13 @@ fn main() {
             commands::form::set_flatten,
             commands::form::document_metadata,
             commands::form::set_metadata,
+            commands::sign::identities,
+            commands::sign::create_identity,
+            commands::sign::import_identity,
+            commands::sign::delete_identity,
+            commands::sign::pick_certificate,
+            commands::sign::document_signatures,
+            commands::sign::sign_document,
             commands::edit::page_images,
             commands::edit::page_text_blocks,
             commands::edit::undo_edit,
