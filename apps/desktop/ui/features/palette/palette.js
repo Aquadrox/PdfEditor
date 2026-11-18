@@ -41,13 +41,16 @@ export class Palette {
     this.actions = await invoke("action_catalog").catch(() => []);
   }
 
-  /** @param {"run" | "help"} kind */
-  open(kind = "run") {
+  /**
+   * @param {"run" | "help"} kind
+   * @param {string} query recherche de départ (« Comment faire ? » depuis l'assistant)
+   */
+  open(kind = "run", query = "") {
     this.help = kind === "help";
     byId("palette-title").textContent = t(this.help ? "palette.helpTitle" : "palette.title");
     this.input.placeholder = t(this.help ? "palette.helpPlaceholder" : "palette.placeholder");
     byId("palette-hint").textContent = t(this.help ? "palette.helpKeys" : "palette.keys");
-    this.input.value = "";
+    this.input.value = query;
     if (!this.dialog.open) this.dialog.showModal();
     this.render();
     this.input.focus();

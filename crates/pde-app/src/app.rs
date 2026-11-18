@@ -9,6 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use pde_core::engine::PdfEngine;
 use pde_core::settings::Settings;
 
+use crate::actions::assistant::{self, ASSISTANT_ACTIONS, Proposal};
 use crate::ai::{AiEvent, AiService, AiStatus, AnswerView, EstimateView, Scope, TestView};
 use crate::edit_view::SavedView;
 use crate::error::AppError;
@@ -21,7 +22,7 @@ use crate::signing::HttpTimestampAuthority;
 use crate::signing::drawings::png_from_base64;
 use crate::signing::{DrawingStore, DrawingView, IdentityStore, IdentityView, SignRequest};
 use crate::view::DocumentView;
-use crate::viewer::Viewer;
+use crate::viewer::{PagesView, Viewer};
 use pde_ai::tasks::{PageText, Task};
 use pde_core::ai::CancelFlag;
 use pde_core::settings::Provider;
@@ -146,7 +147,7 @@ impl App {
     ) -> Result<AnswerView, AppError> {
         let pages = self.ai_pages(id, scope)?;
         let settings = self.settings.get().ai;
-        self.ai_service()?.run(
+        let mut answer = self.ai_service()?.run(
             &settings,
             &pages,
             task,
@@ -154,7 +155,43 @@ impl App {
             run,
             consent,
             on_event,
-        )
+        )?;
+        // Assistant d'actions : chaque appel d'outil est vérifié sur le
+        // document ; seules les propositions valables sont montrées.
+        if matches!(task, Task::Assist(_)) {
+            let scope = self.scope_pages(id, scope)?;
+            for call in std::mem::take(&mut answer.tool_calls) {
+                match assistant::parse(&call, &ASSISTANT_ACTIONS)
+                    .and_then(|p| self.viewer.preview_proposal(id, p, &scope))
+                {
+                    Ok(view) => answer.proposals.push(view),
+                    Err(reason) => answer.rejected.push(reason),
+                }
+            }
+        }
+        Ok(answer)
+    }
+
+    /// Pages de la portée (rangs à partir de 0).
+    fn scope_pages(&self, id: u64, scope: &Scope) -> Result<Vec<usize>, AppError> {
+        Ok(match scope {
+            Scope::Selection { page, .. } => vec![*page],
+            Scope::Pages { pages } => pages.clone(),
+            Scope::Document => (0..self.viewer.document_view(id)?.pages.len()).collect(),
+        })
+    }
+
+    /// Applique les propositions acceptées de l'assistant, en une opération.
+    pub fn assistant_apply(
+        &self,
+        id: u64,
+        scope: &Scope,
+        proposals: &[Proposal],
+    ) -> Result<PagesView, AppError> {
+        let scope = self.scope_pages(id, scope)?;
+        let author = self.settings.get().edit.author;
+        self.viewer
+            .apply_proposals(id, proposals, &scope, author.trim())
     }
 
     /// Identités de signature et signatures manuscrites rangées dans `data_dir`.

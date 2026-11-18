@@ -3,12 +3,15 @@
 //! lu d'un coup ; sinon chaque lot donne des notes (avec leurs pages), puis
 //! une synthèse rédige la réponse (réduction par lots).
 
+mod assist;
 mod chunk;
 pub mod prompts;
 
 pub use chunk::{Chunk, PageText, chunks, estimate_tokens};
 
-use pde_core::ai::{AiError, CancelFlag, ChatMessage, ChatModel, ChatRequest, Usage};
+use pde_core::ai::{
+    AiError, CancelFlag, ChatMessage, ChatModel, ChatRequest, ToolCall, ToolSpec, Usage,
+};
 use pde_core::settings::{AiPrompts, Pricing};
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +23,8 @@ const ANSWER_TOKENS: usize = 2_048;
 const NOTES_TOKENS: usize = 1_200;
 /// Place gardée pour la consigne dans chaque requête.
 const PROMPT_RESERVE: usize = 1_200;
+/// Description des outils de l'assistant, en jetons (estimation).
+const TOOLS_RESERVE: usize = 800;
 
 /// Ce que demande l'utilisateur.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -30,6 +35,8 @@ pub enum Task {
     Entities,
     Risks,
     Question(String),
+    /// Demande d'action à l'assistant (IA-15) : réponse avec des appels d'outils.
+    Assist(String),
 }
 
 /// Requêtes prévues pour une tâche.
@@ -80,7 +87,14 @@ pub fn estimate(plan: &Plan, task: &Task, prompts: &AiPrompts, pricing: &Pricing
         + estimate_tokens(&prompts::task_prompt(task, prompts))
         + question_tokens(task);
     let content: usize = plan.chunks.iter().map(|c| estimate_tokens(&c.text)).sum();
-    let (input, output) = if plan.is_direct() {
+    let (input, output) = if let Task::Assist(request) = task {
+        // Une requête : le début du document, la demande et les outils.
+        let first = plan.chunks.first().map_or(0, |c| estimate_tokens(&c.text));
+        (
+            prompt + first + estimate_tokens(request) + TOOLS_RESERVE,
+            assist::ASSIST_TOKENS,
+        )
+    } else if plan.is_direct() {
         (prompt + content, ANSWER_TOKENS)
     } else {
         let notes = plan.chunks.len() * NOTES_TOKENS;
@@ -94,12 +108,18 @@ pub fn estimate(plan: &Plan, task: &Task, prompts: &AiPrompts, pricing: &Pricing
         cached_input_tokens: 0,
         output_tokens: output as u64,
     };
+    let assist = matches!(task, Task::Assist(_));
     Estimate {
-        requests: plan.requests(),
+        requests: if assist { 1 } else { plan.requests() },
         input_tokens: usage.input_tokens,
         output_tokens: usage.output_tokens,
         cost: pricing.cost(&usage),
-        characters: plan.chunks.iter().map(|c| c.text.chars().count()).sum(),
+        characters: plan
+            .chunks
+            .iter()
+            .take(if assist { 1 } else { usize::MAX })
+            .map(|c| c.text.chars().count())
+            .sum(),
     }
 }
 
@@ -124,17 +144,25 @@ pub enum Event {
 pub struct Outcome {
     pub text: String,
     pub usage: Usage,
+    /// Appels d'outils proposés (assistant d'actions seulement).
+    pub tool_calls: Vec<ToolCall>,
 }
 
 /// Exécute la tâche ; `on_event` reçoit l'avancement et la réponse en flux.
+/// `tools` : outils proposés à l'assistant d'actions (ignorés sinon).
 pub fn run(
     model: &dyn ChatModel,
     task: &Task,
     prompts: &AiPrompts,
     plan: &Plan,
+    tools: &[ToolSpec],
     on_event: &mut dyn FnMut(Event),
     cancel: &CancelFlag,
 ) -> Result<Outcome, AiError> {
+    // Pivoter ou supprimer des pages ne demande pas de texte.
+    if let Task::Assist(request) = task {
+        return assist::run(model, request, plan, tools, on_event, cancel);
+    }
     if plan.chunks.is_empty() {
         return Err(AiError::Refused(
             "aucun texte dans la portée choisie (page scannée ?)".into(),
@@ -163,6 +191,7 @@ pub fn run(
                     ChatMessage::user(format!("{question}<document>\n{}</document>", chunk.text)),
                 ],
                 max_tokens: NOTES_TOKENS,
+                ..Default::default()
             };
             let reply = model.chat(&request, &mut |_| {}, cancel)?;
             usage.add(&reply.usage.unwrap_or_default());
@@ -194,6 +223,7 @@ pub fn run(
     let request = ChatRequest {
         messages: vec![ChatMessage::system(system), ChatMessage::user(final_user)],
         max_tokens: ANSWER_TOKENS,
+        ..Default::default()
     };
     let reply = model.chat(
         &request,
@@ -204,6 +234,7 @@ pub fn run(
     Ok(Outcome {
         text: reply.text.trim().to_owned(),
         usage,
+        tool_calls: Vec::new(),
     })
 }
 
@@ -228,6 +259,7 @@ mod tests {
             task,
             &AiPrompts::default(),
             plan,
+            &[],
             &mut |e| events.push(e),
             &CancelFlag::default(),
         )
@@ -318,6 +350,7 @@ mod tests {
             &Task::Summary,
             &custom,
             &Plan::new(&pages(1, 5), 24_000),
+            &[],
             &mut |_| {},
             &CancelFlag::default(),
         )
@@ -336,6 +369,7 @@ mod tests {
             &Task::Summary,
             &AiPrompts::default(),
             &empty,
+            &[],
             &mut |_| {},
             &CancelFlag::default(),
         );
@@ -348,6 +382,7 @@ mod tests {
             &Task::Summary,
             &AiPrompts::default(),
             &plan,
+            &[],
             &mut |_| {},
             &cancel,
         );

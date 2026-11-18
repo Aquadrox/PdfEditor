@@ -509,35 +509,14 @@
     "params": {
       "additionalProperties": false,
       "properties": {
-        "area": {
-          "additionalProperties": false,
-          "description": "Zone du texte à marquer, en points depuis le coin haut gauche de la page",
-          "properties": {
-            "height": {
-              "type": "number"
-            },
-            "width": {
-              "type": "number"
-            },
-            "x": {
-              "type": "number"
-            },
-            "y": {
-              "type": "number"
-            }
+        "pages": {
+          "description": "Numéros des pages où chercher (toutes celles de la portée si absent), à partir de 1",
+          "items": {
+            "minimum": 1,
+            "type": "integer"
           },
-          "required": [
-            "x",
-            "y",
-            "width",
-            "height"
-          ],
-          "type": "object"
-        },
-        "page": {
-          "description": "Numéro de la page, à partir de 1",
-          "minimum": 1,
-          "type": "integer"
+          "minItems": 1,
+          "type": "array"
         },
         "style": {
           "description": "Surligner, souligner ou barrer",
@@ -547,11 +526,15 @@
             "strike_out"
           ],
           "type": "string"
+        },
+        "text": {
+          "description": "Texte exact à marquer, recopié tel qu'il figure dans le document",
+          "minLength": 1,
+          "type": "string"
         }
       },
       "required": [
-        "page",
-        "area"
+        "text"
       ],
       "type": "object"
     }
@@ -670,30 +653,9 @@
     "params": {
       "additionalProperties": false,
       "properties": {
-        "area": {
-          "additionalProperties": false,
-          "description": "Emplacement de la note, en points depuis le coin haut gauche de la page",
-          "properties": {
-            "height": {
-              "type": "number"
-            },
-            "width": {
-              "type": "number"
-            },
-            "x": {
-              "type": "number"
-            },
-            "y": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "x",
-            "y",
-            "width",
-            "height"
-          ],
-          "type": "object"
+        "near": {
+          "description": "Texte de la page près duquel poser la note (en haut de la page sinon)",
+          "type": "string"
         },
         "page": {
           "description": "Numéro de la page, à partir de 1",
@@ -702,12 +664,12 @@
         },
         "text": {
           "description": "Texte de la note",
+          "minLength": 1,
           "type": "string"
         }
       },
       "required": [
         "page",
-        "area",
         "text"
       ],
       "type": "object"
@@ -734,40 +696,23 @@
     "params": {
       "additionalProperties": false,
       "properties": {
-        "area": {
-          "additionalProperties": false,
-          "description": "Zone à supprimer, en points depuis le coin haut gauche de la page",
-          "properties": {
-            "height": {
-              "type": "number"
-            },
-            "width": {
-              "type": "number"
-            },
-            "x": {
-              "type": "number"
-            },
-            "y": {
-              "type": "number"
-            }
+        "pages": {
+          "description": "Numéros des pages où chercher (toutes celles de la portée si absent), à partir de 1",
+          "items": {
+            "minimum": 1,
+            "type": "integer"
           },
-          "required": [
-            "x",
-            "y",
-            "width",
-            "height"
-          ],
-          "type": "object"
+          "minItems": 1,
+          "type": "array"
         },
-        "page": {
-          "description": "Numéro de la page, à partir de 1",
-          "minimum": 1,
-          "type": "integer"
+        "text": {
+          "description": "Texte exact à supprimer de chaque page, recopié tel qu'il figure dans le document",
+          "minLength": 1,
+          "type": "string"
         }
       },
       "required": [
-        "page",
-        "area"
+        "text"
       ],
       "type": "object"
     }

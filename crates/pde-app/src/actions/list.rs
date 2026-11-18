@@ -77,6 +77,15 @@ fn pages_param(what: &str) -> Value {
     })
 }
 
+/// Texte visé, cherché dans le document : jamais de coordonnées.
+fn text_param(what: &str) -> Value {
+    json!({
+        "type": "string",
+        "minLength": 1,
+        "description": format!("Texte exact {what}, recopié tel qu'il figure dans le document"),
+    })
+}
+
 fn page_param() -> Value {
     json!({ "type": "integer", "minimum": 1, "description": "Numéro de la page, à partir de 1" })
 }
@@ -238,11 +247,11 @@ fn edit() -> Vec<ActionInfo> {
             .keywords(&["surligneur", "fluo", "souligner", "barrer", "marquer"])
             .params(object(
                 json!({
-                    "page": page_param(),
-                    "area": rect_param("Zone du texte à marquer"),
+                    "text": text_param("à marquer"),
+                    "pages": pages_param("où chercher (toutes celles de la portée si absent)"),
                     "style": { "type": "string", "enum": ["highlight", "underline", "strike_out"], "description": "Surligner, souligner ou barrer" },
                 }),
-                &["page", "area"],
+                &["text"],
             )),
         action("draw", EDIT, "Dessiner", "Dessiner à main levée sur la page.", "#tool-ink")
             .mode(Mode::Edit)
@@ -265,20 +274,20 @@ fn edit() -> Vec<ActionInfo> {
             .params(object(
                 json!({
                     "page": page_param(),
-                    "area": rect_param("Emplacement de la note"),
-                    "text": { "type": "string", "description": "Texte de la note" },
+                    "text": { "type": "string", "minLength": 1, "description": "Texte de la note" },
+                    "near": { "type": "string", "description": "Texte de la page près duquel poser la note (en haut de la page sinon)" },
                 }),
-                &["page", "area", "text"],
+                &["page", "text"],
             )),
         action("redact", EDIT, "Caviarder", "Supprimer réellement du texte ou une zone du document : contrairement à un masque, rien ne reste dans le fichier.", "#tool-redact")
             .mode(Mode::Edit)
             .keywords(&["anonymiser", "masquer", "cacher", "effacer", "noircir", "confidentiel", "rgpd"])
             .params(object(
                 json!({
-                    "page": page_param(),
-                    "area": rect_param("Zone à supprimer"),
+                    "text": text_param("à supprimer de chaque page"),
+                    "pages": pages_param("où chercher (toutes celles de la portée si absent)"),
                 }),
-                &["page", "area"],
+                &["text"],
             )),
     ]
 }

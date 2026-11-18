@@ -1,6 +1,7 @@
-// Mode IA (IA-04, IA-05, IA-12) : portée (sélection, page, pages,
-// document), analyses et questions, estimation et confirmation avant
-// l'envoi, réponse en flux avec citations de pages cliquables, annulation.
+// Mode IA (IA-04, IA-05, IA-12, IA-15) : portée (sélection, page, pages,
+// document), analyses, questions et demandes d'action, estimation et
+// confirmation avant l'envoi, réponse en flux avec citations de pages
+// cliquables, annulation ; les actions proposées passent par AssistantView.
 // Tout texte venu du document ou du modèle est affiché en textContent.
 
 import { toast } from "../../components/toast.js";
@@ -8,6 +9,7 @@ import { byId, el } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
 import { invoke, listen } from "../../lib/ipc.js";
 import { blocks, parsePages } from "./ai-text.js";
+import { AssistantView } from "./assistant-view.js";
 
 function money(value, currency) {
   return `${Number(value ?? 0).toFixed(value >= 1 ? 2 : 4)} ${currency}`;
@@ -16,11 +18,17 @@ function money(value, currency) {
 export class AiMode {
   /**
    * @param {import("../viewer/viewer.js").Viewer} viewer
-   * @param {{ openSettings: () => void }} hooks
+   * @param {{ openSettings: () => void, applied: (result: object) => Promise<void>, howTo: (query: string) => void }} hooks
    */
   constructor(viewer, hooks) {
     this.viewer = viewer;
     this.hooks = hooks;
+    this.assistant = new AssistantView(viewer, hooks);
+    /** Champ du bas : question sur le document, ou demande d'action. */
+    this.askMode = "question";
+    for (const button of document.querySelectorAll("[data-ask]")) {
+      button.addEventListener("click", () => this.setAskMode(button.dataset.ask));
+    }
     this.doc = null;
     this.active = false;
     this.scope = "document";
@@ -38,7 +46,7 @@ export class AiMode {
       event.preventDefault();
       const question = byId("ai-question").value.trim();
       if (!question) return;
-      this.ask({ kind: "question", question });
+      this.ask({ kind: this.askMode, question });
     });
     byId("ai-question").addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !event.shiftKey) {
@@ -56,6 +64,7 @@ export class AiMode {
   load(doc) {
     this.doc = doc;
     this.selection = null;
+    this.assistant.clear();
     byId("ai-answers").replaceChildren();
     this.showScope();
   }
@@ -82,6 +91,22 @@ export class AiMode {
     if (page < 0) return;
     this.selection = { text, page };
     if (this.active) this.showScope();
+  }
+
+  /** « Question » ou « Action » (assistant d'actions). */
+  setAskMode(mode) {
+    this.askMode = mode;
+    for (const button of document.querySelectorAll("[data-ask]")) {
+      const on = button.dataset.ask === mode;
+      button.classList.toggle("on", on);
+      button.classList.toggle("ghost", !on);
+      button.setAttribute("aria-checked", String(on));
+    }
+    const field = byId("ai-question");
+    field.placeholder = t(mode === "assist" ? "assistant.placeholder" : "ai.questionPlaceholder");
+    field.setAttribute("aria-label", t(mode === "assist" ? "assistant.request" : "ai.question"));
+    byId("ai-send").textContent = t(mode === "assist" ? "assistant.propose" : "ai.send");
+    field.focus();
   }
 
   setScope(scope) {
@@ -141,12 +166,14 @@ export class AiMode {
     if (estimate.over_cap) return toast(t("ai.overCap", { month: money(estimate.month_cost, estimate.currency) }), "error");
     if (estimate.needs_confirmation && !(await this.confirm(estimate, scope))) return;
     const entry = this.entry(task, scope);
+    entry.task = task;
+    entry.scope = scope;
     try {
       const run = await invoke("ai_start", { id: this.doc.id, scope, task, consent: true });
       entry.run = run;
       this.runs.set(run, entry);
       entry.cancel.onclick = () => invoke("ai_cancel", { run }).catch(() => {});
-      if (task.kind === "question") byId("ai-question").value = "";
+      if (task.question) byId("ai-question").value = "";
     } catch (error) {
       this.finish(entry, { Err: error });
     }
@@ -181,13 +208,13 @@ export class AiMode {
 
   /** Nouvelle réponse dans le panneau. */
   entry(task, scope) {
-    const title = task.kind === "question" ? task.question : t(`ai.task.${task.kind}`);
+    const title = task.question ?? t(`ai.task.${task.kind}`);
     const body = el("div", { class: "ai-body" });
     const status = el("p", { class: "ai-status caption", role: "status" }, t("ai.waiting"));
     const cancel = el("button", { class: "btn ghost small", type: "button" }, t("ai.cancel"));
     const item = el(
       "li",
-      { class: `ai-answer running ${task.kind === "question" ? "question" : "analysis"}` },
+      { class: `ai-answer running ${task.question ? task.kind : "analysis"}` },
       el("div", { class: "ai-answer-head" }, el("strong", { class: "ai-answer-title" }, title), cancel),
       el("p", { class: "caption" }, this.describe(scope)),
       body,
@@ -225,6 +252,9 @@ export class AiMode {
       this.render(entry);
       const fallback = result.Ok.fallback_used ? ` · ${t("ai.fallbackUsed")}` : "";
       entry.status.textContent = `${result.Ok.model} · ${money(result.Ok.cost, result.Ok.currency)}${fallback}`;
+      if (entry.task?.kind === "assist") {
+        this.assistant.show(entry, result.Ok, { id: this.doc.id, scope: entry.scope, request: entry.task.question });
+      }
       return;
     }
     const error = result.Err ?? {};

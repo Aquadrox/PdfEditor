@@ -402,6 +402,10 @@
           </div>
           <ol id="ai-answers" class="ai-answers"></ol>
           <form id="ai-ask" class="ai-ask">
+            <span class="segmented ai-ask-mode" role="radiogroup" data-i18n-aria="assistant.askMode">
+              <button class="btn small on" type="button" role="radio" aria-checked="true" data-ask="question" data-i18n="ai.task.question"></button>
+              <button class="btn small ghost" type="button" role="radio" aria-checked="false" data-ask="assist" data-i18n="assistant.mode" data-i18n-title="assistant.modeHint"></button>
+            </span>
             <textarea id="ai-question" class="input" rows="2" maxlength="2000" data-i18n-placeholder="ai.questionPlaceholder" data-i18n-aria="ai.question"></textarea>
             <button id="ai-send" class="btn primary ai-send" type="submit" data-i18n="ai.send"></button>
           </form>

@@ -9,6 +9,7 @@
 //! le contrôle et l'exécution par les cas d'usage, pour l'assistant, viendront
 //! avec IA-15.
 
+pub mod assistant;
 mod list;
 
 use pde_core::settings::Action as Shortcut;

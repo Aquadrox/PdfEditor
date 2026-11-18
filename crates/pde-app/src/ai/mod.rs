@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 
 use pde_ai::tasks::{self, Event, PageText, Plan, Task};
 use pde_ai::{KeyProvider, OpenAiClient, Transport};
-use pde_core::ai::{AiError, CancelFlag, ChatMessage, ChatModel, ChatRequest};
+use pde_core::ai::{AiError, CancelFlag, ChatMessage, ChatModel, ChatRequest, ToolCall};
 use pde_core::secrets::SecretStore;
 use pde_core::settings::{Ai, Provider};
 use pde_core::usage::UsageSummary;
@@ -20,6 +20,9 @@ use serde::{Deserialize, Serialize};
 
 pub use usage_store::UsageStore;
 
+pub use crate::viewer::assistant::ProposalView;
+
+use crate::actions::assistant::{self, ASSISTANT_ACTIONS};
 use crate::error::{AppError, ErrorKind};
 use crate::lock;
 
@@ -78,6 +81,12 @@ pub struct AnswerView {
     /// Modèle qui a répondu (le profil de secours, le cas échéant).
     pub model: String,
     pub fallback_used: bool,
+    /// Appels d'outils de l'assistant, avant vérification (jamais envoyés tels quels).
+    #[serde(skip)]
+    pub tool_calls: Vec<ToolCall>,
+    /// Propositions vérifiées de l'assistant, et celles refusées (raisons).
+    pub proposals: Vec<ProposalView>,
+    pub rejected: Vec<String>,
 }
 
 /// Avancement envoyé à l'interface.
@@ -273,6 +282,11 @@ impl AiService {
             self.usage.consent(&estimate.host);
         }
         let started = std::time::Instant::now();
+        // Assistant d'actions : les actions qu'il peut proposer, en outils.
+        let tools = match task {
+            Task::Assist(_) => assistant::tools(&ASSISTANT_ACTIONS),
+            _ => Vec::new(),
+        };
         let attempt = |provider: &Provider, on_event: &mut dyn FnMut(AiEvent)| {
             let model = self.model(provider);
             let plan = Plan::new(pages, provider.max_input_tokens as usize);
@@ -281,6 +295,7 @@ impl AiService {
                 task,
                 &ai.prompts,
                 &plan,
+                &tools,
                 &mut |event| {
                     on_event(match event {
                         Event::Reading { done, total } => AiEvent::Reading { done, total },
@@ -317,6 +332,9 @@ impl AiService {
             text: outcome.text,
             model,
             fallback_used,
+            tool_calls: outcome.tool_calls,
+            proposals: Vec::new(),
+            rejected: Vec::new(),
         })
     }
 
@@ -340,6 +358,7 @@ impl AiService {
         let request = ChatRequest {
             messages: vec![ChatMessage::user("Réponds seulement : OK")],
             max_tokens: 16,
+            ..Default::default()
         };
         match self
             .model(provider)

@@ -284,3 +284,47 @@ fn settings_test_reports_models_and_hints() {
     assert!(!result.ok);
     assert!(result.hints.iter().any(|h| h.contains("/v1")), "{result:?}");
 }
+
+#[test]
+fn assistant_offers_catalogued_tools_and_keeps_their_calls() {
+    let sse = "data: {\"choices\":[{\"delta\":{\"content\":\"Je caviarde le nom.\"}}]}\n\n\
+               data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"name\":\"redact\",\"arguments\":\"{\\\"text\\\":\\\"deux ans\\\"}\"}}]}}]}\n\n\
+               data: [DONE]\n";
+    let (service, transport, _) = service(vec![Ok((200, sse.into()))]);
+    let settings = ai();
+    service.set_key(&settings.provider, "k").unwrap();
+    let task = Task::Assist("caviarde la durée".into());
+    let estimate = service.estimate(&settings, &pages(), &task, TODAY);
+    assert_eq!(estimate.requests, 1);
+    let answer = service
+        .run(
+            &settings,
+            &pages(),
+            &task,
+            TODAY,
+            service.start(),
+            true,
+            &mut |_| {},
+        )
+        .unwrap();
+    assert_eq!(answer.text, "Je caviarde le nom.");
+    assert_eq!(answer.tool_calls[0].name, "redact");
+    let sent = transport.sent.lock().unwrap();
+    let body: serde_json::Value = serde_json::from_str(&sent[0].2).unwrap();
+    let names: Vec<&str> = body["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t["function"]["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "highlight",
+            "add_note",
+            "redact",
+            "rotate_pages",
+            "remove_pages"
+        ]
+    );
+}
