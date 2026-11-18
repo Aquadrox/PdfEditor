@@ -157,6 +157,8 @@ impl PdfEngine for FakeEngine {
                 Some(PASSWORD) => 2,
                 Some(_) => return Err(EngineError::WrongPassword),
             },
+            // Vrai PDF (tests de signature) : deux pages A4.
+            other if other.starts_with(b"%PDF-1.") => 2,
             other => std::str::from_utf8(other)
                 .ok()
                 .and_then(|s| s.strip_prefix(PAGES_PDF))

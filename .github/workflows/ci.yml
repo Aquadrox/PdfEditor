@@ -46,11 +46,12 @@ jobs:
         uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check
-      # Bibliothèques de Tauri sous Linux (WebView WebKitGTK).
+      # Bibliothèques de Tauri sous Linux (WebView WebKitGTK) ; pdfsig
+      # (Poppler) et qpdf contre-vérifient les PDF signés par pde-sign.
       - name: Dépendances système
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev poppler-utils qpdf
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
@@ -67,12 +68,15 @@ jobs:
       - name: Clippy (avertissements = erreurs)
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Tests de non-régression
+        env:
+          # Les signatures doivent être validées par des outils indépendants.
+          PDE_REQUIRE_PDF_TOOLS: "1"
         run: cargo test --workspace
       # Garde-fou Android (v1.1) : le cœur doit rester compilable pour Android.
       - name: Compilation du cœur pour Android
         run: |
           rustup target add aarch64-linux-android
-          cargo check -p pde-core -p pde-pdf -p pde-platform -p pde-app --target aarch64-linux-android
+          cargo check -p pde-core -p pde-pdf -p pde-sign -p pde-platform -p pde-app --target aarch64-linux-android
       # Modules JS purs de l'interface (zoom, disposition, traductions).
       - name: Tests de l'interface (modules)
         working-directory: apps/desktop/ui

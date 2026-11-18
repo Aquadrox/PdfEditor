@@ -48,7 +48,7 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ✅ Enregistrer / Enregistrer sous (F-01) : contenu relu avant d'écrire, remplacement atomique, mot de passe conservé ; question avant de fermer le document ou la fenêtre, ou d'en ouvrir un autre, avec des modifications
 - ✅ Réglages Édition et Fichiers (R-03, R-04) : nom d'auteur des notes, police, taille et couleur des nouvelles zones de texte, couleur de surlignage, magnétisme et grille ; intervalle de la sauvegarde automatique, dossier proposé par les dialogues Ouvrir et Image, suffixe des copies (« Enregistrer sous » propose « contrat (modifié).pdf » à côté de l'original). Le comportement à l'enregistrement d'un document signé viendra avec la signature (v0.4)
 
-## v0.3 — Contenu existant et pages 🚧
+## v0.3 — Contenu existant et pages ✅
 
 - ✅ Texte du document (E-05) : outil « Texte du document » en mode Éditer, chaque ligne de la page (objets texte d'une même ligne, même police, corps et couleur) se récrit à sa place, ligne par ligne ; la police du document est gardée si elle sait écrire le nouveau texte (police fournie par le lecteur, ou seulement des caractères déjà écrits avec cette police embarquée, vérifié en relisant le texte écrit), sinon la ligne est récrite avec la police standard la plus proche (Noto au-delà du latin) et le panneau le signale ; vider le texte supprime la ligne ; désignée par le rang de ses objets et vérifiée par sa place d'origine. Restent : paragraphes sur plusieurs lignes (reflux), pages tournées, texte tourné ou dans un formulaire XObject, texte invisible (couche OCR)
 - ✅ Images d'origine (E-06) : en mode Éditer, les images du document se choisissent d'un clic, se déplacent et se redimensionnent (proportions gardées), se suppriment ou se remplacent (« Remplacer… » : nouvelle image dans le même cadre, en une opération) ; l'image d'origine garde son contenu (aucune recompression), seul son cadre change ; désignée par son rang dans la page et vérifiée par son cadre d'origine à chaque pose. Restent : images à l'intérieur d'un formulaire XObject, recadrage du contenu de l'image
@@ -57,19 +57,23 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ✅ Pages d'autres PDF (P-03) : « Insérer un PDF » (plusieurs fichiers, en une opération) ou PDF glissés sur la grille, à l'endroit du dépôt ; fusionner = insérer à la fin ; « Extraire » écrit les pages choisies, avec leurs ajouts, dans un nouveau PDF (nom proposé « contrat (pages 2-3).pdf », mot de passe conservé) sans changer le document ; la sauvegarde automatique désigne les PDF insérés par leur chemin et leur empreinte, sans les copier. Restent : insertion d'un PDF protégé par mot de passe (refusée avec un message), signets et champs de formulaire des PDF insérés
 - ✅ Formulaires (E-08) : en mode Lire, champs texte, cases, boutons radio et listes se remplissent sur la page ; valeurs écrites dans le fichier (`lopdf`, apparence redessinée par PDFium), annulables et reprises par la sauvegarde automatique ; « Aplatir le formulaire » fige les champs dans la page. Restent : listes modifiables traitées comme des listes fermées, champs de signature et boutons poussoirs ignorés, PDF protégés par mot de passe (refusés), champs des pages recopiées ou insérées
 - ✅ Propriétés du document (E-11) : titre, auteur, sujet, mots-clés depuis le menu (« Propriétés du document… »), écrits dans le dictionnaire d'information. Reste : métadonnées XMP non mises à jour
-- ⬜ Tests de parcours de l'interface (Playwright)
+- ✅ Tests de parcours de l'interface (Playwright) : texte et images d'origine, caviardage, pages et PDF insérés, formulaires et propriétés
 
-## v0.4 — Signature et verrouillage
+## v0.4 — Signature et verrouillage 🚧
 
-- ⬜ `pde-platform` : trousseau du système (repris de VoiceToText) pour les mots de passe de certificats
+Première livraison : v0.0.19 (signer, verrouiller, vérifier).
 
-- ⬜ `pde-sign` : écriture incrémentale, signature PAdES B-B (S-05), vérifiée par `pdfsig` / `qpdf` dans la CI
-- ⬜ Identités : certificat auto-signé, import PKCS#12 (S-01, S-02)
-- ⬜ Apparence : manuscrite dessinée / importée / tapée (S-03), champs de signature (S-04)
-- ⬜ Verrouillage DocMDP et passage en lecture seule (S-06)
-- ⬜ Panneau Signatures : vérification (S-07)
-- ⬜ Enregistrement incrémental des documents signés (F-03)
+- ✅ `pde-platform` : protection des clés privées par le système (repris de VoiceToText : DPAPI sous Windows, clé gardée dans le trousseau de la session sous Linux), derrière le trait `DataProtector` de `pde-core`. Le trousseau pour d'autres secrets (clés API) viendra avec l'IA
+- ✅ `pde-sign` (Rust pur, RustCrypto + `lopdf`) : mise à jour incrémentale écrite octet par octet (table `xref` ou flux de références croisées, selon le fichier), signature PAdES B-B (CMS détaché, `signingCertificateV2`, SHA-256, ECDSA P-256 / P-384 ou RSA) (S-05) ; chaque test contre-vérifié par `pdfsig` (Poppler) et `qpdf --check`, exigés par la CI
+- ✅ Identités : certificat auto-signé généré (P-256, 5 ans, usages signature et non-répudiation), import PKCS#12 (RSA, ECDSA) ; clé privée chiffrée par le système dans le dossier de données, jamais en clair (S-01, S-02). Écart assumé : le mot de passe du `.p12` n'est demandé qu'à l'import, la clé est ensuite protégée comme celle d'un certificat généré
+- 🚧 Apparence (S-03) : signature invisible, ou visible dans un cadre tracé sur la page (nom, organisation, date en Helvetica). Restent : signature manuscrite dessinée, tapée ou importée, modèles enregistrés ; texte droit sur une page tournée
+- 🚧 Champs (S-04) : signer un champ de signature vide existant d'un clic ; nouveau champ dans le cadre tracé (CropBox et rotation de la page pris en compte). Reste : placer des champs vides pour d'autres signataires (avec le cycle, v0.8)
+- ✅ Verrouillage DocMDP (S-06) : « Laisser modifiable », « Verrouiller, sauf formulaires et signatures » (`/P 2`), « Verrouiller entièrement » (`/P 1`) ; seule la première signature verrouille ; un document verrouillé passe en lecture (ni Éditer, ni Pages, ni formulaire) et refuse toute nouvelle signature
+- 🚧 Panneau Signatures et sceau (S-07) : chaque champ, signé ou vide ; intégrité des octets signés, signature, certificat désigné, document complété depuis, verrouillage ; sceau de cire dans la barre du haut. Restent : chaîne de confiance (certificats reconnus du système), analyse de ce qui a changé après une signature
+- ⬜ Enregistrement incrémental des documents signés (F-03) : aujourd'hui, modifier puis enregistrer un document signé invalide ses signatures (l'application prévient en passant à Éditer ou Pages)
 - ⬜ Horodatage RFC 3161 (S-08)
+- ⬜ Réglages Signature (R-05) : identité par défaut, verrouillage par défaut, serveur d'horodatage
+- ⬜ Signature d'un document protégé par mot de passe (refusée avec un message)
 
 ## v0.5 — IA : socle et analyse
 

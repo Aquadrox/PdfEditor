@@ -15,6 +15,7 @@ pde-app = { path = "../../crates/pde-app" }
 pde-core = { path = "../../crates/pde-core" }
 pde-pdf = { path = "../../crates/pde-pdf" }
 pde-platform = { path = "../../crates/pde-platform" }
+pde-sign = { path = "../../crates/pde-sign" }
 serde.workspace = true
 # Requis par generate_context! dès que tauri.conf.json a une section plugins.
 serde_json = "1"

@@ -4,6 +4,15 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.19 — 2026-11-18
+
+- Nouveau mode Signer : signez vos PDF avec une signature numérique reconnue par les autres lecteurs (Acrobat, navigateurs…).
+- Créez votre identité de signature (nom, adresse, organisation) : PdfEditor génère un certificat personnel dont la clé reste protégée sur votre PC ; vous pouvez aussi importer un certificat .p12 ou .pfx.
+- Signez sans apparence, dans un cadre que vous tracez sur la page, ou d'un clic dans un champ de signature prévu par le document.
+- Verrouillez le document en signant : entièrement, ou en laissant le remplissage des champs et d'autres signatures ; un document verrouillé ne peut plus être modifié.
+- Le panneau Signatures vérifie chaque signature (document intact ou complété depuis, certificat), et le sceau de la barre du haut résume l'état du document.
+- Le fichier d'origine n'est jamais réécrit : la signature est ajoutée à sa fin, et les signatures déjà présentes restent valides.
+
 ## 0.0.18 — 2026-11-17
 
 - Le texte déjà présent dans le PDF se modifie : en mode Éditer, choisissez « Texte du document », cliquez sur une ligne et récrivez-la à sa place.

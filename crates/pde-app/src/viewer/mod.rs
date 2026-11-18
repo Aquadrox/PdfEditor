@@ -15,6 +15,7 @@ pub use import::ImportFile;
 pub use original_text::TextBlockView;
 pub use pages::PagesView;
 mod recovery;
+mod signatures;
 #[cfg(test)]
 mod testing;
 mod text;
@@ -57,6 +58,11 @@ struct OpenDocument {
     /// SHA-256 du fichier ouvert (hexadécimal) : une sauvegarde automatique
     /// ne se réapplique qu'au même contenu.
     digest: String,
+    /// SHA-256 du fichier tel qu'enregistré en dernier (ouvert, enregistré
+    /// ou signé) : on ne signe que ce contenu-là.
+    saved_digest: String,
+    /// Champs de signature du fichier enregistré.
+    signatures: Vec<pde_sign::SignatureField>,
     /// Version des éléments à la dernière sauvegarde automatique.
     autosaved: Option<u64>,
     edits: Edits,
@@ -127,6 +133,7 @@ impl Viewer {
         let bytes = read_file(path, MAX_FILE_BYTES)?;
         let size = bytes.len();
         let digest = sha256_hex(&bytes);
+        let signatures = signatures::read_signatures(&bytes);
         let started = std::time::Instant::now();
         let opened = self.engine.open(bytes, password.clone()).inspect_err(|e| {
             // Jamais le nom du fichier : il peut être personnel.
@@ -153,7 +160,9 @@ impl Viewer {
                 info: opened.info,
                 layout: 0,
                 password,
+                saved_digest: digest.clone(),
                 digest,
+                signatures,
                 autosaved: None,
                 images: Images::new(),
                 imports: Imports::new(),

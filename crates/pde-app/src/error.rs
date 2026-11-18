@@ -18,6 +18,10 @@ pub enum ErrorKind {
     UnknownDocument,
     InvalidRequest,
     Engine,
+    /// Modifications à enregistrer d'abord (signature).
+    Unsaved,
+    /// Identité ou signature.
+    Signature,
 }
 
 #[derive(Debug, Clone, PartialEq, Error, Serialize)]

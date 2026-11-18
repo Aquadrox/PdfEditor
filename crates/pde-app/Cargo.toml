@@ -14,12 +14,16 @@ pde-core = { path = "../pde-core" }
 # Caractères qu'aucune police ne couvre (signalés dans l'interface).
 pde-fonts = { path = "../pde-fonts" }
 png = "0.18"
+# Signature des documents (PAdES), identités et vérification.
+pde-sign = { path = "../pde-sign" }
 serde.workspace = true
 # Empreinte du PDF d'origine : une sauvegarde automatique ne se réapplique
 # qu'au même fichier.
 sha2 = "0.10"
 serde_json = "1"
 thiserror.workspace = true
+# Clé privée effacée de la mémoire après usage.
+zeroize = "1"
 
 [lints]
 workspace = true

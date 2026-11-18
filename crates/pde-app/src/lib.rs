@@ -14,6 +14,7 @@ pub mod page_png;
 pub mod recent;
 pub mod recovery;
 pub mod settings_store;
+pub mod signing;
 pub mod text_view;
 pub mod unavailable;
 pub mod view;

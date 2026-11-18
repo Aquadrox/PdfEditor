@@ -14,12 +14,14 @@ import { PagesMode } from "./features/pages/pages-mode.js";
 import { FormLayer } from "./features/form/form-layer.js";
 import { attachProperties } from "./features/form/properties-dialog.js";
 import { attachSearch } from "./features/search/search-bar.js";
+import { SignMode } from "./features/sign/sign-mode.js";
 import { attachSettings } from "./features/settings/settings-view.js";
 import { attachUpdates } from "./features/updates/updates.js";
 import { renderOutline } from "./features/viewer/outline.js";
 import { attachStatusbar } from "./features/viewer/statusbar.js";
 import { Thumbnails } from "./features/viewer/thumbnails.js";
 import { Viewer } from "./features/viewer/viewer.js";
+import { attachDeskInput, isEditable } from "./features/viewer/desk-input.js";
 import { zoomIn, zoomOut } from "./features/viewer/zoom.js";
 import { byId } from "./lib/dom.js";
 import { t, translate } from "./lib/i18n.js";
@@ -46,6 +48,7 @@ const viewer = new Viewer(byId("desk"), {
   onPageShown: (frame, page) => {
     edit.layer.pageShown(frame, page);
     form.pageShown(frame, page);
+    sign.pageShown(frame, page);
   },
 });
 const statusbar = attachStatusbar(viewer);
@@ -69,6 +72,25 @@ attachProperties(
   edit.session,
   (title) => setWindowTitle(`${title || current.file_name} – PdfEditor`).catch(() => {}),
 );
+
+// Signature (S-01 à S-07) : le fichier signé est rouvert ; un document
+// verrouillé par sa signature n'est plus modifiable.
+const sign = new SignMode(viewer, {
+  session: edit.session,
+  save: async () => {
+    const saved = await saveDocument(edit.session);
+    renamed(saved);
+    return saved;
+  },
+  reopen: open,
+  onState: applyLock,
+  onSeal: () => setMode("sign"),
+});
+
+function applyLock(info) {
+  if (info.lock === "all" && (mode === "edit" || mode === "pages")) setMode("read");
+  form.setActive(mode === "read" && info.lock !== "all");
+}
 
 /**
  * Pages changées (mode Pages, ou son annulation) : tout ce qui montre les
@@ -100,17 +122,19 @@ function showSaveState(dirty) {
   byId("save-state").textContent = current ? t(state, { time }) : "";
 }
 
-/** Lire, Éditer ou Pages ; les autres modes arrivent avec leurs versions. */
+/** Lire, Éditer, Pages ou Signer ; le mode IA arrive avec sa version. */
 function setMode(next) {
   const previous = mode;
   mode = current ? next : "read";
-  for (const name of ["read", "edit", "pages"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
+  for (const name of ["read", "edit", "pages", "sign"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
   byId(`mode-${mode}`).setAttribute("aria-current", "page");
-  byId("save-button").hidden = mode === "read";
+  byId("save-button").hidden = mode === "read" || mode === "sign";
   if (mode !== "edit") edit.layer.commitText();
   edit.setActive(mode === "edit");
   pages.setActive(mode === "pages", viewer.page);
-  form.setActive(mode === "read");
+  sign.setActive(mode === "sign");
+  form.setActive(mode === "read" && sign.info.lock !== "all");
+  if (mode === "edit" || mode === "pages") sign.warnIfSigned(current);
   // En quittant la grille, la page choisie est affichée.
   if (previous === "pages" && mode !== "pages" && current) viewer.goToPage(pages.firstSelected);
 }
@@ -127,6 +151,7 @@ function show(doc) {
   byId("menu-save-as").disabled = !doc;
   byId("mode-edit").disabled = !doc;
   byId("mode-pages").disabled = !doc;
+  byId("mode-sign").disabled = !doc;
   byId("menu-properties").disabled = !doc;
   statusbar.setDocument(doc);
   setWindowTitle(doc ? `${doc.title} – PdfEditor` : "PdfEditor").catch(() => {});
@@ -138,12 +163,13 @@ function show(doc) {
     statusbar.setPage(0);
     editLoading = edit
       .load(doc)
-      .then(() => Promise.all([pages.load(doc), form.load(doc)]))
+      .then(() => Promise.all([pages.load(doc), form.load(doc), sign.load(doc)]))
       .catch((e) => toast(t("error.unexpected", { message: e?.message ?? String(e) }), "error"));
   } else {
     edit.load(null);
     pages.load(null);
     form.load(null);
+    sign.load(null);
     viewer.unload();
     thumbnails.clear();
     refreshRecent();
@@ -271,11 +297,6 @@ const actions = {
   save_as: saveAs,
 };
 
-/** Champ de saisie : Ctrl+Z / Ctrl+Y y gardent leur sens habituel. */
-function isEditable(target) {
-  return target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
-}
-
 byId("tab-pages").addEventListener("click", () => showSidebarTab("pages"));
 byId("tab-outline").addEventListener("click", () => showSidebarTab("outline"));
 byId("home-open").addEventListener("click", chooseAndOpen);
@@ -289,6 +310,7 @@ byId("edit-redo").addEventListener("click", () => edit.redo());
 byId("mode-read").addEventListener("click", () => setMode("read"));
 byId("mode-edit").addEventListener("click", () => setMode("edit"));
 byId("mode-pages").addEventListener("click", () => setMode("pages"));
+byId("mode-sign").addEventListener("click", () => setMode("sign"));
 byId("menu-settings").addEventListener("click", openSettings);
 byId("recent-clear").addEventListener("click", async () => {
   await invoke("clear_recent_files").catch((e) => toast(e?.message ?? String(e), "error"));
@@ -311,26 +333,12 @@ function dropped(path, point, paths = [path]) {
 
 watchDrops(dropped);
 
-// Ctrl+V avec une image dans le presse-papiers : ajoutée au document.
-document.addEventListener("paste", (event) => {
-  if (!current || isEditable(event.target) || !byId("settings-view").hidden) return;
-  const file = [...(event.clipboardData?.files ?? [])].find((f) => f.type.startsWith("image/"));
-  if (!file) return;
-  event.preventDefault();
+attachDeskInput(viewer, () => Boolean(current), (file) => {
+  // Document verrouillé par sa signature : rien ne s'y ajoute.
+  if (byId("mode-edit").disabled) return;
   if (mode !== "edit") setMode("edit");
   edit.pasteImage(file);
 });
-
-// Ctrl + molette : zoom, comme dans les autres visionneuses.
-byId("desk").addEventListener(
-  "wheel",
-  (event) => {
-    if (!event.ctrlKey || !current) return;
-    event.preventDefault();
-    viewer.setZoom(event.deltaY < 0 ? zoomIn(viewer.zoom) : zoomOut(viewer.zoom));
-  },
-  { passive: false },
-);
 
 document.addEventListener("keydown", (event) => {
   // Page Réglages ouverte : seuls ses propres contrôles réagissent.

@@ -11,12 +11,15 @@ use pde_core::settings::Settings;
 
 use crate::edit_view::SavedView;
 use crate::error::AppError;
+use crate::error::ErrorKind;
 use crate::files::{copy_name, extract_name};
 use crate::recent::{RecentFiles, RecentView};
 use crate::recovery::RecoveryStore;
 use crate::settings_store::{SettingsStore, SettingsView};
+use crate::signing::{IdentityStore, IdentityView, SignRequest};
 use crate::view::DocumentView;
 use crate::viewer::Viewer;
+use pde_sign::Subject;
 
 pub struct App {
     pub viewer: Viewer,
@@ -24,6 +27,8 @@ pub struct App {
     recent: RecentFiles,
     /// Sauvegarde automatique (F-02) ; absente si son dossier est inutilisable.
     pub(crate) recovery: Option<RecoveryStore>,
+    /// Identités de signature ; absentes tant que le dossier n'est pas connu.
+    identities: Option<IdentityStore>,
 }
 
 fn megabytes(mb: u32) -> usize {
@@ -47,7 +52,14 @@ impl App {
             settings,
             recent,
             recovery: None,
+            identities: None,
         }
+    }
+
+    /// Identités de signature rangées dans `store`.
+    pub fn with_identities(mut self, store: IdentityStore) -> Self {
+        self.identities = Some(store);
+        self
     }
 
     /// Active la sauvegarde automatique dans `store`.
@@ -120,6 +132,44 @@ impl App {
             .unwrap_or_default();
         let name = copy_name(&file_name, &self.settings.get().files.copy_suffix);
         Ok((path.parent().map(Path::to_path_buf), name))
+    }
+
+    fn identity_store(&self) -> Result<&IdentityStore, AppError> {
+        self.identities.as_ref().ok_or_else(|| {
+            AppError::new(ErrorKind::Signature, "identités de signature indisponibles")
+        })
+    }
+
+    /// Identités de signature enregistrées.
+    pub fn identities(&self) -> Vec<IdentityView> {
+        self.identities
+            .as_ref()
+            .map(IdentityStore::list)
+            .unwrap_or_default()
+    }
+
+    /// Nouvelle identité au certificat auto-signé (S-01).
+    pub fn create_identity(&self, subject: &Subject) -> Result<IdentityView, AppError> {
+        self.identity_store()?.create(subject, now())
+    }
+
+    /// Importe un certificat PKCS#12 (S-02).
+    pub fn import_identity(&self, path: &Path, password: &str) -> Result<IdentityView, AppError> {
+        self.identity_store()?.import(path, password)
+    }
+
+    pub fn delete_identity(&self, id: &str) -> Result<(), AppError> {
+        self.identity_store()?.delete(id)
+    }
+
+    /// Signe le document avec l'identité demandée (S-05, S-06).
+    pub fn sign_document(&self, id: u64, request: &SignRequest) -> Result<SavedView, AppError> {
+        let identity = self.identity_store()?.load(&request.identity)?;
+        let saved = self.viewer.sign(id, &identity, request, now())?;
+        if let Some(recovery) = &self.recovery {
+            recovery.remove(id);
+        }
+        Ok(saved)
     }
 
     /// Extraire des pages : dossier du document et nom proposé.
