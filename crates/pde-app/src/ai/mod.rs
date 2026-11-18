@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 
 use pde_ai::tasks::{self, Event, PageText, Plan, Task};
 use pde_ai::{KeyProvider, OpenAiClient, Transport};
-use pde_core::ai::{AiError, CancelFlag, ChatMessage, ChatModel, ChatRequest, ToolCall};
+use pde_core::ai::{AiError, CancelFlag, ChatMessage, ChatModel, ChatRequest, ToolCall, ToolSpec};
 use pde_core::secrets::SecretStore;
 use pde_core::settings::{Ai, Provider};
 use pde_core::usage::UsageSummary;
@@ -242,8 +242,25 @@ impl AiService {
         consent: bool,
         on_event: &mut dyn FnMut(AiEvent),
     ) -> Result<AnswerView, AppError> {
+        self.run_with_tools(ai, pages, task, None, today, run, consent, on_event)
+    }
+
+    /// Comme [`AiService::run`] ; `tools` : outils de l'assistant (ceux
+    /// d'une recette), sinon toutes ses actions.
+    #[allow(clippy::too_many_arguments)]
+    pub fn run_with_tools(
+        &self,
+        ai: &Ai,
+        pages: &[PageText],
+        task: &Task,
+        tools: Option<Vec<ToolSpec>>,
+        today: &str,
+        run: (u64, CancelFlag),
+        consent: bool,
+        on_event: &mut dyn FnMut(AiEvent),
+    ) -> Result<AnswerView, AppError> {
         let (id, cancel) = run;
-        let result = self.run_inner(ai, pages, task, today, &cancel, consent, on_event);
+        let result = self.run_inner(ai, pages, task, tools, today, &cancel, consent, on_event);
         lock(&self.runs).remove(&id);
         result
     }
@@ -254,6 +271,7 @@ impl AiService {
         ai: &Ai,
         pages: &[PageText],
         task: &Task,
+        tools: Option<Vec<ToolSpec>>,
         today: &str,
         cancel: &CancelFlag,
         consent: bool,
@@ -284,7 +302,7 @@ impl AiService {
         let started = std::time::Instant::now();
         // Assistant d'actions : les actions qu'il peut proposer, en outils.
         let tools = match task {
-            Task::Assist(_) => assistant::tools(&ASSISTANT_ACTIONS),
+            Task::Assist(_) => tools.unwrap_or_else(|| assistant::tools(&ASSISTANT_ACTIONS)),
             _ => Vec::new(),
         };
         let attempt = |provider: &Provider, on_event: &mut dyn FnMut(AiEvent)| {

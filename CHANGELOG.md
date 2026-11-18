@@ -4,6 +4,12 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.24 — 2026-11-18
+
+- Recettes de l'assistant : une consigne enregistrée avec les seules actions qu'elle peut proposer ; en mode IA, en « Action », choisissez-en une et envoyez, avec ou sans précisions.
+- Trois recettes intégrées : « Anonymiser selon le RGPD », « Préparer pour signature » et « Relire les montants ».
+- Nouvelle rubrique « Recettes » des Réglages : créez les vôtres, dupliquez une recette intégrée pour l'adapter, exportez-les en fichier et importez celles qu'on vous partage.
+
 ## 0.0.23 — 2026-11-18
 
 - Assistant d'actions : en mode IA, choisissez « Action » et demandez en mots courants (« caviarde le nom du client », « surligne les dates », « tourne la page 2 ») ; l'IA propose des actions, montrées en aperçu sur les pages.

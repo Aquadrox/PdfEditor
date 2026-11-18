@@ -10,6 +10,7 @@ pub mod document;
 pub mod edit;
 pub mod engine;
 pub mod geometry;
+pub mod recipe;
 pub mod render;
 pub mod search;
 pub mod secrets;

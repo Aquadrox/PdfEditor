@@ -14,6 +14,7 @@ pub mod images;
 pub mod news;
 pub mod page_png;
 pub mod recent;
+pub mod recipes;
 pub mod recovery;
 pub mod settings_store;
 pub mod signing;

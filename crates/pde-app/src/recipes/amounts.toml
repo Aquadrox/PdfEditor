@@ -1,0 +1,9 @@
+name = "Relire les montants"
+description = "Surligne chaque montant et signale les incohérences par une note."
+instruction = """
+Relis les montants du document : surligne chaque montant (sommes, prix, totaux, \
+pourcentages de remise ou de TVA). Vérifie les totaux et les calculs quand le document \
+donne leurs éléments, et pose une note près de chaque montant incohérent, en expliquant \
+l'écart. Dans ton explication, résume ce que tu as vérifié."""
+actions = ["highlight", "add_note"]
+scope = "document"

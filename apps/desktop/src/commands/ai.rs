@@ -8,12 +8,15 @@ use pde_ai::tasks::Task;
 use pde_app::actions::assistant::Proposal;
 use pde_app::ai::{AiStatus, EstimateView, Scope, TestView};
 use pde_app::app::App;
-use pde_app::error::AppError;
+use pde_app::error::{AppError, ErrorKind};
+use pde_app::recipes::RecipeView;
 use pde_app::viewer::PagesView;
+use pde_core::recipe::Recipe;
 use pde_core::settings::Provider;
 use pde_core::usage::UsageSummary;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
+use tauri_plugin_dialog::DialogExt;
 
 use super::AppState;
 
@@ -43,8 +46,9 @@ pub fn ai_estimate(
     id: u64,
     scope: Scope,
     task: Task,
+    recipe: Option<String>,
 ) -> Result<EstimateView, AppError> {
-    app.ai_estimate(id, &scope, &task)
+    app.ai_estimate(id, &scope, &task, recipe.as_deref())
 }
 
 #[derive(Clone, Serialize)]
@@ -61,21 +65,30 @@ pub fn ai_start(
     id: u64,
     scope: Scope,
     task: Task,
+    recipe: Option<String>,
     consent: bool,
 ) -> Result<u64, AppError> {
     let app = handle.state::<Arc<App>>().inner().clone();
     let run = app.ai_start()?;
     let number = run.0;
     tauri::async_runtime::spawn_blocking(move || {
-        let result = app.ai_run(id, &scope, &task, run, consent, &mut |event| {
-            let _ = handle.emit(
-                "ai-event",
-                EventPayload {
-                    run: number,
-                    data: event,
-                },
-            );
-        });
+        let result = app.ai_run(
+            id,
+            &scope,
+            &task,
+            recipe.as_deref(),
+            run,
+            consent,
+            &mut |event| {
+                let _ = handle.emit(
+                    "ai-event",
+                    EventPayload {
+                        run: number,
+                        data: event,
+                    },
+                );
+            },
+        );
         let _ = handle.emit(
             "ai-done",
             EventPayload {
@@ -102,4 +115,68 @@ pub fn assistant_apply(
     proposals: Vec<Proposal>,
 ) -> Result<PagesView, AppError> {
     app.assistant_apply(id, &scope, &proposals)
+}
+
+/// Recettes de l'assistant (IA-16) : intégrées puis personnelles.
+#[tauri::command(async)]
+pub fn recipes_list(app: AppState<'_>) -> Result<Vec<RecipeView>, AppError> {
+    app.recipes()
+}
+
+#[tauri::command(async)]
+pub fn recipe_save(
+    app: AppState<'_>,
+    id: Option<String>,
+    recipe: Recipe,
+) -> Result<RecipeView, AppError> {
+    app.recipe_save(id.as_deref(), recipe)
+}
+
+#[tauri::command(async)]
+pub fn recipe_delete(app: AppState<'_>, id: String) -> Result<(), AppError> {
+    app.recipe_delete(&id)
+}
+
+fn recipe_dialog(
+    handle: &AppHandle,
+    title: &str,
+) -> tauri_plugin_dialog::FileDialogBuilder<tauri::Wry> {
+    let mut dialog = handle
+        .dialog()
+        .file()
+        .set_title(title)
+        .add_filter("Recettes PdfEditor", &["toml"]);
+    if let Some(window) = handle.get_webview_window("main") {
+        dialog = dialog.set_parent(&window);
+    }
+    dialog
+}
+
+/// Importe une recette choisie par l'utilisateur ; `None` si annulé.
+#[tauri::command(async)]
+pub fn recipe_import(handle: AppHandle) -> Result<Option<RecipeView>, AppError> {
+    let Some(path) = recipe_dialog(&handle, "Importer une recette").blocking_pick_file() else {
+        return Ok(None);
+    };
+    let path = path
+        .into_path()
+        .map_err(|e| AppError::new(ErrorKind::Io, e.to_string()))?;
+    handle.state::<Arc<App>>().recipe_import(&path).map(Some)
+}
+
+/// Exporte la recette `id` dans un fichier ; faux si annulé.
+#[tauri::command(async)]
+pub fn recipe_export(handle: AppHandle, id: String, name: String) -> Result<bool, AppError> {
+    let file = format!("{}.toml", name.trim().replace(['/', '\\', ':'], "-"));
+    let Some(path) = recipe_dialog(&handle, "Exporter la recette")
+        .set_file_name(file)
+        .blocking_save_file()
+    else {
+        return Ok(false);
+    };
+    let path = path
+        .into_path()
+        .map_err(|e| AppError::new(ErrorKind::Io, e.to_string()))?;
+    handle.state::<Arc<App>>().recipe_export(&id, &path)?;
+    Ok(true)
 }

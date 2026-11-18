@@ -1,0 +1,9 @@
+name = "Préparer pour signature"
+description = "Surligne ce qui reste à remplir et pose une note sur chaque point à compléter."
+instruction = """
+Prépare le document pour sa signature : surligne les mentions à compléter (champs \
+vides, pointillés, « à compléter », dates et lieux de signature, « lu et approuvé ») et \
+pose une note sur chaque page où quelque chose doit être rempli ou paraphé, en disant \
+quoi. Ne modifie rien d'autre."""
+actions = ["highlight", "add_note"]
+scope = "document"

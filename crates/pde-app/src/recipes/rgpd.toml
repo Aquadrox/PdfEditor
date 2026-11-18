@@ -1,0 +1,11 @@
+name = "Anonymiser selon le RGPD"
+description = "Caviarde les données personnelles : noms, coordonnées, numéros d'identification."
+instruction = """
+Repère dans le document les données personnelles de personnes physiques et propose de \
+les caviarder, une occurrence de texte distincte par appel : noms et prénoms, adresses \
+postales, adresses électroniques, numéros de téléphone, dates de naissance, numéros de \
+sécurité sociale, d'identité, de passeport, de permis, IBAN et numéros de carte. Ne \
+caviarde pas les noms d'entreprises, d'administrations ni les montants. Si un doute \
+existe sur une donnée, ne la propose pas et signale-la dans ton explication."""
+actions = ["redact"]
+scope = "document"
