@@ -19,6 +19,7 @@ fn options<'a>(identity: &'a pde_sign::Identity, target: Target, lock: Lock) -> 
             "18/11/2026 13:00".into(),
         ]),
         timestamp: None,
+        password: None,
     }
 }
 
@@ -31,7 +32,7 @@ fn invisible_signature_is_valid_for_us_and_for_poppler() {
     // Les octets d'origine sont intacts : la signature est ajoutée à la fin.
     assert_eq!(&signed[..original.len()], &original[..]);
 
-    let found = signatures(&signed).unwrap();
+    let found = signatures(&signed, None).unwrap();
     assert_eq!(found.len(), 1);
     assert_eq!(found[0].name, "Signature1");
     assert_eq!(found[0].page, Some(0));
@@ -64,7 +65,7 @@ fn visible_signature_on_a_cross_reference_stream_file() {
         rect: [350.0, 80.0, 550.0, 130.0],
     };
     let signed = sign(&original, &options(&signer, target, Lock::None)).unwrap();
-    let found = signatures(&signed).unwrap();
+    let found = signatures(&signed, None).unwrap();
     assert_eq!(found[0].page, Some(1));
     assert_eq!(found[0].rect, Some([350.0, 80.0, 550.0, 130.0]));
     let info = found[0].signature.as_ref().unwrap();
@@ -88,7 +89,7 @@ fn second_signature_keeps_the_first_one_valid() {
     };
     let twice = sign(&once, &options(&second, target, Lock::None)).unwrap();
 
-    let found = signatures(&twice).unwrap();
+    let found = signatures(&twice, None).unwrap();
     assert_eq!(found.len(), 2);
     assert_eq!(found[1].name, "Signature2");
     let older = found[0].signature.as_ref().unwrap();
@@ -114,7 +115,7 @@ fn certification_locks_the_document() {
         &options(&signer, Target::Invisible, Lock::Everything),
     )
     .unwrap();
-    let found = signatures(&signed).unwrap();
+    let found = signatures(&signed, None).unwrap();
     let info = found[0].signature.as_ref().unwrap();
     assert_eq!(info.status, SignatureStatus::Valid);
     assert_eq!(info.lock, Some(Lock::Everything));
@@ -140,7 +141,7 @@ fn forms_and_signatures_lock_allows_another_signature() {
     .unwrap();
     let second = identity("Hugo Bernard");
     let twice = sign(&signed, &options(&second, Target::Invisible, Lock::None)).unwrap();
-    let found = signatures(&twice).unwrap();
+    let found = signatures(&twice, None).unwrap();
     assert_eq!(
         found[0].signature.as_ref().unwrap().lock,
         Some(Lock::FormsAndSignatures)
@@ -173,7 +174,7 @@ fn a_changed_byte_breaks_the_signature() {
         .position(|w| w == b"Contrat")
         .expect("texte présent");
     signed[at] = b'K';
-    let found = signatures(&signed).unwrap();
+    let found = signatures(&signed, None).unwrap();
     assert_eq!(
         found[0].signature.as_ref().unwrap().status,
         SignatureStatus::Invalid("le document a été modifié après la signature".into())
@@ -189,7 +190,10 @@ fn appended_bytes_are_reported_as_later_changes() {
     let signer = identity("Claire Martin");
     let mut signed = sign(&original, &options(&signer, Target::Invisible, Lock::None)).unwrap();
     signed.extend_from_slice(b"\n% ajout\n");
-    let info = signatures(&signed).unwrap()[0].signature.clone().unwrap();
+    let info = signatures(&signed, None).unwrap()[0]
+        .signature
+        .clone()
+        .unwrap();
     assert_eq!(info.status, SignatureStatus::Valid);
     assert!(!info.covers_whole_document);
 }
@@ -207,8 +211,12 @@ fn unknown_page_is_refused() {
 
 #[test]
 fn unsigned_document_has_no_signature() {
-    assert!(signatures(&two_pages(false)).unwrap().is_empty());
-    assert!(signatures(&common::simple_fixture()).unwrap().is_empty());
+    assert!(signatures(&two_pages(false), None).unwrap().is_empty());
+    assert!(
+        signatures(&common::simple_fixture(), None)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -250,7 +258,7 @@ fn frame_follows_crop_box_and_rotation() {
         ),
     )
     .unwrap();
-    let found = signatures(&twice).unwrap();
+    let found = signatures(&twice, None).unwrap();
     // Relu dans l'espace affiché : le même cadre qu'à la signature.
     assert_eq!(found[0].rect, Some(shown));
     assert_eq!(found[1].rect, Some(shown));
@@ -313,7 +321,7 @@ fn handwritten_appearance_is_embedded_with_transparency() {
     assert_eq!(image.dict.get(b"Width").unwrap().as_i64().unwrap(), 300);
     assert!(image.dict.has(b"Filter"), "image compressée");
     assert_eq!(
-        signatures(&signed).unwrap()[0]
+        signatures(&signed, None).unwrap()[0]
             .signature
             .as_ref()
             .unwrap()
@@ -337,7 +345,10 @@ fn timestamped_signature_carries_the_server_time() {
     let mut opts = options(&signer, Target::Invisible, Lock::None);
     opts.timestamp = Some(&tsa);
     let signed = sign(&two_pages(false), &opts).unwrap();
-    let info = signatures(&signed).unwrap()[0].signature.clone().unwrap();
+    let info = signatures(&signed, None).unwrap()[0]
+        .signature
+        .clone()
+        .unwrap();
     assert_eq!(info.status, SignatureStatus::Valid);
     let timestamp = info.timestamp.unwrap();
     assert_eq!(timestamp.time, Some(NOW + 7));

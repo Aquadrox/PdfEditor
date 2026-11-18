@@ -24,11 +24,11 @@ const QUICK_SCAN_BYTES: usize = 64 * 1024 * 1024;
 
 /// Champs de signature d'un fichier ; un PDF illisible pour `lopdf` (mais
 /// ouvert par PDFium) n'en a simplement pas.
-pub(super) fn read_signatures(bytes: &[u8]) -> Vec<SignatureField> {
+pub(super) fn read_signatures(bytes: &[u8], password: Option<&str>) -> Vec<SignatureField> {
     if bytes.len() > QUICK_SCAN_BYTES && !contains(bytes, b"/ByteRange") {
         return Vec::new();
     }
-    pde_sign::signatures(bytes).unwrap_or_else(|e| {
+    pde_sign::signatures(bytes, password).unwrap_or_else(|e| {
         log::info!("signatures non lues : {e}");
         Vec::new()
     })
@@ -66,13 +66,14 @@ pub(super) fn preserve_signatures(
             "le fichier signé a changé sur le disque depuis son ouverture : rouvrez-le avant d'enregistrer",
         ));
     }
-    let merged = pde_sign::append_revision(&current, &rewritten).map_err(|e| {
+    let password = open.password.as_deref();
+    let merged = pde_sign::append_revision(&current, &rewritten, password).map_err(|e| {
         AppError::new(
             ErrorKind::Signature,
             format!("les signatures ne peuvent pas être préservées ({e})"),
         )
     })?;
-    let after = pde_sign::signatures(&merged).map_err(sign_error)?;
+    let after = pde_sign::signatures(&merged, password).map_err(sign_error)?;
     if valid(&after) < valid(&open.signatures) {
         return Err(AppError::new(
             ErrorKind::Signature,
@@ -113,17 +114,11 @@ impl Viewer {
         now: u64,
         tsa: Option<&dyn TimestampAuthority>,
     ) -> Result<SavedView, AppError> {
-        let (path, digest, target) = self.with_document(id, |open, _| {
+        let (path, digest, target, password) = self.with_document(id, |open, _| {
             if open.edits.is_dirty() {
                 return Err(AppError::new(
                     ErrorKind::Unsaved,
                     "enregistrez le document avant de le signer",
-                ));
-            }
-            if open.password.is_some() {
-                return Err(AppError::new(
-                    ErrorKind::Signature,
-                    "la signature d'un document protégé par mot de passe n'est pas encore possible",
                 ));
             }
             let target = request
@@ -132,7 +127,12 @@ impl Viewer {
                 .ok_or_else(|| {
                     AppError::new(ErrorKind::InvalidRequest, "cadre de signature invalide")
                 })?;
-            Ok((open.path.clone(), open.saved_digest.clone(), target))
+            Ok((
+                open.path.clone(),
+                open.saved_digest.clone(),
+                target,
+                open.password.clone(),
+            ))
         })?;
         let appearance = Appearance {
             image: match &request.image {
@@ -157,9 +157,10 @@ impl Viewer {
             time: now,
             appearance,
             timestamp: tsa,
+            password: password.as_deref(),
         };
         let signed = pde_sign::sign(&bytes, &options).map_err(sign_error)?;
-        let fields = self.check_signed(&signed)?;
+        let fields = self.check_signed(&signed, password.as_deref())?;
         self.with_document(id, |open, _| {
             // Fichier enregistré entre-temps : on ne l'écrase pas.
             if open.path != path || open.saved_digest != digest {
@@ -181,8 +182,12 @@ impl Viewer {
 
     /// Le fichier signé est relu avant d'être écrit : la nouvelle signature
     /// est valide et couvre tout le fichier, et le moteur l'ouvre.
-    fn check_signed(&self, signed: &[u8]) -> Result<Vec<SignatureField>, AppError> {
-        let fields = pde_sign::signatures(signed).map_err(sign_error)?;
+    fn check_signed(
+        &self,
+        signed: &[u8],
+        password: Option<&str>,
+    ) -> Result<Vec<SignatureField>, AppError> {
+        let fields = pde_sign::signatures(signed, password).map_err(sign_error)?;
         let newest = fields
             .iter()
             .filter_map(|f| f.signature.as_ref())
@@ -193,7 +198,9 @@ impl Viewer {
                 "la signature produite n'a pas pu être vérifiée ; le fichier n'a pas été modifié",
             ));
         }
-        let reopened = self.engine.open(signed.to_vec(), None)?;
+        let reopened = self
+            .engine
+            .open(signed.to_vec(), password.map(str::to_owned))?;
         self.engine.close(reopened.id);
         Ok(fields)
     }

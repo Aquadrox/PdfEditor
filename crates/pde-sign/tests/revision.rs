@@ -23,6 +23,7 @@ fn signed() -> Vec<u8> {
             time: NOW,
             appearance: Appearance::default(),
             timestamp: None,
+            password: None,
         },
     )
     .expect("données de test")
@@ -72,7 +73,8 @@ fn rewritten_with_addition(bytes: &[u8], tamper_signature: bool) -> Vec<u8> {
 #[test]
 fn changes_are_appended_and_the_signature_stays_valid() {
     let original = signed();
-    let saved = append_revision(&original, &rewritten_with_addition(&original, false)).unwrap();
+    let saved =
+        append_revision(&original, &rewritten_with_addition(&original, false), None).unwrap();
     assert!(
         saved.starts_with(&original),
         "les octets signés ne bougent pas"
@@ -84,7 +86,7 @@ fn changes_are_appended_and_the_signature_stays_valid() {
         saved.len() - original.len()
     );
 
-    let found = signatures(&saved).unwrap();
+    let found = signatures(&saved, None).unwrap();
     let info = found[0].signature.as_ref().unwrap();
     assert_eq!(info.status, SignatureStatus::Valid);
     assert!(!info.covers_whole_document);
@@ -103,8 +105,12 @@ fn changes_are_appended_and_the_signature_stays_valid() {
 #[test]
 fn signature_dictionaries_are_never_rewritten() {
     let original = signed();
-    let saved = append_revision(&original, &rewritten_with_addition(&original, true)).unwrap();
-    let info = signatures(&saved).unwrap()[0].signature.clone().unwrap();
+    let saved =
+        append_revision(&original, &rewritten_with_addition(&original, true), None).unwrap();
+    let info = signatures(&saved, None).unwrap()[0]
+        .signature
+        .clone()
+        .unwrap();
     assert_eq!(info.status, SignatureStatus::Valid);
     assert_eq!(
         info.reason, None,
@@ -118,16 +124,23 @@ fn nothing_changed_gives_the_same_file() {
     let mut doc = Document::load_mem(&original).unwrap();
     let mut rewritten = Vec::new();
     doc.save_to(&mut rewritten).unwrap();
-    assert_eq!(append_revision(&original, &rewritten).unwrap(), original);
+    assert_eq!(
+        append_revision(&original, &rewritten, None).unwrap(),
+        original
+    );
 }
 
 #[test]
 fn a_second_revision_follows_the_first() {
     let original = signed();
-    let once = append_revision(&original, &rewritten_with_addition(&original, false)).unwrap();
-    let twice = append_revision(&once, &rewritten_with_addition(&once, false)).unwrap();
+    let once =
+        append_revision(&original, &rewritten_with_addition(&original, false), None).unwrap();
+    let twice = append_revision(&once, &rewritten_with_addition(&once, false), None).unwrap();
     assert!(twice.starts_with(&once));
-    let info = signatures(&twice).unwrap()[0].signature.clone().unwrap();
+    let info = signatures(&twice, None).unwrap()[0]
+        .signature
+        .clone()
+        .unwrap();
     assert_eq!(info.status, SignatureStatus::Valid);
     if let Some(report) = pdfsig("revision-2.pdf", &twice) {
         assert!(report.contains("Signature is Valid"), "{report}");

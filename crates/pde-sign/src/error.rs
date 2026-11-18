@@ -7,8 +7,8 @@ pub enum SignError {
     /// Le PDF ne peut pas être lu (structure invalide).
     #[error("le document n'est pas un PDF lisible : {0}")]
     Pdf(String),
-    /// Document chiffré : la signature d'un PDF protégé n'est pas encore prise en charge.
-    #[error("la signature d'un document protégé par mot de passe n'est pas encore possible")]
+    /// Document protégé : mot de passe absent ou incorrect.
+    #[error("document protégé par mot de passe : mot de passe absent ou incorrect")]
     Encrypted,
     /// Verrouiller exige d'être la première signature du document (DocMDP).
     #[error("un document déjà signé ne peut plus être verrouillé par une nouvelle signature")]

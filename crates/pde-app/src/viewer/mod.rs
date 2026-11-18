@@ -133,7 +133,7 @@ impl Viewer {
         let bytes = read_file(path, MAX_FILE_BYTES)?;
         let size = bytes.len();
         let digest = sha256_hex(&bytes);
-        let signatures = signatures::read_signatures(&bytes);
+        let signatures = signatures::read_signatures(&bytes, password.as_deref());
         let started = std::time::Instant::now();
         let opened = self.engine.open(bytes, password.clone()).inspect_err(|e| {
             // Jamais le nom du fichier : il peut être personnel.

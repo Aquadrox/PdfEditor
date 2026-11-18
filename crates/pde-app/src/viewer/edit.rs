@@ -108,7 +108,7 @@ impl Viewer {
             write_atomic(&target, &bytes)?;
             log::info!("document enregistré : {} Ko", bytes.len() / 1024);
             open.saved_digest = super::sha256_hex(&bytes);
-            open.signatures = super::signatures::read_signatures(&bytes);
+            open.signatures = super::signatures::read_signatures(&bytes, open.password.as_deref());
             open.edits.mark_saved();
             open.path.clone_from(&target);
             Ok(SavedView {

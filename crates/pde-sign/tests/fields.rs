@@ -18,13 +18,14 @@ fn options(identity: &Identity, target: Target) -> SignOptions<'_> {
         time: NOW,
         appearance: Appearance::text(vec!["Hugo Bernard".into()]),
         timestamp: None,
+        password: None,
     }
 }
 
 #[test]
 fn empty_field_is_listed_then_signed_in_place() {
     let original = with_empty_field();
-    let before = signatures(&original).unwrap();
+    let before = signatures(&original, None).unwrap();
     assert_eq!(before.len(), 1);
     assert_eq!(before[0].name, "Client");
     assert_eq!(before[0].page, Some(0));
@@ -33,7 +34,7 @@ fn empty_field_is_listed_then_signed_in_place() {
 
     let signer = identity("Hugo Bernard");
     let signed = sign(&original, &options(&signer, Target::Field("Client".into()))).unwrap();
-    let after = signatures(&signed).unwrap();
+    let after = signatures(&signed, None).unwrap();
     assert_eq!(after.len(), 1, "aucun champ ajouté : {after:?}");
     let info = after[0].signature.as_ref().unwrap();
     assert_eq!(info.status, SignatureStatus::Valid);
@@ -55,7 +56,7 @@ fn empty_field_is_listed_then_signed_in_place() {
 fn new_field_name_does_not_collide_with_existing_ones() {
     let signer = identity("Claire Martin");
     let signed = sign(&with_empty_field(), &options(&signer, Target::Invisible)).unwrap();
-    let names: Vec<String> = signatures(&signed)
+    let names: Vec<String> = signatures(&signed, None)
         .unwrap()
         .into_iter()
         .map(|f| f.name)
@@ -68,7 +69,7 @@ fn form_fields_survive_a_signature() {
     let original = form_fixture();
     let signer = identity("Claire Martin");
     let signed = sign(&original, &options(&signer, Target::Invisible)).unwrap();
-    let found = signatures(&signed).unwrap();
+    let found = signatures(&signed, None).unwrap();
     assert_eq!(found.len(), 1);
     assert_eq!(
         found[0].signature.as_ref().unwrap().status,
@@ -140,7 +141,10 @@ fn imported_rsa_identity_signs_valid_documents() {
         &options(&signer, Target::Invisible),
     )
     .unwrap();
-    let info = signatures(&signed).unwrap()[0].signature.clone().unwrap();
+    let info = signatures(&signed, None).unwrap()[0]
+        .signature
+        .clone()
+        .unwrap();
     assert_eq!(info.status, SignatureStatus::Valid);
     assert_eq!(info.signer.unwrap().common_name, "Société Exemple");
     if let Some(report) = pdfsig("rsa.pdf", &signed) {

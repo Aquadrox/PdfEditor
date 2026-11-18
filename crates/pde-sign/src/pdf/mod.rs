@@ -1,6 +1,7 @@
 //! Lecture et écriture de la structure PDF nécessaire aux signatures.
 
 mod appearance;
+pub(crate) mod compare;
 pub(crate) mod date;
 pub(crate) mod fields;
 pub(crate) mod geometry;

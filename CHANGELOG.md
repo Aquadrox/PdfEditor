@@ -12,6 +12,8 @@ concerne qu'une plateforme.
 - Horodatage : un serveur d'horodatage atteste l'heure de la signature (seule une empreinte lui est envoyée) ; l'heure attestée apparaît dans le panneau Signatures.
 - Nouvelle rubrique Signature dans les Réglages : horodatage par défaut, serveur d'horodatage, verrouillage proposé.
 - Un document verrouillé « sauf formulaires et signatures » ne laisse plus que remplir ses champs et le signer.
+- Le panneau Signatures dit ce qui a changé depuis chaque signature (champs remplis, nouvelle signature, annotations, contenu des pages…) et signale ce que le verrouillage du document interdisait.
+- Les documents protégés par mot de passe se signent aussi ; ils restent protégés.
 
 ## 0.0.19 — 2026-11-18
 

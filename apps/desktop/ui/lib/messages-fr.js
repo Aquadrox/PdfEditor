@@ -396,6 +396,8 @@ export default {
   "sig.signedAt": "Le {day} à {time}.",
   "sig.signedOnPage": "Le {day} à {time}, page {page}.",
   "sig.unchanged": "Document inchangé depuis.",
+  "sig.changes": "Complété depuis : {list}.",
+  "sig.changesForbidden": "Modifié depuis, ce que son verrouillage interdit : {list}.",
   "sig.modifiedAfter": "Le document a été complété depuis (autre signature ou modification).",
   "sig.problem": "Problème : {problem}.",
   "sig.reason": "Motif : {reason}",

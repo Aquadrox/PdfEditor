@@ -273,10 +273,23 @@ fichier signé (racine et `/Info` du document réécrit). Les dictionnaires de
 signature ne sont jamais réécrits. `pde-app` refuse d'écrire si une
 signature valide cessait de l'être, ou si le fichier a changé sur le disque.
 
-Limites connues : un document protégé par mot de passe ne peut pas encore
-être signé ; les modifications faites après une signature ne sont pas
-encore analysées (permises ou non par DocMDP) : l'interface désactive
-Éditer et Pages sur un document verrouillé.
+Modifications après une signature (`pde-sign::changes`) : la révision
+signée (les octets jusqu'à la fin de `/ByteRange`) est relue et comparée
+au document, sur le fond. Chaque objet changé est classé : champ dont seuls
+`/V`, `/AS`, `/AP` changent (remplissage), signature, annotation, page dont
+le contenu ou les attributs changent, arbre des pages, `/Info`, autre ; le
+formulaire et le catalogue ne sont que des conteneurs. Le résultat est
+confronté à la certification (DocMDP) : `/P 2` permet remplissage et
+signatures, `/P 1` rien.
+
+Documents protégés : `lopdf` déchiffre avec le mot de passe ; chaque objet
+ajouté est chiffré avec la clé du document (chaînes en hexadécimal), sauf
+le `/Contents` des signatures (ISO 32000-1, 7.6.2), et le `trailer` reprend
+`/Encrypt` et le premier `/ID` (dont dépend la clé). Le CMS est lu
+directement dans les octets du fichier, jamais chiffrés.
+
+Limite connue : la confiance dans l'émetteur d'un certificat n'est pas
+vérifiée (S-09 / S-10).
 
 ## Cycle de signature
 

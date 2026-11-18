@@ -61,7 +61,7 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 
 ## v0.4 — Signature et verrouillage 🚧
 
-Livraisons : v0.0.19 (signer, verrouiller, vérifier), v0.0.20 (enregistrement des documents signés, signature manuscrite, horodatage).
+Livraisons : v0.0.19 (signer, verrouiller, vérifier), v0.0.20 (enregistrement des documents signés, signature manuscrite, horodatage, analyse des modifications, documents protégés).
 
 - ✅ `pde-platform` : protection des clés privées par le système (repris de VoiceToText : DPAPI sous Windows, clé gardée dans le trousseau de la session sous Linux), derrière le trait `DataProtector` de `pde-core`. Le trousseau pour d'autres secrets (clés API) viendra avec l'IA
 - ✅ `pde-sign` (Rust pur, RustCrypto + `lopdf`) : mise à jour incrémentale écrite octet par octet (table `xref` ou flux de références croisées, selon le fichier), signature PAdES B-B (CMS détaché, `signingCertificateV2`, SHA-256, ECDSA P-256 / P-384 ou RSA) (S-05) ; chaque test contre-vérifié par `pdfsig` (Poppler) et `qpdf --check`, exigés par la CI
@@ -73,8 +73,9 @@ Livraisons : v0.0.19 (signer, verrouiller, vérifier), v0.0.20 (enregistrement d
 - ✅ Enregistrement incrémental des documents signés (F-03) : le document réécrit par PDFium est comparé au fichier signé, objet par objet et sur le fond (ordre des clés, compression ignorés) ; seuls les objets changés sont ajoutés à la fin du fichier ; les dictionnaires de signature ne sont jamais réécrits ; refusé si une signature valide cessait de l'être. Verrou « formulaires » (`/P 2`) : seuls les champs et d'autres signatures restent permis dans l'interface
 - ✅ Horodatage RFC 3161 (S-08, PAdES B-T) : jeton du serveur ajouté au CMS (attribut `timeStampToken`), vérifié à la réception (empreinte, nonce, signature du serveur) et à la lecture ; essayé avec le serveur public de DigiCert. Serveurs en `http://` seulement (le jeton est signé ; pas de pile TLS à embarquer, compilation Android préservée)
 - ✅ Réglages Signature (R-05) : horodatage par défaut, serveur d'horodatage, verrouillage proposé. Reste : identité par défaut (aujourd'hui la dernière utilisée)
-- ⬜ Signature d'un document protégé par mot de passe (refusée avec un message)
-- ⬜ Analyse de ce qui a changé après une signature (permis ou non par DocMDP), chaîne de confiance des certificats
+- ✅ Documents protégés par mot de passe (AES-256, RC4) : signés avec leur mot de passe, objets ajoutés chiffrés comme le reste (sauf le `/Contents` de la signature, lu dans les octets du fichier), `/Encrypt` repris ; enregistrement après signature (F-03) et vérification aussi ; contre-vérifiés par `pdfsig -upw` et `qpdf --password`
+- ✅ Modifications après une signature (S-07) : la révision signée est comparée au document, chaque changement classé (formulaire, signature, annotation, contenu des pages, pages, propriétés, structure) et confronté à la certification (DocMDP) ; panneau et sceau le disent (« Complété depuis : … », « Modifié depuis, ce que son verrouillage interdit : … »)
+- ⬜ Chaîne de confiance des certificats (magasin du système, listes de confiance AATL / EUTL), avec S-09 / S-10
 
 ## v0.5 — IA : socle et analyse
 

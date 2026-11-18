@@ -7,6 +7,7 @@
 use lopdf::{Dictionary, Object};
 
 use crate::certificate::CertificateInfo;
+use crate::changes::{self, Change};
 use crate::cms::{self, CmsFailure};
 use crate::error::Result;
 use crate::pdf::date;
@@ -56,6 +57,11 @@ pub struct SignatureInfo {
     pub lock: Option<Lock>,
     /// Horodatage joint, s'il y en a un.
     pub timestamp: Option<TimestampInfo>,
+    /// Ce qui a changé depuis cette signature (vide s'il n'y a rien après).
+    pub changes: Vec<Change>,
+    /// Ces changements sont permis par la certification du document (toujours
+    /// vrai sans certification).
+    pub changes_permitted: bool,
 }
 
 /// Un champ de signature du document, signé ou vide.
@@ -73,9 +79,11 @@ pub struct SignatureField {
 }
 
 /// Champs de signature du PDF, dans l'ordre du formulaire.
-pub fn signatures(pdf: &[u8]) -> Result<Vec<SignatureField>> {
-    let source = Source::load(pdf)?;
+/// `password` : celui d'un document protégé.
+pub fn signatures(pdf: &[u8], password: Option<&str>) -> Result<Vec<SignatureField>> {
+    let source = Source::load(pdf, password)?;
     let certification = permissions::certification(&source);
+    let document_lock = certification.map_or(Lock::None, |(_, p)| Lock::from_permission(p));
     Ok(fields::all(&source)
         .into_iter()
         .filter(|field| field.is_signature)
@@ -89,7 +97,7 @@ pub fn signatures(pdf: &[u8]) -> Result<Vec<SignatureField>> {
                     .map(|id| PageFrame::of(&source, id).rect_to_display(rect)),
                 _ => rect,
             };
-            let signature = signed(&source, &field, certification);
+            let signature = signed(&source, &field, certification, document_lock, password);
             SignatureField {
                 name: field.name,
                 page,
@@ -104,6 +112,8 @@ fn signed(
     source: &Source,
     field: &Field,
     certification: Option<(Option<lopdf::ObjectId>, i64)>,
+    document_lock: Lock,
+    password: Option<&str>,
 ) -> Option<SignatureInfo> {
     let value = field.value.as_ref()?;
     let dictionary = source.resolve(value).ok()?.as_dict().ok()?;
@@ -124,6 +134,17 @@ fn signed(
         permissions::permission(source, dictionary).map(Lock::from_permission)
     };
     let checked = check(source.bytes, dictionary);
+    let changes: Vec<Change> = match checked.revision_end {
+        Some(end) if !checked.covers => crate::pdf::source::open(&source.bytes[..end], password)
+            .map(|before| {
+                changes::between(&before, &source.document)
+                    .into_iter()
+                    .collect()
+            })
+            .unwrap_or_else(|_| vec![Change::Other]),
+        _ => Vec::new(),
+    };
+    let changes_permitted = changes.iter().all(|c| c.permitted_by(document_lock));
     Some(SignatureInfo {
         status: checked.status,
         signer: checked.signer,
@@ -136,6 +157,8 @@ fn signed(
         covers_whole_document: checked.covers,
         lock,
         timestamp: checked.timestamp,
+        changes,
+        changes_permitted,
     })
 }
 
@@ -146,6 +169,8 @@ struct Check {
     cms_time: Option<u64>,
     covers: bool,
     timestamp: Option<TimestampInfo>,
+    /// Fin de la révision signée (octets couverts), si lisible.
+    revision_end: Option<usize>,
 }
 
 impl Check {
@@ -156,6 +181,7 @@ impl Check {
             cms_time: None,
             covers,
             timestamp: None,
+            revision_end: None,
         }
     }
 }
@@ -181,9 +207,11 @@ fn check(bytes: &[u8], dictionary: &Dictionary) -> Check {
     if !gap_holds_only_the_signature(bytes, open, close) || end > bytes.len() {
         return invalid("zone signée incohérente");
     }
-    let Ok(contents) = dictionary.get(b"Contents").and_then(Object::as_str) else {
-        return invalid("signature absente");
+    // Lu dans les octets du fichier (jamais chiffré, même si le document l'est).
+    let Some(contents) = decode_hex(&bytes[open + 1..close - 1]) else {
+        return invalid("signature illisible");
     };
+    let contents = contents.as_slice();
     let covers = bytes[end..].iter().all(u8::is_ascii_whitespace);
     match cms::verify_detached(contents, &[&bytes[..open], &bytes[close..end]]) {
         Ok(verified) => Check {
@@ -191,6 +219,7 @@ fn check(bytes: &[u8], dictionary: &Dictionary) -> Check {
             signer: CertificateInfo::from_der(&verified.certificate).ok(),
             cms_time: verified.signing_time,
             covers,
+            revision_end: Some(end),
             timestamp: verified.timestamp.map(|check| match check {
                 Ok(token) => TimestampInfo {
                     time: Some(token.time),
@@ -223,6 +252,14 @@ fn check(bytes: &[u8], dictionary: &Dictionary) -> Check {
             Check::failed(status, covers)
         }
     }
+}
+
+/// Octets d'une chaîne hexadécimale (nombre impair de chiffres : dernier complété par 0).
+fn decode_hex(hex: &[u8]) -> Option<Vec<u8>> {
+    let digit = |c: u8| (c as char).to_digit(16).map(|d| d as u8);
+    hex.chunks(2)
+        .map(|pair| Some(digit(pair[0])? << 4 | pair.get(1).map_or(Some(0), |&c| digit(c))?))
+        .collect()
 }
 
 /// `[0 a b c]` : début à 0, trou de `a` à `b`.

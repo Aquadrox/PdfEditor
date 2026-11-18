@@ -35,11 +35,13 @@ pub struct SignOptions<'a> {
     pub appearance: Appearance,
     /// Serveur d'horodatage (PAdES B-T), ou aucun.
     pub timestamp: Option<&'a dyn TimestampAuthority>,
+    /// Mot de passe d'un document protégé.
+    pub password: Option<&'a str>,
 }
 
 /// Le PDF signé : `pdf` inchangé suivi de la mise à jour qui porte la signature.
 pub fn sign(pdf: &[u8], options: &SignOptions<'_>) -> Result<Vec<u8>> {
-    let source = Source::load(pdf)?;
+    let source = Source::load(pdf, options.password)?;
     let identity = options.identity;
     let info = identity.info()?;
     let date = date::format(options.time);
@@ -63,7 +65,9 @@ pub fn sign(pdf: &[u8], options: &SignOptions<'_>) -> Result<Vec<u8>> {
     };
     let prepared = prepare::prepare(&source, &request, capacity)?;
     let trailer = source.trailer(crate::rng::bytes::<16>()?)?;
-    let written = prepared.update.write(pdf, &trailer, source.xref_style())?;
+    let written = prepared
+        .update
+        .write(pdf, &trailer, source.xref_style(), source.encryption())?;
     let base = *written
         .bodies
         .get(&prepared.sig_id)

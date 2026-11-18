@@ -61,7 +61,12 @@ pub(crate) struct SigDict {
     pub capacity: usize,
 }
 
-pub(crate) fn build(details: &Details<'_>, capacity: usize) -> Result<SigDict> {
+/// `encrypt` chiffre les chaînes d'un document protégé (pas `/Contents`).
+pub(crate) fn build(
+    details: &Details<'_>,
+    capacity: usize,
+    encrypt: &dyn Fn(Object) -> Result<Object>,
+) -> Result<SigDict> {
     let mut out = Vec::new();
     out.extend_from_slice(
         b"<<\n/Type /Sig\n/Filter /Adobe.PPKLite\n/SubFilter /ETSI.CAdES.detached\n/ByteRange ",
@@ -75,7 +80,7 @@ pub(crate) fn build(details: &Details<'_>, capacity: usize) -> Result<SigDict> {
     out.resize(out.len() + capacity * 2, b'0');
     out.push(b'>');
     out.extend_from_slice(b"\n/M ");
-    Writer::write_object(&mut out, &Object::string_literal(details.date))?;
+    Writer::write_object(&mut out, &encrypt(Object::string_literal(details.date))?)?;
     for (key, value) in [
         ("Name", details.name),
         ("Reason", details.reason),
@@ -84,7 +89,7 @@ pub(crate) fn build(details: &Details<'_>, capacity: usize) -> Result<SigDict> {
     ] {
         if let Some(value) = value.map(str::trim).filter(|v| !v.is_empty()) {
             out.extend_from_slice(format!("\n/{key} ").as_bytes());
-            Writer::write_object(&mut out, &lopdf::text_string(value))?;
+            Writer::write_object(&mut out, &encrypt(lopdf::text_string(value))?)?;
         }
     }
     if let Some(p) = details.lock.permission() {
@@ -137,7 +142,7 @@ mod tests {
             date: "D:20261118120000Z",
             lock: Lock::Everything,
         };
-        let dict = build(&details, 100).unwrap();
+        let dict = build(&details, 100, &Ok).unwrap();
         let bytes = &dict.bytes;
         assert_eq!(bytes[dict.byte_range_at], b'[');
         assert_eq!(bytes[dict.byte_range_at + dict.byte_range_len - 1], b']');

@@ -353,3 +353,28 @@ test("Mes signatures : choisie d'un clic, supprimable", async () => {
     await app.close();
   }
 });
+
+test("Modifié depuis la signature : ce qui a changé, et si le verrouillage l'interdisait", async () => {
+  const app = await openDocument({
+    identities: [{ ok: [IDENTITY] }],
+    document_signatures: [
+      {
+        ok: [
+          { ...SIGNED, lock: "forms", modified_after: true, changes: ["page_content", "form_fill"], changes_permitted: false },
+          { ...SIGNED, name: "Signature2", signer: "Hugo Bernard", changes: [], changes_permitted: true },
+        ],
+      },
+    ],
+  });
+  const { page } = app;
+  try {
+    await page.locator("#seal-label", { hasText: "Signature à vérifier" }).waitFor();
+    await page.click("#mode-sign");
+    const first = page.locator(".sig-item").first();
+    assert.match(await first.textContent(), /Modifié depuis, ce que son verrouillage interdit : contenu des pages, remplissage du formulaire/);
+    assert.match((await first.getAttribute("class")) ?? "", /concern-invalid/);
+    assert.match(await page.locator(".sig-item").nth(1).textContent(), /Document inchangé depuis/);
+  } finally {
+    await app.close();
+  }
+});

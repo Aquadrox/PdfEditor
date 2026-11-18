@@ -14,6 +14,7 @@
 
 mod appearance;
 mod certificate;
+mod changes;
 mod cms;
 mod error;
 mod identity;
@@ -27,6 +28,7 @@ mod verify;
 
 pub use appearance::{Appearance, MAX_IMAGE_SIDE, SignatureImage};
 pub use certificate::CertificateInfo;
+pub use changes::Change;
 #[cfg(feature = "testing")]
 pub use cms::LocalTimestampAuthority;
 pub use cms::TimestampAuthority;

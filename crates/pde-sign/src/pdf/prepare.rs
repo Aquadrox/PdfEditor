@@ -132,7 +132,9 @@ pub(crate) fn prepare(source: &Source, request: &Request<'_>, capacity: usize) -
         update.push(source.root_id()?, Body::Object(Object::Dictionary(catalog)));
     }
 
-    let sig = sig_dict::build(&request.details, capacity)?;
+    let sig = sig_dict::build(&request.details, capacity, &|object| {
+        source.encrypt(sig_id, object)
+    })?;
     update.push(sig_id, Body::Raw(sig.bytes.clone()));
     Ok(Prepared {
         update,

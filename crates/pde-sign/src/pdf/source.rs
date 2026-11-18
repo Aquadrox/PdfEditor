@@ -1,7 +1,7 @@
 //! Le PDF à signer ou à vérifier : ses octets et sa structure lue par `lopdf`.
 
 use lopdf::xref::XrefType;
-use lopdf::{Dictionary, Document, Object, ObjectId};
+use lopdf::{Dictionary, Document, EncryptionState, Object, ObjectId};
 
 use super::incremental::{Trailer, XrefStyle};
 use crate::error::{Result, SignError};
@@ -13,12 +13,19 @@ pub(crate) struct Source<'a> {
 }
 
 impl<'a> Source<'a> {
-    pub fn load(bytes: &'a [u8]) -> Result<Self> {
-        let document = Document::load_mem(bytes)?;
-        if document.is_encrypted() || document.trailer.get(b"Encrypt").is_ok() {
-            return Err(SignError::Encrypted);
-        }
-        Ok(Source { bytes, document })
+    /// PDF lu ; un document protégé est déchiffré avec `password` (ou le
+    /// mot de passe vide, pour un document protégé seulement contre la
+    /// modification).
+    pub fn load(bytes: &'a [u8], password: Option<&str>) -> Result<Self> {
+        Ok(Source {
+            bytes,
+            document: open(bytes, password)?,
+        })
+    }
+
+    /// Chiffrement du document, s'il est protégé.
+    pub fn encryption(&self) -> Option<&EncryptionState> {
+        self.document.encryption_state.as_ref()
     }
 
     /// Position de la dernière section de références croisées (`startxref`).
@@ -94,7 +101,15 @@ impl<'a> Source<'a> {
             root: self.root_id()?,
             info,
             id: Some((first, new_id.to_vec())),
+            encrypt: self
+                .encryption()
+                .and_then(|state| state.encrypt_object_id()),
         })
+    }
+
+    /// Chiffre `object` (objet `id`) comme le reste du document, s'il est protégé.
+    pub fn encrypt(&self, id: ObjectId, object: Object) -> Result<Object> {
+        encrypt(self.encryption(), id, object)
     }
 
     /// Objet désigné, référence suivie.
@@ -119,4 +134,49 @@ impl<'a> Source<'a> {
             .find(|(_, page)| *page == id)
             .map(|(number, _)| number as usize - 1)
     }
+}
+
+/// Chiffre `object` (objet `id`) avec `state` ; les chaînes chiffrées sont
+/// écrites en hexadécimal (octets quelconques, aucun échappement à risque).
+pub(crate) fn encrypt(
+    state: Option<&EncryptionState>,
+    id: ObjectId,
+    mut object: Object,
+) -> Result<Object> {
+    let Some(state) = state else {
+        return Ok(object);
+    };
+    lopdf::encryption::encrypt_object(state, id, &mut object)
+        .map_err(|e| SignError::Pdf(format!("chiffrement impossible ({e})")))?;
+    hexadecimal(&mut object);
+    Ok(object)
+}
+
+fn hexadecimal(object: &mut Object) {
+    match object {
+        Object::String(_, format) => *format = lopdf::StringFormat::Hexadecimal,
+        Object::Array(items) => items.iter_mut().for_each(hexadecimal),
+        Object::Dictionary(dict) => dict.iter_mut().for_each(|(_, v)| hexadecimal(v)),
+        Object::Stream(stream) => stream.dict.iter_mut().for_each(|(_, v)| hexadecimal(v)),
+        _ => {}
+    }
+}
+
+/// Ouvre un PDF, déchiffré s'il est protégé.
+pub(crate) fn open(bytes: &[u8], password: Option<&str>) -> Result<Document> {
+    let document = match password {
+        Some(password) => {
+            Document::load_mem_with_options(bytes, lopdf::LoadOptions::with_password(password))
+        }
+        None => Document::load_mem(bytes),
+    }
+    .map_err(|error| match error {
+        lopdf::Error::Decryption(_) | lopdf::Error::InvalidPassword => SignError::Encrypted,
+        other => SignError::Pdf(other.to_string()),
+    })?;
+    // Toujours chiffré : le mot de passe manque ou ne convient pas.
+    if document.is_encrypted() {
+        return Err(SignError::Encrypted);
+    }
+    Ok(document)
 }

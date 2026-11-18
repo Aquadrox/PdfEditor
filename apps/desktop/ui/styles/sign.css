@@ -176,6 +176,15 @@
   color: var(--danger);
 }
 
+.sig-item.concern-warn .sig-icon {
+  color: var(--warn);
+}
+
+.sig-item.concern-invalid .sig-icon,
+.sig-item.concern-invalid .sig-line:nth-of-type(2) {
+  color: var(--danger);
+}
+
 .sig-item.empty .sig-icon {
   color: var(--seal);
 }

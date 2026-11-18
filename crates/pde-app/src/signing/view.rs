@@ -3,7 +3,7 @@
 
 use pde_core::document::PageSize;
 use pde_core::geometry::{Point, Rect};
-use pde_sign::{Lock, SignatureField, SignatureStatus, Target};
+use pde_sign::{Change, Lock, SignatureField, SignatureStatus, Target};
 use serde::{Deserialize, Serialize};
 
 use crate::text_view::BoxView;
@@ -52,6 +52,33 @@ impl From<Lock> for LockChoice {
     }
 }
 
+/// Genre de modification faite après une signature.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ChangeView {
+    FormFill,
+    Signature,
+    Annotation,
+    PageContent,
+    Pages,
+    Metadata,
+    Other,
+}
+
+impl From<Change> for ChangeView {
+    fn from(change: Change) -> Self {
+        match change {
+            Change::FormFill => ChangeView::FormFill,
+            Change::Signature => ChangeView::Signature,
+            Change::Annotation => ChangeView::Annotation,
+            Change::PageContent => ChangeView::PageContent,
+            Change::Pages => ChangeView::Pages,
+            Change::Metadata => ChangeView::Metadata,
+            Change::Other => ChangeView::Other,
+        }
+    }
+}
+
 /// Horodatage d'une signature (S-08).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TimestampView {
@@ -87,6 +114,10 @@ pub struct SignatureView {
     pub lock: Option<LockChoice>,
     /// Horodatage joint.
     pub timestamp: Option<TimestampView>,
+    /// Ce qui a changé depuis la signature.
+    pub changes: Vec<ChangeView>,
+    /// Changements permis par la certification du document.
+    pub changes_permitted: bool,
 }
 
 impl SignatureView {
@@ -119,6 +150,8 @@ impl SignatureView {
             modified_after: false,
             lock: None,
             timestamp: None,
+            changes: Vec::new(),
+            changes_permitted: true,
         };
         if let Some(info) = &field.signature {
             (view.state, view.problem) = match &info.status {
@@ -140,6 +173,8 @@ impl SignatureView {
             view.time = info.time;
             view.modified_after = !info.covers_whole_document;
             view.lock = info.lock.map(LockChoice::from);
+            view.changes = info.changes.iter().copied().map(ChangeView::from).collect();
+            view.changes_permitted = info.changes_permitted;
             view.timestamp = info.timestamp.as_ref().map(|t| TimestampView {
                 time: t.time,
                 authority: t.authority.clone(),
