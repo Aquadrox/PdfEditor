@@ -217,3 +217,40 @@ test("Panneau IA : bas du panneau utilisable, largeur réglable, réponse suppri
     await app.close();
   }
 });
+
+test("réponse sélectionnable à la souris et copiable d'un clic", async () => {
+  // Bogue : toute l'interface est non sélectionnable (base.css), réponses comprises.
+  const app = await openDocument({ ai_estimate: [{ ok: { ...ESTIMATE, needs_confirmation: false } }], ai_start: [{ ok: 7 }] });
+  const { page } = app;
+  try {
+    await page.evaluate(() => {
+      window.__copied = [];
+      navigator.clipboard.writeText = async (text) => window.__copied.push(text);
+    });
+    await page.click("#mode-ai");
+    await page.locator("#ai-provider", { hasText: "deepseek-flash" }).waitFor();
+    await page.click('[data-task="summary"]');
+    await waitForCalls(app, "ai_start");
+    const answer = page.locator(".ai-answer").last();
+    assert.equal(await answer.locator(".ai-copy").isHidden(), true, "rien à copier pendant l'écriture");
+    const text = "Un contrat de **deux ans** [p. 2].\n- Prix fixe";
+    await app.emit("ai-done", { run: 7, Ok: { text, cost: 0, currency: "USD", model: "m", fallback_used: false } });
+    const paragraph = answer.locator(".ai-body p").first();
+    await paragraph.waitFor();
+    assert.equal(await paragraph.evaluate((p) => getComputedStyle(p).userSelect), "text");
+    // Glisser la souris sur le début du paragraphe, comme un utilisateur.
+    const box = await paragraph.boundingBox();
+    await page.mouse.move(box.x + 1, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 120, box.y + box.height / 2, { steps: 5 });
+    await page.mouse.up();
+    assert.match(await page.evaluate(() => window.getSelection().toString()), /^Un contrat/);
+
+    await answer.locator(".ai-copy").click();
+    await page.locator(".toast", { hasText: "Réponse copiée." }).waitFor();
+    assert.deepEqual(await page.evaluate(() => window.__copied), [text]);
+    assert.deepEqual(app.errors, []);
+  } finally {
+    await app.close();
+  }
+});

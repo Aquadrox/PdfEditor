@@ -3499,7 +3499,7 @@ dependencies = [
 
 [[package]]
 name = "pde-ai"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "log",
  "pde-core",
@@ -3510,7 +3510,7 @@ dependencies = [
 
 [[package]]
 name = "pde-app"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "base64 0.23.1",
  "image",
@@ -3530,7 +3530,7 @@ dependencies = [
 
 [[package]]
 name = "pde-core"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "serde",
  "serde_json",
@@ -3541,7 +3541,7 @@ dependencies = [
 
 [[package]]
 name = "pde-fonts"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "pde-core",
  "sha2 0.10.9",
@@ -3550,7 +3550,7 @@ dependencies = [
 
 [[package]]
 name = "pde-pdf"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "image",
  "lopdf",
@@ -3562,7 +3562,7 @@ dependencies = [
 
 [[package]]
 name = "pde-platform"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "chacha20poly1305",
  "dirs 6.0.0",
@@ -3574,7 +3574,7 @@ dependencies = [
 
 [[package]]
 name = "pde-sign"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "cms",
  "const-oid",
@@ -3598,7 +3598,7 @@ dependencies = [
 
 [[package]]
 name = "pdfeditor"
-version = "0.0.28"
+version = "0.0.29"
 dependencies = [
  "log",
  "pde-ai",

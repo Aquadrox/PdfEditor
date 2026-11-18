@@ -133,3 +133,38 @@ test("Refuser : rien n'est appliqué ; sans proposition, « Comment faire ? » p
     await app.close();
   }
 });
+
+test("« Renomme X en Y » : l'assistant confie la modification du texte à « Modifier »", async () => {
+  // Bogue : l'assistant n'avait aucun outil pour changer le texte.
+  const EDIT = {
+    proposal: { action: "edit_text", instruction: "Renomme Kaelen Vane en Aquadrox", pages: [] },
+    summary: "Modifier le texte : « Renomme Kaelen Vane en Aquadrox »",
+    pages: [0, 1, 2],
+    previews: [],
+    redaction: false,
+  };
+  const app = await openDocument({
+    ai_rewrite_estimate: [{ ok: ESTIMATE }],
+    ai_rewrite_start: [{ ok: 9 }],
+  });
+  const { page } = app;
+  try {
+    const answer = await request(app, "Renomme Kaelen Vane en Aquadrox");
+    await app.emit("ai-done", {
+      run: 4,
+      Ok: { text: "Je remplace le nom.", cost: 0, currency: "USD", model: "m", fallback_used: false, proposals: [EDIT], rejected: [] },
+    });
+    await answer.locator(".ai-handoff").waitFor();
+    assert.equal(await answer.locator(".ai-apply").count(), 0, "rien à appliquer dans la réponse de l'assistant");
+    await page.waitForFunction(() => window.__calls.some((c) => c.command === "ai_rewrite_start"));
+    const [start] = await app.callsTo("ai_rewrite_start");
+    assert.deepEqual(start, { id: 1, scope: { kind: "document" }, instruction: "Renomme Kaelen Vane en Aquadrox", consent: true });
+    const proposals = [{ page: 0, objects: [2], bounds: { x: 72, y: 80, width: 200, height: 14 }, before: "Kaelen Vane est là", after: "Aquadrox est là" }];
+    await app.emit("ai-done", { run: 9, Ok: { proposals, cost: 0, currency: "USD", model: "m", fallback_used: false } });
+    const rewrite = page.locator(".ai-answer.rewrite").last();
+    await rewrite.locator(".ai-apply", { hasText: "Appliquer (1)" }).waitFor();
+    assert.deepEqual(app.errors, []);
+  } finally {
+    await app.close();
+  }
+});

@@ -4,7 +4,7 @@
 
 mod common;
 
-use common::{engine, open_simple};
+use common::{A4, engine, open_simple};
 use pde_core::document::DocumentId;
 use pde_core::edit::{
     Area, Element, ElementId, Images, OriginalText, PagePlan, StandardFont, TextBox, TextStyle,
@@ -172,5 +172,29 @@ fn an_embedded_font_is_kept_only_for_the_characters_it_already_wrote() {
     assert!(replaced[0].replaced_font);
     let page = text(doc.id);
     assert!(page.contains("Жми") && !page.contains("Привет"), "{page}");
+    engine().close(doc.id);
+}
+
+/// Bogue : sur une vraie page A4, l'arrondi des pixels de PDFium faisait
+/// passer la page pour tournée et aucun bloc n'était proposé (« aucun
+/// texte à modifier » en traduction et en modification par consigne).
+#[test]
+fn a4_page_with_fractional_size_has_blocks() {
+    let doc = engine()
+        .open(A4.to_vec(), None)
+        .expect("a4.pdf doit s'ouvrir");
+    let found = engine()
+        .page_text_blocks(
+            doc.id,
+            Edition::new(PagePlan::identity(1), Vec::new(), Images::new()),
+            0,
+        )
+        .expect("blocs de la page");
+    let texts: Vec<&str> = found.iter().map(|b| b.text.as_str()).collect();
+    assert!(
+        texts.contains(&"Premier paragraphe du bail.")
+            && texts.contains(&"Second paragraphe du bail."),
+        "{texts:?}"
+    );
     engine().close(doc.id);
 }

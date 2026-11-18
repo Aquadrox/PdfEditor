@@ -120,9 +120,16 @@ kbd {
 }
 
 /* Menu déroulant (components/menu.js). */
+/* Sous le bouton qui l'ouvre : sans `top`, un menu absolu dans la barre
+   (flex, centrée) se centrait sur elle et ses premières entrées
+   (Ouvrir, Enregistrer, Fermer) sortaient de l'écran. */
 .menu {
   position: absolute;
+  top: calc(100% + 4px);
+  left: var(--space-2);
   z-index: 20;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
   min-width: 220px;
   padding: var(--space-1);
   border: 1px solid var(--line);

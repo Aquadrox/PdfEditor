@@ -61,6 +61,9 @@ Les pages se comptent à partir de 1, comme dans <page n=\"…\">.
 Caviarder supprime réellement le texte du fichier. Masquer (un aplat qui laisse le texte \
 dans le fichier) n'est pas disponible : si la demande parle de masquer, de cacher ou de \
 confidentialité, propose de caviarder et dis la différence en une phrase.
+Pour changer le texte du document (renommer, remplacer un mot, corriger les fautes, \
+reformuler), appelle edit_text une seule fois avec la consigne complète : l'éditeur \
+proposera ensuite chaque ligne modifiée.
 Écris aussi une ou deux phrases qui expliquent ce que tu proposes. Si aucun outil ne \
 convient, n'en appelle aucun et explique comment faire avec les outils de l'éditeur.";
 

@@ -4,6 +4,8 @@
 Usage : python3 make_fixtures.py
   - simple.pdf    : écrit à la main, sans dépendance ;
   - form.pdf      : formulaire écrit à la main (texte, case, radios, liste) ;
+  - a4.pdf        : vrai format A4 (595,2756 × 841,8898 pt, dimensions non
+                    entières comme chez LibreOffice ou Word) ;
   - encrypted.pdf : simple.pdf chiffré en AES-256, nécessite `pypdf` et
                     `cryptography` (pip install pypdf cryptography).
 
@@ -129,6 +131,25 @@ def build_form() -> bytes:
     return write_pdf(objects, 16)
 
 
+def build_a4() -> bytes:
+    """Page A4 aux dimensions exactes, non entières : PDFium arrondit ses
+    pixels et la page ne doit pas pour autant passer pour tournée."""
+    page = (
+        b"BT /F1 12 Tf 72 760 Td (Premier paragraphe du bail.) Tj ET\n"
+        b"BT /F1 12 Tf 72 740 Td (Second paragraphe du bail.) Tj ET\n"
+    )
+    objects = {
+        1: b"<< /Type /Catalog /Pages 2 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.2756 841.8898] "
+        b"/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+        4: stream(page),
+        5: b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+        6: b"<< /Title " + text_string("A4 de test") + b" /Producer (make_fixtures.py) >>",
+    }
+    return write_pdf(objects, 6)
+
+
 def build_encrypted(simple: Path) -> bytes:
     import io
 
@@ -147,6 +168,8 @@ def main() -> None:
     print(f"écrit : {simple.name}")
     (HERE / "form.pdf").write_bytes(build_form())
     print("écrit : form.pdf")
+    (HERE / "a4.pdf").write_bytes(build_a4())
+    print("écrit : a4.pdf")
     try:
         (HERE / "encrypted.pdf").write_bytes(build_encrypted(simple))
         print("écrit : encrypted.pdf")

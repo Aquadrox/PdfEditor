@@ -320,6 +320,7 @@ fn assistant_offers_catalogued_tools_and_keeps_their_calls() {
     assert_eq!(
         names,
         [
+            "edit_text",
             "highlight",
             "add_note",
             "redact",

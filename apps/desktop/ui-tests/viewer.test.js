@@ -101,3 +101,24 @@ test("couche texte : chaque segment couvre exactement sa place dans le PDF", asy
     await app.close();
   }
 });
+
+test("menu principal entièrement visible, sous son bouton : Ouvrir et Fermer compris", async () => {
+  // Bogue : le menu se centrait sur la barre du haut et ses premières
+  // entrées (Ouvrir, Enregistrer, Fermer) sortaient de l'écran.
+  const app = await openDocument(3);
+  const { page } = app;
+  try {
+    await page.click("#menu-button");
+    const button = await page.locator("#menu-button").boundingBox();
+    const viewport = page.viewportSize();
+    for (const id of ["#menu-open", "#menu-close", "#menu-settings"]) {
+      const box = await page.locator(id).boundingBox();
+      assert.ok(box.y >= button.y + button.height, `${id} sous le bouton du menu`);
+      assert.ok(box.y + box.height <= viewport.height, `${id} dans la fenêtre`);
+    }
+    assert.equal(await page.locator("#menu-close").isEnabled(), true, "Fermer le document ouvert");
+    assert.deepEqual(app.errors, []);
+  } finally {
+    await app.close();
+  }
+});
