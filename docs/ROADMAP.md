@@ -99,11 +99,13 @@ Livraison : v0.0.25.
 - ✅ Modes (IA-07) : remplacer le texte (« Enregistrer sous » garde l'original), bilingue (chaque page suivie de sa copie traduite), texte seul dans le panneau
 - ✅ Glossaire (IA-08) : rubrique IA des Réglages, « terme = traduction » ou « terme » seul (à ne pas traduire), ajouté à la consigne
 
-## v0.7 — IA : modification
+## v0.7 — IA : modification 🚧
 
-- ⬜ Modification par consigne, différences, acceptation bloc par bloc, annulable (IA-09)
-- ⬜ Anonymisation assistée (IA-10)
-- ⬜ Annulation d'une action en cours (IA-12)
+Première livraison : v0.0.26 (modification, anonymisation).
+
+- ✅ Modification par consigne, différences, acceptation bloc par bloc, annulable (IA-09) : même canal que la traduction (`BlockTask::Rewrite` : lignes numérotées, JSON strict), le modèle ne rend que les lignes qu'il change ; propositions avant / après en différences mot à mot, encadrées sur les pages, cochées une à une ; à l'application, chaque ligne est revérifiée (même texte qu'à la proposition) puis posée en une opération, corps ajusté comme pour la traduction
+- ✅ Anonymisation assistée (IA-10) : bouton « Anonymiser » du mode IA, l'assistant d'actions avec la recette « Anonymiser selon le RGPD » (caviardage seulement, aperçu, accord)
+- ✅ Annulation d'une action en cours (IA-12) : depuis v0.0.21, bouton « Annuler » de chaque action IA (analyse, question, assistant, traduction, modification)
 - ⬜ Serveur MCP local optionnel, sur le catalogue des actions (IA-17)
 
 ## v0.8 — Cycle de signature

@@ -2,12 +2,10 @@
 //! questions, assistant d'actions (IA-15) et ses recettes (IA-16).
 
 use pde_ai::tasks::{PageText, Task};
-use pde_ai::translate::Block;
 use pde_core::ai::CancelFlag;
 use pde_core::recipe::Recipe;
 use pde_core::settings::Provider;
 use pde_core::usage::{UsageSummary, day_of};
-use serde::Serialize;
 
 use super::{App, now};
 use crate::actions::assistant::{self, ASSISTANT_ACTIONS, Proposal};
@@ -15,40 +13,6 @@ use crate::ai::{AiEvent, AiService, AiStatus, AnswerView, EstimateView, Scope, T
 use crate::error::{AppError, ErrorKind};
 use crate::recipes::{RecipeStore, RecipeView};
 use crate::viewer::PagesView;
-use crate::viewer::translation::{SourceBlock, TranslatedView, TranslationMode};
-
-/// Traduction terminée, pour l'interface.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct TranslationResult {
-    /// Texte traduit, page par page (Markdown simple).
-    pub text: String,
-    pub cost: f64,
-    pub currency: String,
-    pub model: String,
-    pub fallback_used: bool,
-    /// Traduction posée sur le document (sauf en texte seul).
-    pub applied: Option<TranslatedView>,
-    /// Lignes que le modèle n'a pas rendues (laissées telles quelles).
-    pub missing: usize,
-}
-
-/// « ## Page n » puis les lignes traduites de chaque page.
-fn translation_text(translated: &[(SourceBlock, String)]) -> String {
-    let mut text = String::new();
-    let mut page = None;
-    for (source, line) in translated {
-        if page != Some(source.page) {
-            if page.is_some() {
-                text.push('\n');
-            }
-            text.push_str(&format!("## Page {}\n", source.page + 1));
-            page = Some(source.page);
-        }
-        text.push_str(line.trim());
-        text.push('\n');
-    }
-    text
-}
 
 impl App {
     /// Active l'IA.
@@ -57,7 +21,7 @@ impl App {
         self
     }
 
-    fn ai_service(&self) -> Result<&AiService, AppError> {
+    pub(super) fn ai_service(&self) -> Result<&AiService, AppError> {
         self.ai
             .as_ref()
             .ok_or_else(|| AppError::new(ErrorKind::Ai, "IA indisponible"))
@@ -185,7 +149,7 @@ impl App {
     }
 
     /// Pages de la portée (rangs à partir de 0).
-    fn scope_pages(&self, id: u64, scope: &Scope) -> Result<Vec<usize>, AppError> {
+    pub(super) fn scope_pages(&self, id: u64, scope: &Scope) -> Result<Vec<usize>, AppError> {
         Ok(match scope {
             Scope::Selection { page, .. } => vec![*page],
             Scope::Pages { pages } => pages.clone(),
@@ -204,108 +168,6 @@ impl App {
         let author = self.settings.get().edit.author;
         self.viewer
             .apply_proposals(id, proposals, &scope, author.trim())
-    }
-
-    /// Blocs de la portée à traduire ; une sélection garde les lignes
-    /// qu'elle contient.
-    fn translation_sources(&self, id: u64, scope: &Scope) -> Result<Vec<SourceBlock>, AppError> {
-        let pages = self.scope_pages(id, scope)?;
-        let mut blocks = self.viewer.source_blocks(id, &pages)?;
-        if let Scope::Selection { text, .. } = scope {
-            let selected = text.split_whitespace().collect::<Vec<_>>().join(" ");
-            blocks.retain(|b| {
-                let line = b
-                    .block
-                    .text
-                    .split_whitespace()
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                !line.is_empty() && selected.contains(&line)
-            });
-        }
-        Ok(blocks)
-    }
-
-    fn as_blocks(sources: &[SourceBlock]) -> Vec<Block> {
-        sources
-            .iter()
-            .enumerate()
-            .map(|(id, s)| Block {
-                id,
-                text: s.block.text.clone(),
-            })
-            .collect()
-    }
-
-    pub fn ai_translate_estimate(
-        &self,
-        id: u64,
-        scope: &Scope,
-        language: &str,
-    ) -> Result<EstimateView, AppError> {
-        let blocks = Self::as_blocks(&self.translation_sources(id, scope)?);
-        Ok(self.ai_service()?.estimate_translation(
-            &self.settings.get().ai,
-            &blocks,
-            language,
-            &day_of(now()),
-        ))
-    }
-
-    /// Traduit la portée (bloquant) puis, sauf en texte seul, pose la
-    /// traduction sur le document en une opération.
-    #[allow(clippy::too_many_arguments)]
-    pub fn ai_translate(
-        &self,
-        id: u64,
-        scope: &Scope,
-        language: &str,
-        mode: TranslationMode,
-        run: (u64, CancelFlag),
-        consent: bool,
-        on_event: &mut dyn FnMut(AiEvent),
-    ) -> Result<TranslationResult, AppError> {
-        let sources = self.translation_sources(id, scope)?;
-        let settings = self.settings.get().ai;
-        let answer = self.ai_service()?.translate(
-            &settings,
-            &Self::as_blocks(&sources),
-            language,
-            &day_of(now()),
-            run,
-            consent,
-            on_event,
-        )?;
-        let translated: Vec<(SourceBlock, String)> = answer
-            .blocks
-            .iter()
-            .filter_map(|b| Some((sources.get(b.id)?.clone(), b.text.clone())))
-            .collect();
-        let missing = sources
-            .iter()
-            .filter(|s| !s.block.text.trim().is_empty())
-            .count()
-            .saturating_sub(translated.len());
-        let text = translation_text(&translated);
-        let applied = match mode {
-            TranslationMode::Text => None,
-            _ if translated.is_empty() => None,
-            _ => Some(self.viewer.apply_translation(
-                id,
-                mode,
-                &translated,
-                settings.translation.min_size,
-            )?),
-        };
-        Ok(TranslationResult {
-            text,
-            cost: answer.cost,
-            currency: answer.currency,
-            model: answer.model,
-            fallback_used: answer.fallback_used,
-            applied,
-            missing,
-        })
     }
 
     /// Recettes rangées dans `data_dir/recipes`.
@@ -351,9 +213,11 @@ mod tests {
 
     use super::*;
     use crate::ai::UsageStore;
+    use crate::app::AcceptedRewrite;
     use crate::fake::{FakeEngine, SIMPLE_PDF};
     use crate::recent::RecentFiles;
     use crate::settings_store::SettingsStore;
+    use crate::viewer::translation::TranslationMode;
 
     /// Trousseau vide : le serveur local n'a pas besoin de clé.
     struct NoSecrets;
@@ -484,6 +348,53 @@ mod tests {
             sent[0].2.contains("Bonjour PdfEditor"),
             "les lignes partent"
         );
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn rewrite_proposes_changed_lines_and_applies_only_accepted_ones() {
+        let reply = r#"{"choices":[{"message":{"content":"[{\"id\":0,\"text\":\"Bonjour cher PdfEditor\"}]"}}]}"#;
+        let (app, transport, id, dir) = app("rewrite", &[reply]);
+        let scope = Scope::Pages { pages: vec![0] };
+        assert!(
+            app.ai_rewrite_estimate(id, &scope, "  ").is_err(),
+            "consigne vide"
+        );
+        let start = app.ai_start().unwrap();
+        let result = app
+            .ai_rewrite(id, &scope, "plus chaleureux", start, true, &mut |_| {})
+            .unwrap();
+        assert_eq!(result.proposals.len(), 1);
+        let proposal = &result.proposals[0];
+        assert_eq!(
+            (proposal.before.as_str(), proposal.after.as_str()),
+            ("Bonjour PdfEditor", "Bonjour cher PdfEditor")
+        );
+        // Rien n'est posé avant l'accord.
+        assert!(app.viewer.edit_view(id).unwrap().elements.is_empty());
+        let body = &transport.sent.lock().unwrap()[0].2;
+        assert!(
+            body.contains("Demande de l'utilisateur : plus chaleureux"),
+            "{body}"
+        );
+
+        let accepted = AcceptedRewrite {
+            page: proposal.page,
+            objects: proposal.objects.clone(),
+            before: proposal.before.clone(),
+            text: proposal.after.clone(),
+        };
+        // Ligne qui a changé depuis : refusée.
+        let stale = AcceptedRewrite {
+            before: "autre texte".into(),
+            ..accepted.clone()
+        };
+        assert!(app.ai_rewrite_apply(id, &[stale]).is_err());
+        let placed = app.ai_rewrite_apply(id, &[accepted]).unwrap();
+        assert_eq!(placed.blocks, 1);
+        assert_eq!(app.viewer.edit_view(id).unwrap().elements.len(), 1);
+        app.viewer.undo(id).unwrap();
+        assert!(app.viewer.edit_view(id).unwrap().elements.is_empty());
         let _ = std::fs::remove_dir_all(dir);
     }
 

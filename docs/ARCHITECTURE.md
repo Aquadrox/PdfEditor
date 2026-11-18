@@ -344,6 +344,12 @@ Portée (sélection | pages | tout)
   et la traduction va sur les copies.
 - **Modification** : même format ; seules les propositions sur des blocs
   existants de la portée sont acceptées ; affichage en différences.
+  `pde-ai::translate` porte les deux tâches (`BlockTask::Translate` et
+  `BlockTask::Rewrite` : seule la consigne change, la demande de
+  l'utilisateur vient après le document). `app::blocks` rend les lignes
+  changées (avant, après, objets, cadre) sans rien poser ; les lignes
+  acceptées reviennent avec leur texte d'origine, revérifié avant la pose
+  (une ligne changée depuis est refusée), puis posées comme une traduction.
 - **Sécurité** : le document est une donnée (`<document>…</document>`),
   balises désamorcées dans le texte (repris de VoiceToText), réponse hors
   format rejetée ; aucun envoi sans fournisseur configuré et, au-delà du

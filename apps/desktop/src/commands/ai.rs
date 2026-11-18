@@ -7,11 +7,11 @@ use std::sync::Arc;
 use pde_ai::tasks::Task;
 use pde_app::actions::assistant::Proposal;
 use pde_app::ai::{AiStatus, EstimateView, Scope, TestView};
-use pde_app::app::App;
+use pde_app::app::{AcceptedRewrite, App};
 use pde_app::error::{AppError, ErrorKind};
 use pde_app::recipes::RecipeView;
 use pde_app::viewer::PagesView;
-use pde_app::viewer::translation::TranslationMode;
+use pde_app::viewer::translation::{TranslatedView, TranslationMode};
 use pde_core::recipe::Recipe;
 use pde_core::settings::Provider;
 use pde_core::usage::UsageSummary;
@@ -225,4 +225,58 @@ pub fn ai_translate_start(
         );
     });
     Ok(number)
+}
+
+/// Estimation d'une modification par consigne (IA-09).
+#[tauri::command(async)]
+pub fn ai_rewrite_estimate(
+    app: AppState<'_>,
+    id: u64,
+    scope: Scope,
+    instruction: String,
+) -> Result<EstimateView, AppError> {
+    app.ai_rewrite_estimate(id, &scope, &instruction)
+}
+
+/// Lance une modification ; propositions par `ai-done`, rien n'est posé.
+#[tauri::command(async)]
+pub fn ai_rewrite_start(
+    handle: AppHandle,
+    id: u64,
+    scope: Scope,
+    instruction: String,
+    consent: bool,
+) -> Result<u64, AppError> {
+    let app = handle.state::<Arc<App>>().inner().clone();
+    let run = app.ai_start()?;
+    let number = run.0;
+    tauri::async_runtime::spawn_blocking(move || {
+        let result = app.ai_rewrite(id, &scope, &instruction, run, consent, &mut |event| {
+            let _ = handle.emit(
+                "ai-event",
+                EventPayload {
+                    run: number,
+                    data: event,
+                },
+            );
+        });
+        let _ = handle.emit(
+            "ai-done",
+            EventPayload {
+                run: number,
+                data: result,
+            },
+        );
+    });
+    Ok(number)
+}
+
+/// Pose les modifications acceptées, en une opération.
+#[tauri::command(async)]
+pub fn ai_rewrite_apply(
+    app: AppState<'_>,
+    id: u64,
+    accepted: Vec<AcceptedRewrite>,
+) -> Result<TranslatedView, AppError> {
+    app.ai_rewrite_apply(id, &accepted)
 }

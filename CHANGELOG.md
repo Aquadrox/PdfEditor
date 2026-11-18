@@ -4,6 +4,13 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.26 — 2026-11-18
+
+- Modifier le texte avec l'IA : en mode IA, choisissez « Modifier » et donnez une consigne (« corrige les fautes », « plus formel », « mets à jour les dates ») ; chaque ligne changée est proposée en différences, encadrée sur la page.
+- Cochez les lignes à garder, puis « Appliquer » : rien n'est modifié sans votre accord, et une seule annulation (Ctrl+Z) défait l'ensemble.
+- Nouveau bouton « Anonymiser » : l'IA repère les données personnelles (noms, coordonnées, IBAN…) et propose de les caviarder, en aperçu.
+- Traduire, modifier le texte avec l'IA et anonymiser se trouvent aussi par la palette de commandes (Ctrl+K).
+
 ## 0.0.25 — 2026-11-18
 
 - Traduction par l'IA vers la langue de votre choix, sur une sélection, des pages ou tout le document : chaque ligne est remplacée à sa place, avec sa police quand c'est possible.

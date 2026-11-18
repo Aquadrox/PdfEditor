@@ -266,3 +266,20 @@
 .ai-translate-note {
   margin: var(--space-1) 0 0;
 }
+
+/* Modification par consigne (IA-09) : différences mot à mot. */
+.ai-diff del {
+  background: var(--danger-soft);
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+.ai-diff ins {
+  background: var(--ai-soft);
+  color: var(--ai);
+  text-decoration: none;
+}
+
+.ai-preview.rewrite {
+  border-style: dotted;
+}

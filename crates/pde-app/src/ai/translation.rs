@@ -1,8 +1,8 @@
-//! Traduction vue du service IA (IA-06 à IA-08) : estimation, accord et
-//! plafond comme pour les autres actions, glossaire des réglages, profil de
-//! secours. Seules des longueurs et des durées vont au journal.
+//! Travail par blocs vu du service IA : traduction (IA-06 à IA-08) et
+//! modification par consigne (IA-09) ; estimation, accord et plafond comme
+//! pour les autres actions, profil de secours. Seules des longueurs et des durées vont au journal.
 
-use pde_ai::translate::{self, Block};
+use pde_ai::translate::{self, Block, BlockTask};
 use pde_core::ai::{AiError, CancelFlag};
 use pde_core::settings::{Ai, Provider};
 
@@ -25,14 +25,13 @@ impl AiService {
         &self,
         ai: &Ai,
         blocks: &[Block],
-        language: &str,
+        task: &BlockTask,
         today: &str,
     ) -> EstimateView {
         let provider = &ai.provider;
         let e = translate::estimate(
             blocks,
-            language,
-            &ai.translation.glossary_entries(),
+            task,
             provider.max_input_tokens as usize,
             &provider.pricing,
         );
@@ -51,14 +50,14 @@ impl AiService {
         &self,
         ai: &Ai,
         blocks: &[Block],
-        language: &str,
+        task: &BlockTask,
         today: &str,
         run: (u64, CancelFlag),
         consent: bool,
         on_event: &mut dyn FnMut(AiEvent),
     ) -> Result<TranslationAnswer, AppError> {
         let (id, cancel) = run;
-        let result = self.translate_inner(ai, blocks, language, today, &cancel, consent, on_event);
+        let result = self.translate_inner(ai, blocks, task, today, &cancel, consent, on_event);
         lock(&self.runs).remove(&id);
         result
     }
@@ -68,23 +67,21 @@ impl AiService {
         &self,
         ai: &Ai,
         blocks: &[Block],
-        language: &str,
+        task: &BlockTask,
         today: &str,
         cancel: &CancelFlag,
         consent: bool,
         on_event: &mut dyn FnMut(AiEvent),
     ) -> Result<TranslationAnswer, AppError> {
-        let estimate = self.estimate_translation(ai, blocks, language, today);
+        let estimate = self.estimate_translation(ai, blocks, task, today);
         self.check_send(ai, &estimate, consent)?;
         let started = std::time::Instant::now();
-        let glossary = ai.translation.glossary_entries();
         let attempt = |provider: &Provider, on_event: &mut dyn FnMut(AiEvent)| {
             let model = self.model(provider);
-            let translated = translate::translate(
+            let translated = translate::run(
                 model.as_ref(),
                 blocks,
-                language,
-                &glossary,
+                task,
                 provider.max_input_tokens as usize,
                 &mut |done, total| on_event(AiEvent::Reading { done, total }),
                 cancel,
@@ -106,7 +103,7 @@ impl AiService {
         let (translated, model, pricing) = result.map_err(ai_error)?;
         self.usage.record(today, &translated.usage, &pricing);
         log::info!(
-            "traduction terminée : {} blocs, {} caractères envoyés, {} ms",
+            "travail par blocs terminé : {} blocs rendus, {} caractères envoyés, {} ms",
             translated.blocks.len(),
             estimate.characters,
             started.elapsed().as_millis()
