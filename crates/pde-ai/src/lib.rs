@@ -13,6 +13,7 @@ pub mod http;
 pub mod sanitize;
 pub mod stream;
 pub mod tasks;
+pub mod translate;
 pub mod transport;
 
 #[cfg(any(test, feature = "testing"))]

@@ -9,6 +9,7 @@ mod images;
 mod import;
 mod original_text;
 mod pages;
+pub mod translation;
 
 pub use existing::PageImageView;
 pub use form::{FieldView, WidgetView};

@@ -52,6 +52,11 @@
       "entities": "",
       "risks": "",
       "question": ""
+    },
+    "translation": {
+      "language": "anglais",
+      "min_size": 6.0,
+      "glossary": ""
     }
   },
   "shortcuts": {

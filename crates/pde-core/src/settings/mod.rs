@@ -8,6 +8,7 @@ mod ai;
 mod edit;
 mod shortcuts;
 mod signature;
+mod translation;
 
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +18,7 @@ pub use shortcuts::{Action, Shortcuts, normalize as normalize_shortcut};
 pub use signature::{
     DEFAULT_TIMESTAMP_URL, DefaultLock, Signature, check_url as check_timestamp_url,
 };
+pub use translation::{GlossaryEntry, MIN_SIZE_RANGE, Translation};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

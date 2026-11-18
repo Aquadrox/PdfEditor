@@ -8,6 +8,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 mod ai;
 
+pub use ai::TranslationResult;
+
 use pde_core::engine::PdfEngine;
 use pde_core::settings::Settings;
 

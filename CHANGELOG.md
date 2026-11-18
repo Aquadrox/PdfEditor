@@ -4,6 +4,13 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.25 — 2026-11-18
+
+- Traduction par l'IA vers la langue de votre choix, sur une sélection, des pages ou tout le document : chaque ligne est remplacée à sa place, avec sa police quand c'est possible.
+- Trois modes : remplacer le texte (« Enregistrer sous » garde l'original), document bilingue (chaque page suivie de sa traduction) ou texte seul dans le panneau.
+- Une traduction plus longue que l'original est réduite jusqu'à un corps minimal réglable ; les lignes qui restent trop longues, ou que le modèle n'a pas rendues, sont signalées. Annuler (Ctrl+Z) défait toute la traduction.
+- Glossaire dans les Réglages (rubrique IA) : imposez la traduction d'un terme, ou gardez-le tel quel.
+
 ## 0.0.24 — 2026-11-18
 
 - Recettes de l'assistant : une consigne enregistrée avec les seules actions qu'elle peut proposer ; en mode IA, en « Action », choisissez-en une et envoyez, avec ou sans précisions.

@@ -53,6 +53,29 @@ impl EmbeddedFont {
             .map(|bbox| f64::from(bbox.y_max) / units)
             .unwrap_or_else(|| f64::from(metrics.ascent) / units)
     }
+
+    /// Largeur du texte en points, au corps `size` (caractère absent : la
+    /// largeur d'un « n »). Sert à ajuster le corps d'un texte traduit.
+    pub fn text_width(&self, text: &str, size: f64) -> f64 {
+        let Some(font) = &self.font else {
+            return text.chars().count() as f64 * size * 0.55;
+        };
+        let metrics = font.glyph_metrics(Size::unscaled(), LocationRef::default());
+        let units = f64::from(
+            font.metrics(Size::unscaled(), LocationRef::default())
+                .units_per_em,
+        );
+        let charmap = font.charmap();
+        let advance = |c: char| {
+            charmap
+                .map(c)
+                .and_then(|id| metrics.advance_width(id))
+                .map(f64::from)
+        };
+        let fallback = advance('n').unwrap_or(units * 0.55);
+        let total: f64 = text.chars().map(|c| advance(c).unwrap_or(fallback)).sum();
+        total / units * size
+    }
 }
 
 macro_rules! font {
@@ -136,6 +159,19 @@ mod tests {
     use super::*;
 
     const ALL: [StandardFont; 3] = [StandardFont::Sans, StandardFont::Serif, StandardFont::Mono];
+
+    #[test]
+    fn text_width_grows_with_text_and_size() {
+        let font = embedded(StandardFont::Sans, false, false);
+        let short = font.text_width("Bonjour", 10.0);
+        assert!(short > 20.0 && short < 50.0, "{short}");
+        assert!(font.text_width("Bonjour le monde", 10.0) > short);
+        assert!((font.text_width("Bonjour", 20.0) - 2.0 * short).abs() < 1e-9);
+        assert!(
+            font.text_width("你好", 10.0) > 0.0,
+            "caractère absent : largeur de repli"
+        );
+    }
 
     #[test]
     fn every_bundled_font_parses_and_has_sensible_metrics() {

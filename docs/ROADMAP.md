@@ -91,11 +91,13 @@ Première livraison : v0.0.21 (socle, réglages, analyse et questions) ; v0.0.22
 - ✅ Assistant d'actions (IA-15) : portée (sélection, pages, document) + demande → appel d'outils de l'API compatible OpenAI (`tools`, réponses en flux réassemblées) → propositions vérifiées (outil permis, arguments, pages dans la portée, texte trouvé dans le document) → aperçu en pointillés sur les pages, cases à cocher, Appliquer / Refuser → une seule opération de l'historique (`Edits::grouped`), tout ou rien. Outils : caviarder, surligner / souligner / barrer, note, pivoter, supprimer des pages ; le modèle désigne du texte, jamais des coordonnées. Masquer (aplat) n'est pas encore proposé : l'assistant le dit et propose de caviarder. Modèle sans outils (HTTP 400/404/422) : redemande sans, explication, bouton « Comment faire ? »
 - ✅ Recettes intégrées et personnelles (IA-16) : fichier TOML (nom, description, consigne, actions permises, portée proposée) vérifié par `pde-core::recipe` ; trois intégrées en lecture seule (Anonymiser selon le RGPD, Préparer pour signature, Relire les montants), personnelles dans `recipes/` du dossier de données ; créer, dupliquer, modifier, supprimer, importer et exporter (rubrique « Recettes » des Réglages) ; choisie en mode IA (« Action »), la recette précède la demande (facultative) et limite les outils offerts au modèle comme les propositions acceptées
 
-## v0.6 — IA : traduction
+## v0.6 — IA : traduction ✅
 
-- ⬜ Traduction par blocs, mise en page conservée, ajustement de la taille (IA-06)
-- ⬜ Modes : document traduit, bilingue, texte seul (IA-07)
-- ⬜ Glossaires (IA-08)
+Livraison : v0.0.25.
+
+- ✅ Traduction par blocs, mise en page conservée, ajustement de la taille (IA-06) : chaque ligne de texte d'origine (blocs de E-05) part avec son numéro, par lots sous la limite de jetons ; réponse JSON stricte `[{id, text}]` vérifiée (numéros connus, une ligne) ; la traduction remplace le bloc dans son cadre (`OriginalText`, police d'origine si elle sait l'écrire), corps réduit d'après la largeur mesurée (polices Noto) jusqu'au corps minimal réglable, débordements et lignes non rendues signalés ; une seule opération de l'historique
+- ✅ Modes (IA-07) : remplacer le texte (« Enregistrer sous » garde l'original), bilingue (chaque page suivie de sa copie traduite), texte seul dans le panneau
+- ✅ Glossaire (IA-08) : rubrique IA des Réglages, « terme = traduction » ou « terme » seul (à ne pas traduire), ajouté à la consigne
 
 ## v0.7 — IA : modification
 
