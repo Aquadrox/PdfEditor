@@ -22,6 +22,11 @@
     "default_dir": "",
     "copy_suffix": " (modifié)"
   },
+  "signature": {
+    "timestamp": false,
+    "timestamp_url": "http://timestamp.digicert.com",
+    "default_lock": "none"
+  },
   "shortcuts": {
     "open": "Ctrl+O",
     "close": "Ctrl+W",

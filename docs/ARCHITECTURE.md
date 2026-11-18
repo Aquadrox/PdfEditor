@@ -43,7 +43,7 @@ adaptateur (il passe par un trait de `pde-core`) ; seul `apps/desktop` connaît 
 | `pde-core` | Géométrie, unités, modèle du document (pages, blocs de texte, éléments), opérations d'édition, historique annuler / rétablir, réglages (TOML + validation), traits `PdfEngine`, `DataProtector`, plus tard `ChatModel`, `Clock` | `serde`, `toml`, `thiserror` | v0.0 |
 | `pde-pdf` | Moteur PDF : ouverture, rendu, extraction du texte avec positions, application des opérations, formulaires et propriétés, enregistrement complet ou incrémental | `pdfium-render` (PDFium), `lopdf` (structure du formulaire, valeurs, dictionnaire d'information) | v0.1 |
 | `pde-fonts` | Polices Noto embarquées (Sans, Serif, Sans Mono : latin étendu, grec, cyrillique ; OFL), caractères couverts, métriques | `skrifa` | v0.2 |
-| `pde-sign` | Signature PAdES, vérification, identités (PKCS#12, auto-signé), DocMDP (plus tard FieldMDP, horodatage RFC 3161), écriture incrémentale ; ni PDFium ni système | `lopdf`, RustCrypto (`cms`, `x509-cert`, `rsa`, `p256`, `p384`, `sha2`), `p12-keystore` | v0.4 |
+| `pde-sign` | Signature PAdES, vérification, identités (PKCS#12, auto-signé), DocMDP (plus tard FieldMDP, horodatage RFC 3161), écriture incrémentale ; ni PDFium ni système | `lopdf`, RustCrypto (`cms`, `x509-cert`, `x509-tsp`, `rsa`, `p256`, `p384`, `sha2`), `p12-keystore` | v0.4 |
 | `pde-workflow` | Cycle de signature : plan, machine à états, manifeste embarqué, journal d'audit chaîné | `pde-core`, `serde_json`, `sha2` | v0.8 |
 | `pde-ai` | Client LLM compatible OpenAI (repris de VoiceToText), profils, prompts, découpage du document, tâches analyse / traduction / modification, coûts | `ureq`, `serde_json` | v0.5 |
 | `pde-platform` | Dossiers de l'application, protection des données par le système (`DataProtector`) : DPAPI de Windows ; sous Linux, chiffrement authentifié (ChaCha20-Poly1305) avec une clé gardée dans le trousseau Secret Service ; plus tard le trousseau pour les clés API | `windows`, `secret-service`, `chacha20poly1305` | v0.1 |
@@ -248,10 +248,48 @@ journaux (`PrivateKey` n'affiche que son algorithme). Le mot de passe d'un
 PKCS#12 ne sert qu'à l'import. Les tests génèrent leurs clés et certificats
 à l'exécution (aucun dans le dépôt).
 
-Limites connues : modifier puis enregistrer un document signé le réécrit
-entièrement et invalide ses signatures (l'enregistrement incrémental, F-03,
-est la prochaine étape) ; un document protégé par mot de passe ne peut pas
-encore être signé.
+Apparence manuscrite (S-03) : l'interface dessine la signature (tracé,
+nom dans une police manuscrite, image importée dont le papier clair devient
+transparent) sur un canevas, la détoure et l'envoie en PNG ; `pde-app`
+la décode (taille bornée), `pde-sign` la pose en image PDF (`DeviceRGB` et
+`/SMask`, compressée) au-dessus des lignes de texte. Les modèles (« Mes
+signatures ») sont des PNG dans `signatures/` du dossier de données.
+
+Horodatage (S-08) : après la signature, l'empreinte SHA-256 de la valeur
+de signature part vers le serveur (`TimeStampReq` avec nonce, `x509-tsp`) ;
+le jeton reçu est vérifié (empreinte, nonce, signature CMS du serveur) puis
+ajouté en attribut non signé `timeStampToken`. Le transport est un trait
+de `pde-sign` (`TimestampAuthority`) ; `pde-app` fournit le client HTTP
+(`ureq` sans TLS : le jeton est signé, et rien de C à compiler pour
+Android). La signature se fait hors du verrou des documents : l'appel réseau
+ne fige pas l'affichage.
+
+Enregistrer un document signé (F-03, `pde-sign::append_revision`) : PDFium
+réécrit tout le document en gardant les numéros d'objets ; on compare
+chaque objet au fichier signé **sur le fond** (ordre des clés, écriture des
+nombres et des chaînes, compression des flux ignorés) et seuls les objets
+changés ou nouveaux sont ajoutés en mise à jour incrémentale à la suite du
+fichier signé (racine et `/Info` du document réécrit). Les dictionnaires de
+signature ne sont jamais réécrits. `pde-app` refuse d'écrire si une
+signature valide cessait de l'être, ou si le fichier a changé sur le disque.
+
+Modifications après une signature (`pde-sign::changes`) : la révision
+signée (les octets jusqu'à la fin de `/ByteRange`) est relue et comparée
+au document, sur le fond. Chaque objet changé est classé : champ dont seuls
+`/V`, `/AS`, `/AP` changent (remplissage), signature, annotation, page dont
+le contenu ou les attributs changent, arbre des pages, `/Info`, autre ; le
+formulaire et le catalogue ne sont que des conteneurs. Le résultat est
+confronté à la certification (DocMDP) : `/P 2` permet remplissage et
+signatures, `/P 1` rien.
+
+Documents protégés : `lopdf` déchiffre avec le mot de passe ; chaque objet
+ajouté est chiffré avec la clé du document (chaînes en hexadécimal), sauf
+le `/Contents` des signatures (ISO 32000-1, 7.6.2), et le `trailer` reprend
+`/Encrypt` et le premier `/ID` (dont dépend la clé). Le CMS est lu
+directement dans les octets du fichier, jamais chiffrés.
+
+Limite connue : la confiance dans l'émetteur d'un certificat n'est pas
+vérifiée (S-09 / S-10).
 
 ## Cycle de signature
 

@@ -3,7 +3,7 @@
 
 import { byId, el } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
-import { details, sealLabel } from "./sign-state.js";
+import { concern, details, documentLock, sealLabel } from "./sign-state.js";
 
 const ICONS = { valid: "i-check", invalid: "i-alert", unsupported: "i-alert", empty: "i-frame" };
 
@@ -20,6 +20,7 @@ function icon(name) {
 /** Liste du panneau ; `onField` : signer un champ vide, `onPage` : aller à la page. */
 export function renderPanel(signatures, { onField, onPage }) {
   byId("signatures-empty").hidden = signatures.length > 0;
+  const lock = documentLock(signatures);
   byId("signatures-list").replaceChildren(
     ...signatures.map((signature) => {
       const title = signature.state === "empty" ? signature.name : (signature.signer ?? signature.name);
@@ -30,10 +31,13 @@ export function renderPanel(signatures, { onField, onPage }) {
       } else if (signature.page !== null && signature.page !== undefined) {
         actions.push(el("button", { class: "btn ghost small", type: "button", onclick: () => onPage(signature.page) }, t("sig.goTo")));
       }
+      // Valide, mais suivie d'une modification à vérifier ou interdite.
+      const worry = signature.state === "valid" ? concern(signature, lock) : "none";
+      const iconName = worry === "none" ? ICONS[signature.state] ?? "i-alert" : "i-alert";
       return el(
         "li",
-        { class: `sig-item ${signature.state}` },
-        el("span", { class: "sig-icon" }, icon(ICONS[signature.state] ?? "i-alert")),
+        { class: `sig-item ${signature.state} concern-${worry}` },
+        el("span", { class: "sig-icon" }, icon(iconName)),
         el("div", { class: "sig-text" }, el("strong", { class: "sig-name" }, title), el("span", { class: "sig-state" }, t(`sig.state.${signature.state}`)), ...lines, ...actions),
       );
     }),

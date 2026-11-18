@@ -2,7 +2,7 @@
 
 use pde_app::edit_view::SavedView;
 use pde_app::error::{AppError, ErrorKind};
-use pde_app::signing::{IdentityView, SignRequest, SignatureView};
+use pde_app::signing::{DrawingView, IdentityView, SignRequest, SignatureView};
 use pde_sign::Subject;
 use serde::Deserialize;
 use tauri::{AppHandle, Manager};
@@ -65,6 +65,23 @@ pub fn pick_certificate(handle: AppHandle) -> Result<Option<String>, AppError> {
     path.into_path()
         .map(|p| Some(p.display().to_string()))
         .map_err(|e| AppError::new(ErrorKind::Io, e.to_string()))
+}
+
+/// Signatures manuscrites enregistrées (« Mes signatures »).
+#[tauri::command(async)]
+pub fn signature_drawings(app: AppState<'_>) -> Vec<DrawingView> {
+    app.drawings()
+}
+
+/// Enregistre une signature manuscrite (PNG en base64).
+#[tauri::command(async)]
+pub fn save_signature_drawing(app: AppState<'_>, png: String) -> Result<DrawingView, AppError> {
+    app.save_drawing(&png)
+}
+
+#[tauri::command(async)]
+pub fn delete_signature_drawing(app: AppState<'_>, id: String) -> Result<(), AppError> {
+    app.delete_drawing(&id)
 }
 
 /// Champs de signature du document (origine en haut).

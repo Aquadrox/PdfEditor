@@ -4,6 +4,17 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.20 — 2026-11-18
+
+- Un document signé s'enregistre sans perdre ses signatures : vos modifications sont ajoutées à la suite, et le panneau Signatures indique que le document a été complété depuis.
+- Signature manuscrite : dessinez-la à la souris ou au stylet, tapez votre nom dans une écriture manuscrite, ou importez la photo de votre signature (le papier blanc devient transparent).
+- « Mes signatures » garde vos signatures manuscrites pour les réutiliser d'un clic.
+- Horodatage : un serveur d'horodatage atteste l'heure de la signature (seule une empreinte lui est envoyée) ; l'heure attestée apparaît dans le panneau Signatures.
+- Nouvelle rubrique Signature dans les Réglages : horodatage par défaut, serveur d'horodatage, verrouillage proposé.
+- Un document verrouillé « sauf formulaires et signatures » ne laisse plus que remplir ses champs et le signer.
+- Le panneau Signatures dit ce qui a changé depuis chaque signature (champs remplis, nouvelle signature, annotations, contenu des pages…) et signale ce que le verrouillage du document interdisait.
+- Les documents protégés par mot de passe se signent aussi ; ils restent protégés.
+
 ## 0.0.19 — 2026-11-18
 
 - Nouveau mode Signer : signez vos PDF avec une signature numérique reconnue par les autres lecteurs (Acrobat, navigateurs…).

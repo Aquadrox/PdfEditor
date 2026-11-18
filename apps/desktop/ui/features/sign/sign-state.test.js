@@ -28,10 +28,23 @@ test("Sceau : aucun, valide, partiel, invalide, verrouillé", () => {
   assert.deepEqual(sealLabel(summary([valid({ lock: "all" })])), ["seal.locked", {}]);
 });
 
-test("Signature suivie d'une modification : à vérifier, sauf certification qui la permet", () => {
+test("Signature suivie d'une modification : à vérifier, sauf ce que la certification attend", () => {
   assert.equal(summary([valid({ modified_after: true })]).tone, "warn");
-  // Une seconde signature après une certification « formulaires » est attendue.
-  assert.equal(summary([valid({ modified_after: true, lock: "forms" }), valid()]).tone, "valid");
+  assert.equal(summary([valid({ modified_after: true, changes: ["page_content"] })]).tone, "warn");
+  // Une seconde signature, ou des champs remplis sous un verrou « formulaires » : attendu.
+  assert.equal(summary([valid({ modified_after: true, changes: ["signature"] }), valid()]).tone, "valid");
+  assert.equal(summary([valid({ modified_after: true, lock: "forms", changes: ["form_fill", "signature"] }), valid()]).tone, "valid");
+  // Interdit par le verrouillage : le sceau le dit.
+  const forbidden = summary([valid({ modified_after: true, lock: "forms", changes: ["page_content"], changes_permitted: false })]);
+  assert.equal(forbidden.tone, "invalid");
+  assert.deepEqual(sealLabel(forbidden), ["seal.invalid", {}]);
+});
+
+test("Ce qui a changé depuis la signature, en mots", () => {
+  const added = details(valid({ modified_after: true, changes: ["form_fill", "signature"] }));
+  assert.deepEqual(added[1], ["sig.changes", { list: "remplissage du formulaire, nouvelle signature" }]);
+  const forbidden = details(valid({ modified_after: true, changes: ["page_content"], changes_permitted: false }));
+  assert.deepEqual(forbidden[1], ["sig.changesForbidden", { list: "contenu des pages" }]);
 });
 
 test("Verrouillage : seule une certification valide compte", () => {
@@ -52,6 +65,14 @@ test("Détails du panneau : page, état, motif, certificat", () => {
   const broken = details({ ...valid(), state: "invalid", problem: "le document a été modifié après la signature" });
   assert.deepEqual(broken[1], ["sig.problem", { problem: "le document a été modifié après la signature" }]);
   assert.equal(broken.length, 2);
+});
+
+test("Horodatage : heure et serveur, ou raison du refus", () => {
+  const stamped = details(valid({ timestamp: { time: 1795003200, authority: "DigiCert", problem: null } }));
+  assert.equal(stamped[1][0], "sig.timestamp");
+  assert.equal(stamped[1][1].authority, "DigiCert");
+  const broken = details(valid({ timestamp: { time: null, authority: null, problem: "autre signature" } }));
+  assert.deepEqual(broken[1], ["sig.timestampInvalid", { problem: "autre signature" }]);
 });
 
 test("Apparence : nom, organisation, date en français", () => {

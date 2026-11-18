@@ -1,7 +1,8 @@
 //! Signer un PDF (S-05, S-06) : préparer la mise à jour incrémentale avec un
 //! trou pour le CMS, calculer l'empreinte de tout le reste, signer, remplir.
 
-use crate::cms;
+use crate::appearance::Appearance;
+use crate::cms::{self, TimestampAuthority};
 use crate::error::{Result, SignError};
 use crate::identity::Identity;
 use crate::pdf::date;
@@ -13,12 +14,13 @@ pub use crate::pdf::prepare::Target;
 pub use crate::pdf::sig_dict::Lock;
 
 /// Marge du CMS au-delà des certificats : signature (RSA 4096 = 512
-/// octets), attributs signés et structure. Place pour l'horodatage (S-08)
-/// à prévoir ici.
+/// octets), attributs signés et structure.
 const CMS_OVERHEAD: usize = 3 * 1024;
+/// Place d'un jeton d'horodatage (CMS du serveur, avec sa chaîne de certificats).
+const TIMESTAMP_RESERVE: usize = 16 * 1024;
 
 /// Ce que demande l'utilisateur.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SignOptions<'a> {
     pub identity: &'a Identity,
     pub target: Target,
@@ -29,17 +31,26 @@ pub struct SignOptions<'a> {
     pub lock: Lock,
     /// Instant de la signature, secondes depuis 1970 (UTC).
     pub time: u64,
-    /// Lignes affichées dans le cadre d'une signature visible.
-    pub appearance: Vec<String>,
+    /// Ce qu'affiche le cadre d'une signature visible.
+    pub appearance: Appearance,
+    /// Serveur d'horodatage (PAdES B-T), ou aucun.
+    pub timestamp: Option<&'a dyn TimestampAuthority>,
+    /// Mot de passe d'un document protégé.
+    pub password: Option<&'a str>,
 }
 
 /// Le PDF signé : `pdf` inchangé suivi de la mise à jour qui porte la signature.
 pub fn sign(pdf: &[u8], options: &SignOptions<'_>) -> Result<Vec<u8>> {
-    let source = Source::load(pdf)?;
+    let source = Source::load(pdf, options.password)?;
     let identity = options.identity;
     let info = identity.info()?;
     let date = date::format(options.time);
-    let capacity = capacity_for(identity)?;
+    let reserve = if options.timestamp.is_some() {
+        TIMESTAMP_RESERVE
+    } else {
+        0
+    };
+    let capacity = capacity_for(identity)? + reserve;
     let request = Request {
         target: &options.target,
         details: Details {
@@ -54,7 +65,9 @@ pub fn sign(pdf: &[u8], options: &SignOptions<'_>) -> Result<Vec<u8>> {
     };
     let prepared = prepare::prepare(&source, &request, capacity)?;
     let trailer = source.trailer(crate::rng::bytes::<16>()?)?;
-    let written = prepared.update.write(pdf, &trailer, source.xref_style())?;
+    let written = prepared
+        .update
+        .write(pdf, &trailer, source.xref_style(), source.encryption())?;
     let base = *written
         .bodies
         .get(&prepared.sig_id)
@@ -76,7 +89,7 @@ pub fn sign(pdf: &[u8], options: &SignOptions<'_>) -> Result<Vec<u8>> {
         .key()
         .digest_algorithm()
         .digest(&[&bytes[..open], &bytes[close..]]);
-    let signature = cms::sign_detached(identity, &digest)?;
+    let signature = cms::sign_detached(identity, &digest, options.timestamp)?;
     if signature.len() > prepared.sig.capacity {
         return Err(SignError::TooLarge);
     }

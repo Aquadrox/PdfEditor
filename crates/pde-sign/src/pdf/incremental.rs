@@ -8,7 +8,7 @@
 
 use std::collections::BTreeMap;
 
-use lopdf::{Dictionary, Object, ObjectId, Writer};
+use lopdf::{Dictionary, EncryptionState, Object, ObjectId, Writer};
 
 use crate::error::Result;
 
@@ -37,6 +37,8 @@ pub(crate) struct Trailer {
     pub info: Option<ObjectId>,
     /// Identifiant du fichier : le premier reste, le second change.
     pub id: Option<(Vec<u8>, Vec<u8>)>,
+    /// Dictionnaire de chiffrement d'un document protégé (inchangé).
+    pub encrypt: Option<ObjectId>,
 }
 
 /// Objets de la mise à jour, dans l'ordre d'écriture.
@@ -59,7 +61,15 @@ impl Update {
     }
 
     /// Ajoute la mise à jour à `source`.
-    pub fn write(self, source: &[u8], trailer: &Trailer, style: XrefStyle) -> Result<Written> {
+    /// Ajoute la mise à jour à `source` ; les objets sont chiffrés avec
+    /// `encryption` si le document est protégé.
+    pub fn write(
+        self,
+        source: &[u8],
+        trailer: &Trailer,
+        style: XrefStyle,
+        encryption: Option<&EncryptionState>,
+    ) -> Result<Written> {
         let mut out = Vec::with_capacity(source.len() + 16 * 1024);
         out.extend_from_slice(source);
         if !matches!(source.last(), Some(b'\n' | b'\r')) {
@@ -73,7 +83,10 @@ impl Update {
             out.extend_from_slice(format!("{} {} obj\n", id.0, id.1).as_bytes());
             bodies.insert(*id, out.len());
             match body {
-                Body::Object(object) => Writer::write_object(&mut out, object)?,
+                Body::Object(object) => {
+                    let object = super::source::encrypt(encryption, *id, object.clone())?;
+                    Writer::write_object(&mut out, &object)?;
+                }
                 Body::Raw(bytes) => out.extend_from_slice(bytes),
             }
             out.extend_from_slice(b"\nendobj\n");
@@ -102,6 +115,9 @@ fn trailer_dictionary(trailer: &Trailer, size: u32) -> Dictionary {
                 Object::String(second.clone(), lopdf::StringFormat::Hexadecimal),
             ],
         );
+    }
+    if let Some(encrypt) = trailer.encrypt {
+        dictionary.set("Encrypt", encrypt);
     }
     dictionary.set("Prev", trailer.prev as i64);
     dictionary

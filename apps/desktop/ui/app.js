@@ -88,7 +88,8 @@ const sign = new SignMode(viewer, {
 });
 
 function applyLock(info) {
-  if (info.lock === "all" && (mode === "edit" || mode === "pages")) setMode("read");
+  if (info.lock && (mode === "edit" || mode === "pages")) setMode("read");
+  form.flattenAllowed = !info.lock;
   form.setActive(mode === "read" && info.lock !== "all");
 }
 
@@ -255,6 +256,7 @@ function applySettings(saved) {
   viewer.defaultZoom = saved.display.default_zoom;
   shortcuts = keymap(saved.shortcuts);
   edit.applySettings(saved.edit);
+  sign.applySettings(saved.signature);
   for (const kbd of document.querySelectorAll("kbd[data-shortcut]")) {
     kbd.textContent = shortcutLabel(saved.shortcuts[kbd.dataset.shortcut] ?? "");
   }

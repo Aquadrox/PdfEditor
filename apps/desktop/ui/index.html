@@ -409,6 +409,7 @@
           <button class="nav-item" data-section="shortcuts" data-i18n="settings.shortcuts"></button>
           <button class="nav-item" data-section="edit" data-i18n="settings.edit"></button>
           <button class="nav-item" data-section="files" data-i18n="settings.files"></button>
+          <button class="nav-item" data-section="signature" data-i18n="settings.signature"></button>
           <button class="nav-item" data-section="diagnostic" data-i18n="settings.diagnostic"></button>
         </nav>
         <div class="settings-content">
@@ -515,6 +516,26 @@
             <div class="field">
               <label for="set-copy-suffix"><span data-i18n="settings.copySuffix"></span><span class="hint" data-i18n="settings.copySuffix.hint"></span></label>
               <input id="set-copy-suffix" class="input" type="text" maxlength="40" data-setting="files.copy_suffix" />
+            </div>
+          </section>
+
+          <section class="settings-section" data-section="signature" hidden>
+            <h2 class="settings-section-title" data-i18n="settings.signature"></h2>
+            <div class="field">
+              <label for="set-default-lock"><span data-i18n="settings.defaultLock"></span><span class="hint" data-i18n="settings.defaultLock.hint"></span></label>
+              <select id="set-default-lock" class="input" data-setting="signature.default_lock">
+                <option value="none" data-i18n="sign.lock.none"></option>
+                <option value="forms" data-i18n="sign.lock.forms"></option>
+                <option value="all" data-i18n="sign.lock.all"></option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="set-timestamp"><span data-i18n="settings.timestamp"></span><span class="hint" data-i18n="settings.timestamp.hint"></span></label>
+              <input id="set-timestamp" class="switch" type="checkbox" role="switch" data-setting="signature.timestamp" />
+            </div>
+            <div class="field">
+              <label for="set-timestamp-url"><span data-i18n="settings.timestampUrl"></span><span class="hint" data-i18n="settings.timestampUrl.hint"></span></label>
+              <input id="set-timestamp-url" class="input" type="url" maxlength="300" spellcheck="false" data-setting="signature.timestamp_url" />
             </div>
           </section>
 
@@ -645,6 +666,33 @@
             <label><span data-i18n="sign.reason"></span><input id="sign-reason" class="input" maxlength="200" data-i18n-placeholder="sign.reasonPlaceholder" /></label>
             <label><span data-i18n="sign.location"></span><input id="sign-location" class="input" maxlength="200" /></label>
           </div>
+          <section id="sign-appearance" class="sign-appearance" aria-labelledby="sign-appearance-title" hidden>
+            <span id="sign-appearance-title" class="caption" data-i18n="sign.appearance"></span>
+            <div class="segmented appearance-tabs">
+              <button class="btn ghost" type="button" data-appearance="draw" data-i18n="sign.appearance.draw"></button>
+              <button class="btn ghost" type="button" data-appearance="type" data-i18n="sign.appearance.type"></button>
+              <button class="btn ghost" type="button" data-appearance="import" data-i18n="sign.appearance.import"></button>
+              <button class="btn ghost" type="button" data-appearance="saved" data-i18n="sign.appearance.saved"></button>
+              <button class="btn ghost" type="button" data-appearance="text" data-i18n="sign.appearance.text"></button>
+            </div>
+            <div id="sign-type-row" class="row2" hidden>
+              <input id="sign-typed" class="input" maxlength="80" data-i18n-aria="sign.appearance.typed" />
+              <select id="sign-typed-font" class="input" data-i18n-aria="sign.appearance.font">
+                <option value="Caveat">Caveat</option>
+                <option value="Dancing Script">Dancing Script</option>
+                <option value="Homemade Apple">Homemade Apple</option>
+              </select>
+            </div>
+            <div id="sign-import-row" hidden>
+              <input id="sign-import-file" class="input" type="file" accept="image/png,image/jpeg,image/webp" data-i18n-aria="sign.appearance.import" />
+            </div>
+            <div id="sign-saved-list" class="sign-saved" hidden></div>
+            <div id="sign-pad-wrap" class="sign-pad-wrap">
+              <canvas id="sign-pad" class="sign-pad" width="960" height="300" data-i18n-aria="sign.appearance.pad"></canvas>
+              <button id="sign-pad-clear" class="btn ghost small sign-pad-clear" type="button" data-i18n="sign.appearance.clear"></button>
+            </div>
+            <label id="sign-keep-row" class="inline checkbox"><input id="sign-keep" type="checkbox" /><span data-i18n="sign.appearance.keep"></span></label>
+          </section>
           <fieldset class="lock-choices">
             <legend data-i18n="sign.after"></legend>
             <label class="radio-card"><input type="radio" name="sign-lock" value="none" checked /><span><strong data-i18n="sign.lock.none"></strong><span class="caption" data-i18n="sign.lock.noneHint"></span></span></label>
@@ -652,6 +700,7 @@
             <label class="radio-card"><input type="radio" name="sign-lock" value="all" /><span><strong data-i18n="sign.lock.all"></strong><span class="caption" data-i18n="sign.lock.allHint"></span></span></label>
             <p id="sign-lock-note" class="caption" data-i18n="sign.lock.alreadySigned" hidden></p>
           </fieldset>
+          <label class="inline checkbox timestamp-row"><input id="sign-timestamp" type="checkbox" /><span id="sign-timestamp-label"></span></label>
           <p id="sign-unsaved" class="notice" data-i18n="sign.unsavedNote" hidden></p>
           <p id="sign-error" class="dialog-error" role="alert" hidden></p>
         </div>

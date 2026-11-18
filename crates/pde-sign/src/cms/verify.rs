@@ -27,6 +27,8 @@ pub(crate) struct CmsVerified {
     pub certificate: Vec<u8>,
     /// Heure de signature déclarée dans le CMS, si présente.
     pub signing_time: Option<u64>,
+    /// Jeton d'horodatage joint : vérifié, ou la raison de son refus.
+    pub timestamp: Option<std::result::Result<super::TokenCheck, String>>,
 }
 
 /// Pourquoi la signature n'est pas valable.
@@ -111,7 +113,20 @@ pub(crate) fn verify_detached(der: &[u8], content: &[&[u8]]) -> Outcome<CmsVerif
         &prehash,
         signer.signature.as_bytes(),
     )?;
+    let timestamp = signer
+        .unsigned_attrs
+        .iter()
+        .flat_map(|set| set.iter())
+        .find(|attribute| attribute.oid == oids::TIMESTAMP_TOKEN)
+        .and_then(|attribute| attribute.values.iter().next())
+        .map(|token| {
+            token
+                .to_der()
+                .map_err(|e| e.to_string())
+                .and_then(|der| super::timestamp::check_token(&der, signer.signature.as_bytes()))
+        });
     Ok(CmsVerified {
+        timestamp,
         certificate: certificate_der,
         signing_time,
     })
@@ -259,7 +274,7 @@ mod tests {
 
     fn signed(identity: &Identity, content: &[u8]) -> Vec<u8> {
         let digest = identity.key().digest_algorithm().digest(&[content]);
-        sign_detached(identity, &digest).unwrap()
+        sign_detached(identity, &digest, None).unwrap()
     }
 
     #[test]

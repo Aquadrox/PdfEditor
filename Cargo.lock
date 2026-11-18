@@ -722,6 +722,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c9ea0ac24bc397ab3c98583a3c9ba74fa56b09a4449bbe172b9b1ddb016027a"
 
 [[package]]
+name = "cmpv2"
+version = "0.3.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f1447c225395762423ec0a0c319a2ecdba87256baf4a9d9648cb220c0fc2736"
+dependencies = [
+ "crmf",
+ "der",
+ "spki",
+ "x509-cert",
+]
+
+[[package]]
 name = "cms"
 version = "0.3.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -884,6 +896,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b929dd2a135771f40afabd1073f85eed59c800b7c61901e5c254270497dad64"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "crmf"
+version = "0.3.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "691ea00e3a867032ecfaadf82040e2c204ea007e9845eb2f723ddfb31808ba57"
+dependencies = [
+ "cms",
+ "der",
+ "spki",
+ "x509-cert",
 ]
 
 [[package]]
@@ -3475,8 +3499,9 @@ dependencies = [
 
 [[package]]
 name = "pde-app"
-version = "0.0.19"
+version = "0.0.20"
 dependencies = [
+ "base64 0.23.1",
  "image",
  "log",
  "pde-core",
@@ -3487,12 +3512,13 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "thiserror 2.0.21",
+ "ureq",
  "zeroize",
 ]
 
 [[package]]
 name = "pde-core"
-version = "0.0.19"
+version = "0.0.20"
 dependencies = [
  "serde",
  "serde_json",
@@ -3503,7 +3529,7 @@ dependencies = [
 
 [[package]]
 name = "pde-fonts"
-version = "0.0.19"
+version = "0.0.20"
 dependencies = [
  "pde-core",
  "sha2 0.10.9",
@@ -3512,7 +3538,7 @@ dependencies = [
 
 [[package]]
 name = "pde-pdf"
-version = "0.0.19"
+version = "0.0.20"
 dependencies = [
  "image",
  "lopdf",
@@ -3524,7 +3550,7 @@ dependencies = [
 
 [[package]]
 name = "pde-platform"
-version = "0.0.19"
+version = "0.0.20"
 dependencies = [
  "chacha20poly1305",
  "dirs 6.0.0",
@@ -3536,7 +3562,7 @@ dependencies = [
 
 [[package]]
 name = "pde-sign"
-version = "0.0.19"
+version = "0.0.20"
 dependencies = [
  "cms",
  "const-oid",
@@ -3546,6 +3572,7 @@ dependencies = [
  "p12-keystore",
  "p256",
  "p384",
+ "pde-sign",
  "pkcs8",
  "rsa",
  "sha2 0.11.1",
@@ -3553,12 +3580,13 @@ dependencies = [
  "spki",
  "thiserror 2.0.21",
  "x509-cert",
+ "x509-tsp",
  "zeroize",
 ]
 
 [[package]]
 name = "pdfeditor"
-version = "0.0.19"
+version = "0.0.20"
 dependencies = [
  "log",
  "pde-app",
@@ -5988,6 +6016,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
+name = "ureq"
+version = "3.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ac5cecf619ca81f66a96482db09687c9f7465af65f4300a8c30cca05bd5a59d"
+dependencies = [
+ "base64 0.23.1",
+ "log",
+ "percent-encoding",
+ "ureq-proto",
+ "utf8-zero",
+]
+
+[[package]]
+name = "ureq-proto"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "622dce33c252115466d83f63e9744a18f12b4406aae51a01c15ad8fcf1185eb3"
+dependencies = [
+ "base64 0.23.1",
+ "http",
+ "httparse",
+ "log",
+]
+
+[[package]]
 name = "url"
 version = "2.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6020,6 +6073,12 @@ checksum = "0b62a1e85e12d5d712bf47a85f426b73d303e2d00a90de5f3004df3596e9d216"
 dependencies = [
  "byteorder",
 ]
+
+[[package]]
+name = "utf8-zero"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8c0a043c9540bae7c578c88f91dda8bd82e59ae27c21baca69c8b191aaf5a6e"
 
 [[package]]
 name = "utf8_iter"
@@ -6797,6 +6856,18 @@ dependencies = [
  "rusticata-macros",
  "thiserror 2.0.21",
  "time",
+]
+
+[[package]]
+name = "x509-tsp"
+version = "0.2.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a37a884245847754119708e7716365a6cf94bb227b9c7892303184b143463da1"
+dependencies = [
+ "cmpv2",
+ "cms",
+ "der",
+ "x509-cert",
 ]
 
 [[package]]

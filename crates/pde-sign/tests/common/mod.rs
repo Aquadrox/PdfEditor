@@ -102,6 +102,13 @@ pub fn form_fixture() -> Vec<u8> {
     std::fs::read(fixtures_dir().join("form.pdf")).expect("form.pdf")
 }
 
+/// PDF chiffré en AES-256 de pde-pdf, et son mot de passe de test.
+pub fn encrypted_fixture() -> Vec<u8> {
+    std::fs::read(fixtures_dir().join("encrypted.pdf")).expect("encrypted.pdf")
+}
+
+pub const TEST_PASSWORD: &str = "mot-de-passe-de-test";
+
 pub fn simple_fixture() -> Vec<u8> {
     std::fs::read(fixtures_dir().join("simple.pdf")).expect("simple.pdf")
 }
@@ -131,22 +138,37 @@ fn tool_available(tool: &str) -> bool {
 
 /// Sortie de `pdfsig` (Poppler), ou `None` s'il n'est pas installé.
 pub fn pdfsig(name: &str, bytes: &[u8]) -> Option<String> {
+    pdfsig_with(name, bytes, &[])
+}
+
+/// `pdfsig` avec des options (`-upw mot-de-passe`).
+pub fn pdfsig_with(name: &str, bytes: &[u8], options: &[&str]) -> Option<String> {
     if !tool_available("pdfsig") {
         return None;
     }
     let path = write_temp(name, bytes);
-    let output = Command::new("pdfsig").arg(&path).output().expect("pdfsig");
+    let output = Command::new("pdfsig")
+        .args(options)
+        .arg(&path)
+        .output()
+        .expect("pdfsig");
     let _ = std::fs::remove_file(&path);
     Some(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
 /// `qpdf --check` accepte le fichier (code 0, ou 3 = avertissements seulement).
 pub fn assert_qpdf_accepts(name: &str, bytes: &[u8]) {
+    assert_qpdf_accepts_with(name, bytes, &[]);
+}
+
+/// `qpdf --check` avec des options (`--password=…`).
+pub fn assert_qpdf_accepts_with(name: &str, bytes: &[u8], options: &[&str]) {
     if !tool_available("qpdf") {
         return;
     }
     let path = write_temp(name, bytes);
     let output = Command::new("qpdf")
+        .args(options)
         .arg("--check")
         .arg(&path)
         .output()

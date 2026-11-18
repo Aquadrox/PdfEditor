@@ -7,6 +7,8 @@ publish.workspace = true
 license.workspace = true
 
 [dependencies]
+# Images de signature manuscrite envoyées par l'interface (PNG en base64).
+base64 = "0.23"
 # Images ajoutées aux documents (E-02) : PNG, JPEG, WebP, en Rust pur.
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 log = "0.4"
@@ -22,8 +24,15 @@ serde.workspace = true
 sha2 = "0.10"
 serde_json = "1"
 thiserror.workspace = true
+# Serveur d'horodatage (RFC 3161) en HTTP : sans TLS, donc sans code C à
+# compiler (Android) ; le jeton rendu est signé par le serveur.
+ureq = { version = "3", default-features = false }
 # Clé privée effacée de la mémoire après usage.
 zeroize = "1"
+
+[dev-dependencies]
+# Serveur d'horodatage simulé pour les tests de signature.
+pde-sign = { path = "../pde-sign", features = ["testing"] }
 
 [lints]
 workspace = true

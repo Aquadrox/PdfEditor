@@ -24,6 +24,8 @@ export class FormLayer {
     this.doc = null;
     this.fields = [];
     this.active = false;
+    /** Aplatir est refusé sur un document verrouillé par sa signature. */
+    this.flattenAllowed = true;
     session.subscribe(() => this.refresh());
     byId("menu-flatten").addEventListener("click", () => this.flatten());
   }
@@ -51,7 +53,7 @@ export class FormLayer {
   }
 
   refresh() {
-    byId("menu-flatten").disabled = !this.doc || !this.usable;
+    byId("menu-flatten").disabled = !this.doc || !this.usable || !this.flattenAllowed;
     this.viewer.frames.forEach((frame, index) => {
       if (frame.querySelector("img")) this.render(frame, index);
     });

@@ -27,11 +27,21 @@ rsa = { version = "0.10", features = ["pkcs1v15"] }
 sha2 = { version = "0.11", features = ["oid"] }
 signature = "3"
 pkcs8 = { version = "0.11", features = ["alloc"] }
+# Horodatage RFC 3161 : requêtes, réponses, jetons (S-08).
+x509-tsp = "0.2.0-rc.0"
 # Certificats PKCS#12 (.p12 / .pfx) importés.
 p12-keystore = "0.4"
 # Aléa du système (numéros de série, clés).
 getrandom = { version = "0.4", features = ["sys_rng"] }
 zeroize = "1"
+
+[dev-dependencies]
+# Les tests d'intégration utilisent le serveur d'horodatage simulé.
+pde-sign = { path = ".", features = ["testing"] }
+
+[features]
+# Serveur d'horodatage simulé (LocalTimestampAuthority), pour les tests.
+testing = []
 
 [lints]
 workspace = true
