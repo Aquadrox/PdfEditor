@@ -334,7 +334,14 @@ Portée (sélection | pages | tout)
   réponse sont vérifiées (page existante) avant d'être affichées comme liens.
 - **Traduction** : par blocs, réponse JSON `{id, texte}` ; chaque bloc traduit
   remplace l'original dans son rectangle, police réduite jusqu'à un minimum
-  réglable, débordement signalé à l'utilisateur.
+  réglable, débordement signalé à l'utilisateur. Les blocs sont les lignes
+  de texte d'origine de E-05 (`viewer::translation::source_blocks`) ; le
+  lot, la consigne (langue, glossaire) et la lecture stricte de la réponse
+  sont dans `pde-ai::translate` ; le corps est ajusté d'après la largeur
+  mesurée avec la police Noto du style (`pde-fonts`), une marge de 2 %
+  couvrant l'écart avec la police d'origine. La pose est une opération
+  groupée (`Edits::grouped`) ; en bilingue, les pages sont d'abord dupliquées
+  et la traduction va sur les copies.
 - **Modification** : même format ; seules les propositions sur des blocs
   existants de la portée sont acceptées ; affichage en différences.
 - **Sécurité** : le document est une donnée (`<document>…</document>`),

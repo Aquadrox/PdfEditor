@@ -29,6 +29,7 @@ export class AiMode {
     /** Recettes de l'assistant (IA-16), et celle choisie. */
     this.recipes = [];
     byId("ai-recipe").addEventListener("change", () => this.recipeChosen());
+    byId("ai-translate").addEventListener("click", () => this.translate());
     for (const button of document.querySelectorAll("[data-ask]")) {
       button.addEventListener("click", () => this.setAskMode(button.dataset.ask));
     }
@@ -84,7 +85,7 @@ export class AiMode {
     const configured = Boolean(status?.configured);
     byId("ai-unconfigured").hidden = configured;
     byId("ai-provider").textContent = configured ? status.label : "";
-    for (const button of document.querySelectorAll("[data-task], #ai-send")) button.disabled = !configured || !this.doc;
+    for (const button of document.querySelectorAll("[data-task], #ai-send, #ai-translate")) button.disabled = !configured || !this.doc;
   }
 
   captureSelection() {
@@ -113,6 +114,53 @@ export class AiMode {
     field.setAttribute("aria-label", t(mode === "assist" ? "assistant.request" : "ai.question"));
     byId("ai-send").textContent = t(mode === "assist" ? "assistant.propose" : "ai.send");
     field.focus();
+  }
+
+  /** Langue proposée (réglage), si l'utilisateur n'en a pas déjà saisi une. */
+  setLanguage(language) {
+    const field = byId("ai-language");
+    if (!field.value.trim()) field.value = language;
+  }
+
+  /** Traduction de la portée (IA-06, IA-07) : estimation, accord, envoi. */
+  async translate() {
+    const scope = this.request();
+    const language = byId("ai-language").value.trim();
+    if (!this.doc || !scope) return toast(t("ai.scope.invalid"), "error");
+    if (!language) return toast(t("translate.noLanguage"), "error");
+    const mode = byId("ai-translate-mode").value;
+    let estimate;
+    try {
+      estimate = await invoke("ai_translate_estimate", { id: this.doc.id, scope, language });
+    } catch (error) {
+      return toast(t("ai.failed", { message: error?.message ?? String(error) }), "error");
+    }
+    if (estimate.over_cap) return toast(t("ai.overCap", { month: money(estimate.month_cost, estimate.currency) }), "error");
+    if (estimate.needs_confirmation && !(await this.confirm(estimate, scope))) return;
+    const task = { kind: "translate", question: t("translate.title", { language }), mode };
+    const entry = this.entry(task, scope);
+    entry.task = task;
+    try {
+      const run = await invoke("ai_translate_start", { id: this.doc.id, scope, language, mode, consent: true });
+      entry.run = run;
+      this.runs.set(run, entry);
+      entry.cancel.onclick = () => invoke("ai_cancel", { run }).catch(() => {});
+    } catch (error) {
+      this.finish(entry, { Err: error });
+    }
+  }
+
+  /** Traduction terminée : posée sur le document (sauf texte seul), et ce qu'il faut vérifier. */
+  async translated(entry, result) {
+    const notes = [];
+    if (result.applied) {
+      await this.hooks.applied(result.applied.pages);
+      notes.push(t("translate.placed", { blocks: result.applied.blocks }));
+      if (entry.task.mode === "replace") notes.push(t("translate.replaced"));
+      if (result.applied.overflowing) notes.push(t("translate.overflowing", { count: result.applied.overflowing }));
+    }
+    if (result.missing) notes.push(t("translate.missing", { count: result.missing }));
+    for (const note of notes) entry.item.append(el("p", { class: "caption ai-translate-note", role: "status" }, note));
   }
 
   /** Recettes à jour (Réglages) : la liste du choix est refaite. */
@@ -287,6 +335,7 @@ export class AiMode {
       this.render(entry);
       const fallback = result.Ok.fallback_used ? ` · ${t("ai.fallbackUsed")}` : "";
       entry.status.textContent = `${result.Ok.model} · ${money(result.Ok.cost, result.Ok.currency)}${fallback}`;
+      if (entry.task?.kind === "translate") this.translated(entry, result.Ok);
       if (entry.task?.kind === "assist") {
         this.assistant.show(entry, result.Ok, { id: this.doc.id, scope: entry.scope, request: entry.task.question });
       }

@@ -4,6 +4,7 @@
 //! consommation. Jamais de texte du document ni de question dans les
 //! journaux : seulement des longueurs et des durées.
 
+mod translation;
 mod usage_store;
 
 use std::collections::HashMap;
@@ -18,6 +19,7 @@ use pde_core::settings::{Ai, Provider};
 use pde_core::usage::UsageSummary;
 use serde::{Deserialize, Serialize};
 
+pub use translation::TranslationAnswer;
 pub use usage_store::UsageStore;
 
 pub use crate::viewer::assistant::ProposalView;
@@ -194,23 +196,75 @@ impl AiService {
     pub fn estimate(&self, ai: &Ai, pages: &[PageText], task: &Task, today: &str) -> EstimateView {
         let provider = &ai.provider;
         let plan = Plan::new(pages, provider.max_input_tokens as usize);
-        let estimate = tasks::estimate(&plan, task, &ai.prompts, &provider.pricing);
+        let e = tasks::estimate(&plan, task, &ai.prompts, &provider.pricing);
+        self.estimate_view(
+            ai,
+            (e.requests, e.input_tokens, e.output_tokens),
+            e.cost,
+            e.characters,
+            today,
+        )
+    }
+
+    /// Estimation montrée : coût, confirmation demandée ou non, plafond.
+    /// `counts` : requêtes, jetons envoyés, jetons reçus au plus.
+    pub(crate) fn estimate_view(
+        &self,
+        ai: &Ai,
+        counts: (usize, u64, u64),
+        cost: f64,
+        characters: usize,
+        today: &str,
+    ) -> EstimateView {
+        let provider = &ai.provider;
         let host = provider.host().unwrap_or_default();
         let month_cost = self.usage.summary(today).month.cost;
         EstimateView {
-            requests: estimate.requests,
-            input_tokens: estimate.input_tokens,
-            output_tokens: estimate.output_tokens,
-            cost: estimate.cost,
+            requests: counts.0,
+            input_tokens: counts.1,
+            output_tokens: counts.2,
+            cost,
             currency: provider.pricing.currency.clone(),
-            characters: estimate.characters,
+            characters,
             needs_confirmation: ai.confirm_each_send
-                || estimate.cost > ai.confirm_above
+                || cost > ai.confirm_above
                 || (!provider.is_local() && !self.usage.consented(&host)),
-            over_cap: ai.monthly_cap > 0.0 && month_cost + estimate.cost > ai.monthly_cap,
+            over_cap: ai.monthly_cap > 0.0 && month_cost + cost > ai.monthly_cap,
             month_cost,
             host,
         }
+    }
+
+    /// Envoi permis : fournisseur configuré, plafond respecté, accord donné
+    /// s'il est demandé (gardé ensuite pour ce fournisseur).
+    pub(crate) fn check_send(
+        &self,
+        ai: &Ai,
+        estimate: &EstimateView,
+        consent: bool,
+    ) -> Result<(), AppError> {
+        if !ai.provider.is_configured() {
+            return Err(AppError::new(
+                ErrorKind::Ai,
+                "aucun fournisseur d'IA : choisissez-en un dans les Réglages (rubrique IA)",
+            ));
+        }
+        if estimate.over_cap {
+            return Err(AppError::new(
+                ErrorKind::Ai,
+                format!(
+                    "plafond mensuel de {:.2} {} atteint : envoi refusé",
+                    ai.monthly_cap, estimate.currency
+                ),
+            ));
+        }
+        if estimate.needs_confirmation && !consent {
+            return Err(AppError::new(ErrorKind::Ai, "envoi non confirmé"));
+        }
+        if consent && !ai.provider.is_local() {
+            self.usage.consent(&estimate.host);
+        }
+        Ok(())
     }
 
     /// Nouvelle action, annulable par [`AiService::cancel`].
@@ -277,28 +331,8 @@ impl AiService {
         consent: bool,
         on_event: &mut dyn FnMut(AiEvent),
     ) -> Result<AnswerView, AppError> {
-        if !ai.provider.is_configured() {
-            return Err(AppError::new(
-                ErrorKind::Ai,
-                "aucun fournisseur d'IA : choisissez-en un dans les Réglages (rubrique IA)",
-            ));
-        }
         let estimate = self.estimate(ai, pages, task, today);
-        if estimate.over_cap {
-            return Err(AppError::new(
-                ErrorKind::Ai,
-                format!(
-                    "plafond mensuel de {:.2} {} atteint : envoi refusé",
-                    ai.monthly_cap, estimate.currency
-                ),
-            ));
-        }
-        if estimate.needs_confirmation && !consent {
-            return Err(AppError::new(ErrorKind::Ai, "envoi non confirmé"));
-        }
-        if consent && !ai.provider.is_local() {
-            self.usage.consent(&estimate.host);
-        }
+        self.check_send(ai, &estimate, consent)?;
         let started = std::time::Instant::now();
         // Assistant d'actions : les actions qu'il peut proposer, en outils.
         let tools = match task {

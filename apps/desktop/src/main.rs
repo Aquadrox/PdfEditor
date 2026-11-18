@@ -133,6 +133,8 @@ fn main() {
             commands::ai::ai_start,
             commands::ai::ai_cancel,
             commands::ai::assistant_apply,
+            commands::ai::ai_translate_estimate,
+            commands::ai::ai_translate_start,
             commands::ai::recipes_list,
             commands::ai::recipe_save,
             commands::ai::recipe_delete,

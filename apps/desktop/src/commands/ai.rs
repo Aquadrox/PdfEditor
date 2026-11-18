@@ -11,6 +11,7 @@ use pde_app::app::App;
 use pde_app::error::{AppError, ErrorKind};
 use pde_app::recipes::RecipeView;
 use pde_app::viewer::PagesView;
+use pde_app::viewer::translation::TranslationMode;
 use pde_core::recipe::Recipe;
 use pde_core::settings::Provider;
 use pde_core::usage::UsageSummary;
@@ -179,4 +180,49 @@ pub fn recipe_export(handle: AppHandle, id: String, name: String) -> Result<bool
         .map_err(|e| AppError::new(ErrorKind::Io, e.to_string()))?;
     handle.state::<Arc<App>>().recipe_export(&id, &path)?;
     Ok(true)
+}
+
+/// Estimation d'une traduction (IA-06), avant tout envoi.
+#[tauri::command(async)]
+pub fn ai_translate_estimate(
+    app: AppState<'_>,
+    id: u64,
+    scope: Scope,
+    language: String,
+) -> Result<EstimateView, AppError> {
+    app.ai_translate_estimate(id, &scope, &language)
+}
+
+/// Lance une traduction ; avancement et résultat par `ai-event` / `ai-done`.
+#[tauri::command(async)]
+pub fn ai_translate_start(
+    handle: AppHandle,
+    id: u64,
+    scope: Scope,
+    language: String,
+    mode: TranslationMode,
+    consent: bool,
+) -> Result<u64, AppError> {
+    let app = handle.state::<Arc<App>>().inner().clone();
+    let run = app.ai_start()?;
+    let number = run.0;
+    tauri::async_runtime::spawn_blocking(move || {
+        let result = app.ai_translate(id, &scope, &language, mode, run, consent, &mut |event| {
+            let _ = handle.emit(
+                "ai-event",
+                EventPayload {
+                    run: number,
+                    data: event,
+                },
+            );
+        });
+        let _ = handle.emit(
+            "ai-done",
+            EventPayload {
+                run: number,
+                data: result,
+            },
+        );
+    });
+    Ok(number)
 }

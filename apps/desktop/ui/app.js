@@ -269,6 +269,7 @@ function applySettings(saved) {
   shortcuts = keymap(saved.shortcuts);
   edit.applySettings(saved.edit);
   sign.applySettings(saved.signature);
+  ai.setLanguage(saved.ai.translation.language);
   for (const kbd of document.querySelectorAll("kbd[data-shortcut]")) {
     kbd.textContent = shortcutLabel(saved.shortcuts[kbd.dataset.shortcut] ?? "");
   }

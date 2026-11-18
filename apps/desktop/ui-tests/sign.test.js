@@ -370,9 +370,13 @@ test("Modifié depuis la signature : ce qui a changé, et si le verrouillage l'i
   try {
     await page.locator("#seal-label", { hasText: "Signature à vérifier" }).waitFor();
     await page.click("#mode-sign");
-    const first = page.locator(".sig-item").first();
+    // Attendre l'état final de la liste : lue trop tôt sous charge, elle
+    // n'était pas encore complète (échec intermittent).
+    const first = page.locator(".sig-item.concern-invalid").first();
+    await first.waitFor();
     assert.match(await first.textContent(), /Modifié depuis, ce que son verrouillage interdit : contenu des pages, remplissage du formulaire/);
-    assert.match((await first.getAttribute("class")) ?? "", /concern-invalid/);
+    assert.equal(await page.locator(".sig-item").first().getAttribute("class"), await first.getAttribute("class"));
+    await page.locator(".sig-item", { hasText: "Document inchangé depuis" }).waitFor();
     assert.match(await page.locator(".sig-item").nth(1).textContent(), /Document inchangé depuis/);
   } finally {
     await app.close();

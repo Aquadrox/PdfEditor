@@ -3,6 +3,7 @@
 //! Les règles d'adresse viennent de VoiceToText : HTTPS obligatoire hors du
 //! réseau local, et la clé API ne part jamais en clair hors de ce PC.
 
+use super::translation::Translation;
 use serde::{Deserialize, Serialize};
 
 /// Prix par million de jetons, dans `currency`.
@@ -227,6 +228,8 @@ pub struct Ai {
     /// Confirmer avant chaque envoi, quel que soit le coût.
     pub confirm_each_send: bool,
     pub prompts: Prompts,
+    /// Traduction (IA-06 à IA-08).
+    pub translation: Translation,
 }
 
 impl Default for Ai {
@@ -239,6 +242,7 @@ impl Default for Ai {
             monthly_cap: 0.0,
             confirm_each_send: false,
             prompts: Prompts::default(),
+            translation: Translation::default(),
         }
     }
 }
@@ -282,6 +286,7 @@ impl Ai {
             valid
         });
         ai.profiles.truncate(MAX_PROFILES);
+        ai.translation = ai.translation.checked(warnings);
         for value in [&mut ai.confirm_above, &mut ai.monthly_cap] {
             if !value.is_finite() || *value < 0.0 {
                 warnings.push("ai : montants positifs attendus".into());
