@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="styles/form.css" />
     <link rel="stylesheet" href="styles/sign.css" />
     <link rel="stylesheet" href="styles/ai.css" />
+    <link rel="stylesheet" href="styles/palette.css" />
     <script type="module" src="app.js"></script>
   </head>
   <body>
@@ -90,6 +91,8 @@
           <button id="menu-close" role="menuitem" disabled><span data-i18n="menu.close"></span><kbd data-shortcut="close"></kbd></button>
           <button id="menu-properties" role="menuitem" disabled><span data-i18n="menu.properties"></span></button>
           <button id="menu-flatten" role="menuitem" disabled><span data-i18n="menu.flatten"></span></button>
+          <button id="menu-palette" role="menuitem"><span data-i18n="menu.palette"></span><kbd data-shortcut="palette"></kbd></button>
+          <button id="menu-how-to" role="menuitem"><span data-i18n="menu.howTo"></span><kbd data-shortcut="how_to"></kbd></button>
           <button id="menu-settings" role="menuitem"><span data-i18n="menu.settings"></span><kbd data-shortcut="settings"></kbd></button>
         </div>
         <span class="doc-title">
@@ -724,6 +727,16 @@
           <button class="btn primary" value="ok" data-i18n="password.submit"></button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="palette" class="palette" aria-labelledby="palette-title">
+      <div class="palette-body">
+        <h2 id="palette-title" class="palette-title"></h2>
+        <input id="palette-input" class="input" type="text" role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" autocomplete="off" spellcheck="false" data-i18n-label="palette.search" />
+        <ul id="palette-list" class="palette-list" role="listbox" data-i18n-aria="palette.results"></ul>
+        <p id="palette-empty" class="palette-empty" data-i18n="palette.empty" hidden></p>
+      </div>
+      <p id="palette-hint" class="palette-hint"></p>
     </dialog>
 
     <dialog id="redact-dialog" aria-labelledby="redact-title">

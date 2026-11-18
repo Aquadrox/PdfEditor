@@ -1,5 +1,6 @@
 //! Réglages, journaux et informations sur l'application.
 
+use pde_app::actions::{self, ActionInfo};
 use pde_app::error::{AppError, ErrorKind};
 use pde_app::settings_store::SettingsView;
 use pde_core::settings::Settings;
@@ -32,6 +33,12 @@ use crate::updates::UpdatesState;
 #[tauri::command(async)]
 pub fn get_settings(app: AppState<'_>) -> SettingsView {
     app.settings()
+}
+
+/// Catalogue des actions de l'éditeur (palette de commandes, « Comment faire ? »).
+#[tauri::command]
+pub fn action_catalog() -> Vec<ActionInfo> {
+    actions::catalog()
 }
 
 /// Réglages par défaut (bouton « Rétablir »).

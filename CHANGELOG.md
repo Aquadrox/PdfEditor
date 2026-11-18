@@ -4,6 +4,12 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.22 — 2026-11-18
+
+- Palette de commandes (Ctrl+K) : toutes les actions de l'éditeur par leur nom, avec leur raccourci ; Entrée exécute l'action, dans le bon mode.
+- « Comment faire ? » (F1) : décrivez ce que vous voulez faire, par exemple « tourner une page », et PdfEditor vous montre l'outil dans la barre, avec une explication.
+- Les deux sont aussi dans le menu, et leurs raccourcis se changent dans les Réglages.
+
 ## 0.0.21 — 2026-11-18
 
 - Nouveau mode IA : résumé, points clés, entités (personnes, dates, montants…) et risques et clauses d'un document, sur une sélection, des pages choisies ou tout le document.

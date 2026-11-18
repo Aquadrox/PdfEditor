@@ -22,10 +22,12 @@ pub enum Action {
     Redo,
     Save,
     SaveAs,
+    Palette,
+    HowTo,
 }
 
 impl Action {
-    pub const ALL: [Action; 13] = [
+    pub const ALL: [Action; 15] = [
         Action::Open,
         Action::Close,
         Action::Search,
@@ -39,6 +41,8 @@ impl Action {
         Action::Redo,
         Action::Save,
         Action::SaveAs,
+        Action::Palette,
+        Action::HowTo,
     ];
 
     pub fn default_shortcut(self) -> &'static str {
@@ -56,6 +60,8 @@ impl Action {
             Action::Redo => "Ctrl+Y",
             Action::Save => "Ctrl+S",
             Action::SaveAs => "Ctrl+Shift+S",
+            Action::Palette => "Ctrl+K",
+            Action::HowTo => "F1",
         }
     }
 }

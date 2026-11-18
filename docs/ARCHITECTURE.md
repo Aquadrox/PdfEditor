@@ -372,6 +372,13 @@ Sélection (page, zone, texte) + demande de l'utilisateur
   les outils de l'IA et le serveur MCP en sont tirés : rien à maintenir en
   double, et un test vérifie que chaque action a son explication, son schéma
   et son outil dans la barre.
+- **Palette** (v0.0.22) : l'interface reçoit le catalogue (`action_catalog`)
+  et le cherche elle-même (`features/palette`). Elle exécute une action par
+  son raccourci ou en actionnant son outil, après être passée dans son mode ;
+  « Comment faire ? » met l'outil en évidence sans rien exécuter. Le
+  catalogue est copié dans `ui-tests/fixtures/action-catalog.json` pour les
+  tests de l'interface, et un test de `pde-app` vérifie qu'ils sont
+  identiques.
 - **Pourquoi l'appel d'outils** : il est géré par la plupart des fournisseurs
   compatibles (OpenAI, DeepSeek, Mistral, GLM, OpenRouter, modèles locaux
   récents via Ollama) ; la réponse est structurée, donc vérifiable avant tout

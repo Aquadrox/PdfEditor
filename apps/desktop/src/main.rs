@@ -164,6 +164,7 @@ fn main() {
             commands::settings::get_settings,
             commands::settings::save_settings,
             commands::settings::default_settings,
+            commands::settings::action_catalog,
             commands::settings::pick_folder,
             commands::settings::open_logs_folder,
             commands::settings::app_info,

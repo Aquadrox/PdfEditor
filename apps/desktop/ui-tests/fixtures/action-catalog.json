@@ -1,0 +1,1197 @@
+[
+  {
+    "id": "open",
+    "group": "Fichier",
+    "title": "Ouvrir un PDF",
+    "help": "Ouvrir un fichier PDF depuis le disque ; vous pouvez aussi le déposer sur la fenêtre.",
+    "keywords": [
+      "fichier",
+      "charger",
+      "document"
+    ],
+    "mode": null,
+    "tool": "#menu-open",
+    "needs_document": false,
+    "shortcut": "open",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "save",
+    "group": "Fichier",
+    "title": "Enregistrer",
+    "help": "Enregistrer les modifications dans le fichier ouvert.",
+    "keywords": [
+      "sauvegarder",
+      "sauver"
+    ],
+    "mode": null,
+    "tool": "#menu-save",
+    "needs_document": true,
+    "shortcut": "save",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "save_as",
+    "group": "Fichier",
+    "title": "Enregistrer sous",
+    "help": "Enregistrer le document modifié dans un nouveau fichier ; l'original reste intact.",
+    "keywords": [
+      "copie",
+      "exporter",
+      "nouveau fichier"
+    ],
+    "mode": null,
+    "tool": "#menu-save-as",
+    "needs_document": true,
+    "shortcut": "save_as",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "close",
+    "group": "Fichier",
+    "title": "Fermer le document",
+    "help": "Fermer le document affiché ; PdfEditor propose d'enregistrer s'il a changé.",
+    "keywords": [],
+    "mode": null,
+    "tool": "#menu-close",
+    "needs_document": true,
+    "shortcut": "close",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "properties",
+    "group": "Fichier",
+    "title": "Propriétés du document",
+    "help": "Voir et modifier le titre, l'auteur, le sujet et les mots-clés du document.",
+    "keywords": [
+      "titre",
+      "auteur",
+      "métadonnées",
+      "informations"
+    ],
+    "mode": null,
+    "tool": "#menu-properties",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "flatten_form",
+    "group": "Fichier",
+    "title": "Aplatir le formulaire",
+    "help": "Figer les champs remplis dans la page : le formulaire n'est plus modifiable.",
+    "keywords": [
+      "formulaire",
+      "champs",
+      "figer"
+    ],
+    "mode": null,
+    "tool": "#menu-flatten",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "settings",
+    "group": "Fichier",
+    "title": "Réglages",
+    "help": "Ouvrir les réglages : thème, zoom, raccourcis, modifications, signature, IA.",
+    "keywords": [
+      "préférences",
+      "options",
+      "paramètres",
+      "raccourcis",
+      "thème"
+    ],
+    "mode": null,
+    "tool": "#menu-settings",
+    "needs_document": false,
+    "shortcut": "settings",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "mode_read",
+    "group": "Affichage",
+    "title": "Mode Lire",
+    "help": "Lire le document et remplir ses formulaires.",
+    "keywords": [
+      "lecture",
+      "formulaire",
+      "remplir"
+    ],
+    "mode": null,
+    "tool": "#mode-read",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "search",
+    "group": "Affichage",
+    "title": "Rechercher",
+    "help": "Chercher un mot ou une expression dans le document.",
+    "keywords": [
+      "trouver",
+      "chercher",
+      "texte"
+    ],
+    "mode": null,
+    "tool": "#search-button",
+    "needs_document": true,
+    "shortcut": "search",
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "query": {
+          "description": "Texte à chercher",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "go_to_page",
+    "group": "Affichage",
+    "title": "Aller à la page",
+    "help": "Afficher une page donnée : tapez son numéro dans la barre d'état.",
+    "keywords": [
+      "page",
+      "naviguer",
+      "numéro"
+    ],
+    "mode": null,
+    "tool": "#page-input",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "page": {
+          "description": "Numéro de la page, à partir de 1",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "page"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "zoom_in",
+    "group": "Affichage",
+    "title": "Zoom avant",
+    "help": "Agrandir l'affichage des pages.",
+    "keywords": [
+      "agrandir",
+      "grossir"
+    ],
+    "mode": null,
+    "tool": "#zoom-in",
+    "needs_document": true,
+    "shortcut": "zoom_in",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "zoom_out",
+    "group": "Affichage",
+    "title": "Zoom arrière",
+    "help": "Réduire l'affichage des pages.",
+    "keywords": [
+      "réduire",
+      "rapetisser"
+    ],
+    "mode": null,
+    "tool": "#zoom-out",
+    "needs_document": true,
+    "shortcut": "zoom_out",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "zoom_reset",
+    "group": "Affichage",
+    "title": "Taille réelle",
+    "help": "Afficher les pages à 100 %.",
+    "keywords": [
+      "100",
+      "zoom"
+    ],
+    "mode": null,
+    "tool": "#zoom-value",
+    "needs_document": true,
+    "shortcut": "zoom_reset",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "fit_page",
+    "group": "Affichage",
+    "title": "Page entière",
+    "help": "Ajuster le zoom pour voir la page entière.",
+    "keywords": [
+      "ajuster",
+      "zoom"
+    ],
+    "mode": null,
+    "tool": "#fit-page",
+    "needs_document": true,
+    "shortcut": "fit_page",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "fit_width",
+    "group": "Affichage",
+    "title": "Pleine largeur",
+    "help": "Ajuster le zoom à la largeur de la fenêtre.",
+    "keywords": [
+      "ajuster",
+      "zoom",
+      "largeur"
+    ],
+    "mode": null,
+    "tool": "#fit-width",
+    "needs_document": true,
+    "shortcut": "fit_width",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "show_thumbnails",
+    "group": "Affichage",
+    "title": "Miniatures des pages",
+    "help": "Afficher les miniatures des pages dans le volet de gauche.",
+    "keywords": [
+      "vignettes",
+      "aperçu",
+      "volet"
+    ],
+    "mode": null,
+    "tool": "#tab-pages",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "show_outline",
+    "group": "Affichage",
+    "title": "Plan du document",
+    "help": "Afficher le plan (signets) du document dans le volet de gauche.",
+    "keywords": [
+      "signets",
+      "sommaire",
+      "table des matières"
+    ],
+    "mode": null,
+    "tool": "#tab-outline",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "mode_edit",
+    "group": "Éditer",
+    "title": "Mode Éditer",
+    "help": "Ajouter du texte, des images, des annotations, ou caviarder.",
+    "keywords": [
+      "modifier",
+      "éditer"
+    ],
+    "mode": null,
+    "tool": "#mode-edit",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "undo",
+    "group": "Éditer",
+    "title": "Annuler",
+    "help": "Annuler la dernière modification.",
+    "keywords": [
+      "défaire",
+      "revenir"
+    ],
+    "mode": "edit",
+    "tool": "#edit-undo",
+    "needs_document": true,
+    "shortcut": "undo",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "redo",
+    "group": "Éditer",
+    "title": "Rétablir",
+    "help": "Refaire la modification annulée.",
+    "keywords": [
+      "refaire"
+    ],
+    "mode": "edit",
+    "tool": "#edit-redo",
+    "needs_document": true,
+    "shortcut": "redo",
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "add_text",
+    "group": "Éditer",
+    "title": "Ajouter du texte",
+    "help": "Écrire un nouveau texte sur la page : cliquez où il doit commencer.",
+    "keywords": [
+      "écrire",
+      "taper",
+      "zone de texte"
+    ],
+    "mode": "edit",
+    "tool": "#tool-text",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "edit_text",
+    "group": "Éditer",
+    "title": "Modifier le texte du document",
+    "help": "Corriger une ligne de texte existante : cliquez dessus et tapez.",
+    "keywords": [
+      "corriger",
+      "remplacer",
+      "faute",
+      "coquille"
+    ],
+    "mode": "edit",
+    "tool": "#tool-retext",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "add_image",
+    "group": "Éditer",
+    "title": "Ajouter une image",
+    "help": "Poser une image (PNG, JPEG, WebP) sur la page ; vous pouvez aussi la coller ou la déposer.",
+    "keywords": [
+      "photo",
+      "logo",
+      "tampon",
+      "insérer"
+    ],
+    "mode": "edit",
+    "tool": "#tool-image",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "highlight",
+    "group": "Éditer",
+    "title": "Surligner, souligner, barrer",
+    "help": "Marquer du texte : sélectionnez-le avec l'outil Surligner, puis choisissez surligner, souligner ou barrer.",
+    "keywords": [
+      "surligneur",
+      "fluo",
+      "souligner",
+      "barrer",
+      "marquer"
+    ],
+    "mode": "edit",
+    "tool": "#tool-markup",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "area": {
+          "additionalProperties": false,
+          "description": "Zone du texte à marquer, en points depuis le coin haut gauche de la page",
+          "properties": {
+            "height": {
+              "type": "number"
+            },
+            "width": {
+              "type": "number"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "type": "object"
+        },
+        "page": {
+          "description": "Numéro de la page, à partir de 1",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "style": {
+          "description": "Surligner, souligner ou barrer",
+          "enum": [
+            "highlight",
+            "underline",
+            "strike_out"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "area"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "draw",
+    "group": "Éditer",
+    "title": "Dessiner",
+    "help": "Dessiner à main levée sur la page.",
+    "keywords": [
+      "crayon",
+      "stylo",
+      "main levée",
+      "griffonner"
+    ],
+    "mode": "edit",
+    "tool": "#tool-ink",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "add_shape",
+    "group": "Éditer",
+    "title": "Rectangle, ellipse, flèche",
+    "help": "Tracer une forme ; un rectangle plein masque une zone, mais le contenu reste dans le fichier : pour le supprimer, caviardez.",
+    "keywords": [
+      "forme",
+      "cadre",
+      "flèche",
+      "trait",
+      "masquer",
+      "cacher",
+      "entourer"
+    ],
+    "mode": "edit",
+    "tool": "#tool-shape",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "area": {
+          "additionalProperties": false,
+          "description": "Zone de la forme, en points depuis le coin haut gauche de la page",
+          "properties": {
+            "height": {
+              "type": "number"
+            },
+            "width": {
+              "type": "number"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "type": "object"
+        },
+        "filled": {
+          "description": "Forme pleine (masque ce qu'elle couvre, sans le supprimer)",
+          "type": "boolean"
+        },
+        "page": {
+          "description": "Numéro de la page, à partir de 1",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "shape": {
+          "description": "Forme à tracer",
+          "enum": [
+            "rectangle",
+            "ellipse",
+            "line",
+            "arrow"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "area",
+        "shape"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "add_note",
+    "group": "Éditer",
+    "title": "Ajouter une note",
+    "help": "Poser un commentaire sur la page, que tous les lecteurs PDF affichent.",
+    "keywords": [
+      "commentaire",
+      "annotation",
+      "post-it",
+      "remarque"
+    ],
+    "mode": "edit",
+    "tool": "#tool-note",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "area": {
+          "additionalProperties": false,
+          "description": "Emplacement de la note, en points depuis le coin haut gauche de la page",
+          "properties": {
+            "height": {
+              "type": "number"
+            },
+            "width": {
+              "type": "number"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "type": "object"
+        },
+        "page": {
+          "description": "Numéro de la page, à partir de 1",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "text": {
+          "description": "Texte de la note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "area",
+        "text"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "redact",
+    "group": "Éditer",
+    "title": "Caviarder",
+    "help": "Supprimer réellement du texte ou une zone du document : contrairement à un masque, rien ne reste dans le fichier.",
+    "keywords": [
+      "anonymiser",
+      "masquer",
+      "cacher",
+      "effacer",
+      "noircir",
+      "confidentiel",
+      "rgpd"
+    ],
+    "mode": "edit",
+    "tool": "#tool-redact",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "area": {
+          "additionalProperties": false,
+          "description": "Zone à supprimer, en points depuis le coin haut gauche de la page",
+          "properties": {
+            "height": {
+              "type": "number"
+            },
+            "width": {
+              "type": "number"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "type": "object"
+        },
+        "page": {
+          "description": "Numéro de la page, à partir de 1",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "page",
+        "area"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "mode_pages",
+    "group": "Pages",
+    "title": "Mode Pages",
+    "help": "Réorganiser les pages : déplacer, pivoter, supprimer, insérer, extraire.",
+    "keywords": [
+      "organiser",
+      "ordre",
+      "grille"
+    ],
+    "mode": null,
+    "tool": "#mode-pages",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "insert_blank_page",
+    "group": "Pages",
+    "title": "Insérer une page blanche",
+    "help": "Ajouter une page blanche après les pages choisies.",
+    "keywords": [
+      "ajouter",
+      "page vide"
+    ],
+    "mode": "pages",
+    "tool": "#pages-insert",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "description": "Numéro de la page après laquelle insérer (0 : au début)",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "after"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "insert_pdf",
+    "group": "Pages",
+    "title": "Insérer un PDF",
+    "help": "Ajouter les pages d'autres PDF après les pages choisies ; vous pouvez aussi les glisser sur la grille.",
+    "keywords": [
+      "fusionner",
+      "combiner",
+      "assembler",
+      "joindre",
+      "ajouter"
+    ],
+    "mode": "pages",
+    "tool": "#pages-insert-pdf",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "duplicate_pages",
+    "group": "Pages",
+    "title": "Dupliquer des pages",
+    "help": "Copier les pages choisies, avec ce que vous y avez ajouté.",
+    "keywords": [
+      "copier"
+    ],
+    "mode": "pages",
+    "tool": "#pages-duplicate",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "pages": {
+          "description": "Numéros des pages à copier, à partir de 1",
+          "items": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "pages"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "rotate_pages",
+    "group": "Pages",
+    "title": "Pivoter des pages",
+    "help": "Tourner les pages choisies d'un quart de tour, à gauche ou à droite.",
+    "keywords": [
+      "tourner",
+      "rotation",
+      "orientation",
+      "paysage",
+      "portrait"
+    ],
+    "mode": "pages",
+    "tool": "#pages-rotate-right",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "description": "Sens du quart de tour",
+          "enum": [
+            "left",
+            "right"
+          ],
+          "type": "string"
+        },
+        "pages": {
+          "description": "Numéros des pages à tourner, à partir de 1",
+          "items": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "pages",
+        "direction"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "extract_pages",
+    "group": "Pages",
+    "title": "Extraire des pages",
+    "help": "Enregistrer les pages choisies dans un nouveau PDF.",
+    "keywords": [
+      "séparer",
+      "diviser",
+      "découper",
+      "scinder",
+      "exporter"
+    ],
+    "mode": "pages",
+    "tool": "#pages-extract",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "pages": {
+          "description": "Numéros des pages à extraire, à partir de 1",
+          "items": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "pages"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "remove_pages",
+    "group": "Pages",
+    "title": "Supprimer des pages",
+    "help": "Retirer les pages choisies du document (Suppr dans la grille).",
+    "keywords": [
+      "effacer",
+      "enlever",
+      "retirer"
+    ],
+    "mode": "pages",
+    "tool": "#pages-remove",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {
+        "pages": {
+          "description": "Numéros des pages à supprimer, à partir de 1",
+          "items": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "pages"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "mode_sign",
+    "group": "Signer",
+    "title": "Mode Signer",
+    "help": "Signer le document et vérifier ses signatures.",
+    "keywords": [
+      "signature",
+      "vérifier"
+    ],
+    "mode": null,
+    "tool": "#mode-sign",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "sign",
+    "group": "Signer",
+    "title": "Signer le document",
+    "help": "Apposer une signature électronique, avec ou sans apparence sur la page.",
+    "keywords": [
+      "signature",
+      "parapher",
+      "certificat",
+      "pades"
+    ],
+    "mode": "sign",
+    "tool": "#sign-start",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "place_signature",
+    "group": "Signer",
+    "title": "Placer la signature",
+    "help": "Tracer sur la page le cadre où la signature apparaîtra.",
+    "keywords": [
+      "cadre",
+      "champ de signature",
+      "emplacement"
+    ],
+    "mode": "sign",
+    "tool": "#sign-place",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "identities",
+    "group": "Signer",
+    "title": "Identités de signature",
+    "help": "Créer ou importer l'identité (certificat) qui signe vos documents.",
+    "keywords": [
+      "certificat",
+      "p12",
+      "pfx",
+      "clé"
+    ],
+    "mode": "sign",
+    "tool": "#sign-identities",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "mode_ai",
+    "group": "IA",
+    "title": "Mode IA",
+    "help": "Analyser le document ou lui poser des questions avec l'assistant IA.",
+    "keywords": [
+      "assistant",
+      "intelligence artificielle"
+    ],
+    "mode": null,
+    "tool": "#mode-ai",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "ai_summary",
+    "group": "IA",
+    "title": "Résumer",
+    "help": "Résumer la sélection, des pages ou le document avec l'IA.",
+    "keywords": [
+      "résumé",
+      "synthèse"
+    ],
+    "mode": "ai",
+    "tool": "[data-task=\"summary\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "ai_key_points",
+    "group": "IA",
+    "title": "Points clés",
+    "help": "Lister les points clés de la sélection, des pages ou du document.",
+    "keywords": [
+      "essentiel",
+      "idées"
+    ],
+    "mode": "ai",
+    "tool": "[data-task=\"key_points\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "ai_entities",
+    "group": "IA",
+    "title": "Entités",
+    "help": "Relever personnes, organisations, dates et montants cités.",
+    "keywords": [
+      "noms",
+      "dates",
+      "montants"
+    ],
+    "mode": "ai",
+    "tool": "[data-task=\"entities\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "ai_risks",
+    "group": "IA",
+    "title": "Risques et clauses",
+    "help": "Repérer les risques et les clauses à surveiller, par exemple dans un contrat.",
+    "keywords": [
+      "contrat",
+      "clauses",
+      "juridique"
+    ],
+    "mode": "ai",
+    "tool": "[data-task=\"risks\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "ai_question",
+    "group": "IA",
+    "title": "Poser une question",
+    "help": "Poser une question sur le document ; la réponse cite ses pages.",
+    "keywords": [
+      "question",
+      "demander"
+    ],
+    "mode": "ai",
+    "tool": "#ai-question",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  }
+]

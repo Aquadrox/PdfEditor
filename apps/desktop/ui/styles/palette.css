@@ -1,0 +1,125 @@
+/* Palette de commandes (Ctrl+K) et « Comment faire ? » (F1). */
+dialog.palette {
+  width: min(600px, calc(100vw - 32px));
+  margin-top: 12vh;
+}
+
+.palette-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-2);
+}
+
+.palette-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.palette-body .input {
+  height: 36px;
+  font-size: var(--text-panel);
+}
+
+.palette-list {
+  max-height: min(420px, 55vh);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.palette-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.palette-item[aria-selected="true"] {
+  background: var(--accent-soft);
+}
+
+.palette-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.palette-name {
+  font-weight: 500;
+}
+
+.palette-group {
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.palette-line kbd {
+  margin-left: auto;
+}
+
+.palette-help {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.palette-show {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  visibility: hidden;
+}
+
+.palette-item[aria-selected="true"] .palette-show,
+.palette-item:hover .palette-show {
+  visibility: visible;
+}
+
+.palette-item[aria-disabled="true"] .palette-name {
+  color: var(--muted);
+}
+
+.palette-empty {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--muted);
+}
+
+.palette-hint {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 0 0 var(--radius-float) var(--radius-float);
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+/* Outil montré par « Comment faire ? ». */
+.spotlight {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  animation: spotlight-pulse 0.8s ease-in-out 3;
+}
+
+@keyframes spotlight-pulse {
+  50% {
+    outline-offset: 5px;
+    outline-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spotlight {
+    animation: none;
+  }
+}

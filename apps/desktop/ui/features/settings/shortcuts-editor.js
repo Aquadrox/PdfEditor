@@ -20,6 +20,8 @@ const ACTIONS = [
   "fit_page",
   "fit_width",
   "settings",
+  "palette",
+  "how_to",
 ];
 
 /**

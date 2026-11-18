@@ -18,12 +18,18 @@ export const DEFAULT_SETTINGS = JSON.parse(
   readFileSync(new URL("./fixtures/default-settings.json", import.meta.url), "utf8"),
 );
 
+/** Catalogue des actions, identique à celui de l'application (vérifié par pde-app). */
+export const ACTION_CATALOG = JSON.parse(
+  readFileSync(new URL("./fixtures/action-catalog.json", import.meta.url), "utf8"),
+);
+
 /** Réponses des commandes que chaque démarrage appelle. */
 const STARTUP = {
   get_settings: [{ ok: { settings: DEFAULT_SETTINGS, warnings: [] } }],
   default_settings: [{ ok: DEFAULT_SETTINGS }],
   recent_files: [{ ok: [] }],
   app_info: [{ ok: { version: "0.0.0-test" } }],
+  action_catalog: [{ ok: ACTION_CATALOG }],
   initial_files: [{ ok: [] }],
   recoveries: [{ ok: [] }],
   update_status: [{ ok: { current: "0.0.0-test", available: null, notes: [], configured: true } }],
