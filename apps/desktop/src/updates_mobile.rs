@@ -10,7 +10,7 @@ use tauri::AppHandle;
 
 /// Système dont l'application affiche les notes de version.
 pub fn platform() -> Platform {
-    Platform::Linux
+    Platform::Android
 }
 
 pub struct Updates;
