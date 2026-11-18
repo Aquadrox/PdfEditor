@@ -52,9 +52,9 @@ impl SignatureImage {
     pub(crate) fn split(&self) -> (Vec<u8>, Option<Vec<u8>>) {
         let mut rgb = Vec::with_capacity(self.rgba.len() / 4 * 3);
         let mut alpha = Vec::with_capacity(self.rgba.len() / 4);
-        for pixel in self.rgba.chunks_exact(4) {
-            rgb.extend_from_slice(&pixel[..3]);
-            alpha.push(pixel[3]);
+        for [r, g, b, a] in self.rgba.as_chunks::<4>().0 {
+            rgb.extend_from_slice(&[*r, *g, *b]);
+            alpha.push(*a);
         }
         let opaque = alpha.iter().all(|&a| a == 255);
         (rgb, (!opaque).then_some(alpha))
