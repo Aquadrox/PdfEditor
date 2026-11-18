@@ -21,7 +21,9 @@ import { renderOutline } from "./features/viewer/outline.js";
 import { attachStatusbar } from "./features/viewer/statusbar.js";
 import { Thumbnails } from "./features/viewer/thumbnails.js";
 import { Viewer } from "./features/viewer/viewer.js";
-import { attachDeskInput, isEditable } from "./features/viewer/desk-input.js";
+import { attachDeskInput } from "./features/viewer/desk-input.js";
+import { attachKeyboard } from "./features/palette/keyboard.js";
+import { Palette } from "./features/palette/palette.js";
 import { showSidebarTab } from "./features/viewer/sidebar.js";
 import { AiMode } from "./features/ai/ai-mode.js";
 import { attachAiSettings } from "./features/ai/ai-settings.js";
@@ -29,7 +31,7 @@ import { zoomIn, zoomOut } from "./features/viewer/zoom.js";
 import { byId } from "./lib/dom.js";
 import { t, translate } from "./lib/i18n.js";
 import { invoke, listen, setWindowTitle } from "./lib/ipc.js";
-import { eventToShortcut, keymap, shortcutLabel } from "./lib/shortcuts.js";
+import { shortcutLabel, keymap } from "./lib/shortcuts.js";
 import { applyTheme } from "./lib/theme.js";
 
 translate(document);
@@ -299,7 +301,15 @@ const actions = {
   redo: () => edit.redo(),
   save,
   save_as: saveAs,
+  palette: () => palette.open("run"),
+  how_to: () => palette.open("help"),
 };
+
+// Palette de commandes et « Comment faire ? » (V-08), tirées du catalogue des actions.
+const palette = new Palette(
+  { hasDocument: () => Boolean(current), mode: () => mode, setMode, shortcuts: actions },
+  () => settings?.shortcuts ?? {},
+);
 
 byId("home-open").addEventListener("click", chooseAndOpen);
 byId("menu-open").addEventListener("click", chooseAndOpen);
@@ -315,6 +325,8 @@ byId("mode-pages").addEventListener("click", () => setMode("pages"));
 byId("mode-sign").addEventListener("click", () => setMode("sign"));
 byId("mode-ai").addEventListener("click", () => setMode("ai"));
 byId("menu-settings").addEventListener("click", () => openSettings());
+byId("menu-palette").addEventListener("click", () => palette.open("run"));
+byId("menu-how-to").addEventListener("click", () => palette.open("help"));
 byId("recent-clear").addEventListener("click", async () => {
   await invoke("clear_recent_files").catch((e) => toast(e?.message ?? String(e), "error"));
   refreshRecent();
@@ -343,24 +355,10 @@ attachDeskInput(viewer, () => Boolean(current), (file) => {
   edit.pasteImage(file);
 });
 
-document.addEventListener("keydown", (event) => {
-  // Page Réglages ouverte : seuls ses propres contrôles réagissent.
-  if (!byId("settings-view").hidden || document.querySelector("dialog[open]")) return;
-  const editable = isEditable(event.target);
-  // Mode Pages : Suppr, Ctrl+A, flèches, Entrée sur la grille.
-  if (!editable && pages.handleKey(event)) return event.preventDefault();
-  // Suppr, flèches, Entrée, Échap : sur la zone sélectionnée, pas sur un bouton.
-  if (!editable && edit.handleKey(event, { onButton: event.target instanceof HTMLButtonElement })) {
-    return event.preventDefault();
-  }
-  const shortcut = eventToShortcut(event);
-  const action = shortcut && shortcuts.get(shortcut);
-  if (!action || (editable && (action === "undo" || action === "redo"))) return;
-  event.preventDefault();
-  actions[action]();
-});
+attachKeyboard({ pages, edit, keymap: () => shortcuts, actions });
 
 async function start() {
+  palette.load();
   invoke("app_info")
     .then((info) => {
       byId("app-version").textContent = t("settings.version", { version: info.version });

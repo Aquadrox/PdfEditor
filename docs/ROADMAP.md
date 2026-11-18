@@ -79,15 +79,15 @@ Livraisons : v0.0.19 (signer, verrouiller, vérifier), v0.0.20 (enregistrement d
 
 ## v0.5 — IA : socle et analyse 🚧
 
-Première livraison : v0.0.21 (socle, réglages, analyse et questions).
+Première livraison : v0.0.21 (socle, réglages, analyse et questions) ; v0.0.22 : catalogue des actions et palette de commandes.
 
 - ✅ `pde-ai` : client compatible OpenAI repris de VoiceToText, découpé (`client`, `errors`, `hints`, `sanitize`, `stream`, `transport`) et testé ; trait `ChatModel` (`pde-core::ai`) et faux modèle / faux transport de test ; réponses en flux (SSE, ou JSON d'un bloc), annulation entre deux morceaux. Transport HTTP abstrait : `ureq` (HTTPS) n'est compilé que pour l'application (fonction `http`), le cœur reste compilable pour Android
 - ✅ Réglages IA (IA-01, IA-02, IA-11, R-07) : préréglages (DeepSeek, OpenAI, Mistral, GLM, OpenRouter, Ollama, LM Studio), adresse vérifiée (HTTPS hors réseau local, clé jamais en clair hors de ce PC), profils et profil de secours, clé par fournisseur dans le trousseau du système, « Tester » (requête courte, liste des modèles, pistes de correction), consignes modifiables (le préambule de sécurité reste en tête)
 - ✅ Estimation du coût, confirmation, consommation, plafond (IA-03) : jetons et coût estimés avant l'envoi ; confirmation au premier envoi vers un fournisseur, au-delà d'un seuil ou à chaque envoi ; plafond mensuel ; consommation jour / mois / total (`ai-usage.json`, compteurs seulement)
 - ✅ Panneau IA (IA-04) : portée sélection / page affichée / pages choisies / document ; résumé, points clés, entités, risques et clauses ; long document lu par lots puis synthétisé ; réponse en flux, annulable (IA-12)
 - ✅ Questions sur le document avec citations de pages (IA-05) : [p. 3] vérifiées contre le nombre de pages, cliquables ; texte du document toujours une donnée (balises désamorcées, jamais de HTML venu du modèle)
-- ⬜ Catalogue des actions (`pde-app::actions`) : chaque action de l'éditeur décrite une seule fois (nom, explication, paramètres en JSON Schema, contrôle, exécution annulable) ; il sert à la palette de commandes, à l'aide « Comment faire ? », aux outils de l'IA et plus tard au serveur MCP — une action ajoutée à l'éditeur est aussitôt connue de tous
-- ⬜ Palette de commandes Ctrl+K et « Comment faire ? », sans IA (V-08)
+- ✅ Catalogue des actions (`pde-app::actions`) : chaque action de l'éditeur (45, en six rubriques) décrite une seule fois : nom, explication, mots-clés, mode et outil dans l'interface, raccourci, paramètres en JSON Schema. Il sert à la palette de commandes et à l'aide « Comment faire ? », et servira aux outils de l'IA et au serveur MCP — une action ajoutée est aussitôt connue de tous. Des tests vérifient que chaque action a son explication, un schéma valide et son outil dans l'interface, et que chaque raccourci y figure. Le contrôle et l'exécution par les cas d'usage viennent avec l'assistant d'actions
+- ✅ Palette de commandes Ctrl+K et « Comment faire ? » (F1), sans IA (V-08) : recherche sans accents, par début de mot, sur le nom, les mots-clés et l'explication, les mots vides d'une question ignorés ; Entrée exécute l'action dans son mode (par son raccourci ou son outil), Maj+Entrée ou F1 montrent l'outil dans la barre (mis en évidence, explication) ; action impossible expliquée (document à ouvrir, verrou de signature) ; raccourcis réglables (R-08)
 - ⬜ Assistant d'actions (IA-15) : sélection + demande → appel d'outils de l'API compatible OpenAI (`tools`) → actions proposées en aperçu, Appliquer / Refuser ; ou explication avec l'outil montré ; repli sur « Comment faire ? » avec un modèle qui n'appelle pas d'outils
 - ⬜ Recettes intégrées et personnelles (IA-16)
 
