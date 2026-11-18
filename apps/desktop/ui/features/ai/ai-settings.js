@@ -18,6 +18,42 @@ function money(value, currency) {
  * page Réglages (brouillon)
  */
 export function attachAiSettings(settings) {
+  /**
+   * Modèles du serveur, en boutons (comme VoiceToText) : un clic les met
+   * dans le champ Modèle, le modèle choisi est marqué.
+   */
+  function modelChoice(models) {
+    const current = settings.draft().ai.provider.model;
+    const buttons = models.map((name) =>
+      el(
+        "button",
+        {
+          type: "button",
+          class: `btn small ${name === current ? "on" : "ghost"}`,
+          "aria-pressed": String(name === current),
+          title: t("settings.ai.useModel"),
+          onclick: (event) => {
+            settings.set("ai.provider.model", name);
+            byId("set-ai-model").value = name;
+            for (const other of event.currentTarget.parentElement.children) {
+              const on = other === event.currentTarget;
+              other.classList.toggle("on", on);
+              other.classList.toggle("ghost", !on);
+              other.setAttribute("aria-pressed", String(on));
+            }
+          },
+        },
+        name,
+      ),
+    );
+    return el(
+      "div",
+      { class: "ai-models" },
+      el("p", { class: "caption" }, t("settings.ai.models", { count: models.length })),
+      el("div", { class: "ai-model-list" }, ...buttons),
+    );
+  }
+
   const preset = byId("ai-preset");
   preset.replaceChildren(...PRESETS.map((p) => el("option", { value: p.id }, p.label)));
   preset.addEventListener("change", () => {
@@ -55,7 +91,7 @@ export function attachAiSettings(settings) {
         ...result.hints.map((hint) => el("p", { class: "caption" }, hint)),
       );
       byId("ai-models").replaceChildren(...result.models.map((m) => el("option", { value: m })));
-      if (result.models.length) box.append(el("p", { class: "caption" }, t("settings.ai.models", { count: result.models.length })));
+      if (result.models.length) box.append(modelChoice(result.models));
     } catch (error) {
       box.classList.add("failed");
       box.textContent = message(error);

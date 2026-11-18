@@ -11,6 +11,7 @@ import { invoke, listen } from "../../lib/ipc.js";
 import { blocks, parsePages } from "./ai-text.js";
 import { AssistantView } from "./assistant-view.js";
 import { RewriteView } from "./rewrite-view.js";
+import { attachPanelResize } from "./panel-resize.js";
 
 function money(value, currency) {
   return `${Number(value ?? 0).toFixed(value >= 1 ? 2 : 4)} ${currency}`;
@@ -25,6 +26,7 @@ export class AiMode {
     this.viewer = viewer;
     this.hooks = hooks;
     this.assistant = new AssistantView(viewer, hooks);
+    attachPanelResize(byId("ai-panel"), byId("ai-resizer"), "pde.ai-panel-width");
     this.rewrites = new RewriteView(viewer, hooks);
     byId("ai-anonymize").addEventListener("click", () => this.anonymize());
     /** Champ du bas : question sur le document, ou demande d'action. */
@@ -320,17 +322,34 @@ export class AiMode {
     const body = el("div", { class: "ai-body" });
     const status = el("p", { class: "ai-status caption", role: "status" }, t("ai.waiting"));
     const cancel = el("button", { class: "btn ghost small", type: "button" }, t("ai.cancel"));
+    // Supprimer la réponse du panneau (une fois finie) : rien d'autre ne change.
+    const remove = el("button", {
+      class: "btn ghost icon small ai-remove",
+      type: "button",
+      hidden: true,
+      "aria-label": t("ai.remove"),
+      title: t("ai.remove"),
+    }, "×");
     const item = el(
       "li",
       { class: `ai-answer running ${task.question ? task.kind : "analysis"}` },
-      el("div", { class: "ai-answer-head" }, el("strong", { class: "ai-answer-title" }, title), cancel),
+      el("div", { class: "ai-answer-head" }, el("strong", { class: "ai-answer-title" }, title), cancel, remove),
       el("p", { class: "caption" }, this.describe(scope)),
       body,
       status,
     );
     byId("ai-answers").append(item);
     item.scrollIntoView({ block: "nearest" });
-    return { item, body, status, cancel, text: "", run: null };
+    const entry = { item, body, status, cancel, remove, text: "", run: null };
+    remove.addEventListener("click", () => this.removeEntry(entry));
+    return entry;
+  }
+
+  /** Retire une réponse du panneau, et ses propositions encore en attente. */
+  removeEntry(entry) {
+    if (this.assistant.pending?.entry === entry) this.assistant.clear();
+    if (this.rewrites.pending?.entry === entry) this.rewrites.clear();
+    entry.item.remove();
   }
 
   onEvent(payload) {
@@ -355,6 +374,7 @@ export class AiMode {
   finish(entry, result) {
     entry.item.classList.remove("running");
     entry.cancel.remove();
+    entry.remove.hidden = false;
     if (result.Ok) {
       entry.text = result.Ok.text ?? "";
       this.render(entry);

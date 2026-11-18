@@ -47,7 +47,7 @@ export class RewriteView {
     const all = el("button", { class: "btn ghost small", type: "button", onclick: () => this.checkAll() }, t("rewrite.all"));
     const refuse = el("button", { class: "btn ghost", type: "button", onclick: () => this.close(t("assistant.refused")) }, t("assistant.refuse"));
     box.append(el("ul", { class: "ai-proposal-list" }, ...rows.map((r) => r.row)), el("div", { class: "ai-proposal-actions" }, all, refuse, apply));
-    this.pending = { id, box, rows, apply };
+    this.pending = { entry, id, box, rows, apply };
     this.preview();
     this.viewer.goToPage(result.proposals[0].page);
   }

@@ -8,6 +8,9 @@ qui ne concerne qu'une plateforme.
 
 - [Android] Ouvrir un PDF depuis le sélecteur de documents du téléphone ; « Enregistrer » le réécrit à son emplacement d'origine, « Enregistrer sous » propose de choisir où.
 - [Android] PdfEditor apparaît dans « Ouvrir avec » et « Partager » pour les PDF : le document s'ouvre aussitôt, même si l'application était déjà lancée.
+- Mode IA : le bas du panneau (type de demande, recette, champ) est enfin utilisable, sur plusieurs lignes ; le panneau s'élargit en tirant son bord gauche (ou avec les flèches), et seule la liste des réponses défile.
+- Mode IA : chaque réponse (résumé, question…) peut être supprimée du panneau avec son bouton ×.
+- Réglages IA : « Tester » affiche les modèles du serveur en boutons, comme VoiceToText ; un clic choisit le modèle.
 
 ## 0.0.27 — 2026-11-18
 
