@@ -75,6 +75,26 @@ impl OpenAiClient {
         ) {
             body["stream_options"] = json!({ "include_usage": true });
         }
+        // Outils (assistant d'actions) : le modèle choisit d'en appeler ou non.
+        if !request.tools.is_empty() {
+            body["tools"] = request
+                .tools
+                .iter()
+                .map(|tool| {
+                    let parameters: Value = serde_json::from_str(&tool.parameters)
+                        .unwrap_or_else(|_| json!({ "type": "object", "properties": {} }));
+                    json!({
+                        "type": "function",
+                        "function": {
+                            "name": tool.name,
+                            "description": tool.description,
+                            "parameters": parameters,
+                        },
+                    })
+                })
+                .collect();
+            body["tool_choice"] = json!("auto");
+        }
         for (key, value) in &self.extra_body {
             body[key] = value.clone();
         }
@@ -183,6 +203,7 @@ mod tests {
                 ChatMessage::user("question"),
             ],
             max_tokens: 500,
+            ..Default::default()
         }
     }
 
@@ -218,6 +239,7 @@ mod tests {
         assert_eq!(body["stream"], true);
         assert_eq!(body["max_tokens"], 500);
         assert_eq!(body["stream_options"]["include_usage"], true);
+        assert!(body.get("tools").is_none(), "pas d'outils sans demande");
         assert_eq!(body["thinking"]["type"], "disabled");
         assert_eq!(body["messages"][1]["role"], "user");
     }

@@ -372,6 +372,16 @@ Sélection (page, zone, texte) + demande de l'utilisateur
   les outils de l'IA et le serveur MCP en sont tirés : rien à maintenir en
   double, et un test vérifie que chaque action a son explication, son schéma
   et son outil dans la barre.
+- **Assistant** (v0.0.23) : la tâche `Assist` de `pde-ai` envoie une
+  requête (début du document, demande) avec les outils tirés du catalogue
+  (`actions::assistant::tools`) ; les appels reçus sont lus en
+  `Proposal` (`actions::assistant::parse`), puis la visionneuse
+  (`viewer::assistant`) cherche le texte visé dans les pages de la portée
+  et rend l'aperçu. Le modèle désigne du texte, jamais des coordonnées :
+  une zone vient toujours de la recherche dans le document. « Appliquer »
+  renvoie les propositions cochées, vérifiées à nouveau, appliquées par
+  `Edits::grouped` (ajouts, puis rotations, puis suppressions) : une seule
+  entrée de l'historique, rien d'appliqué si une étape échoue.
 - **Palette** (v0.0.22) : l'interface reçoit le catalogue (`action_catalog`)
   et le cherche elle-même (`features/palette`). Elle exécute une action par
   son raccourci ou en actionnant son outil, après être passée dans son mode ;

@@ -4,6 +4,13 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
 concerne qu'une plateforme.
 
+## 0.0.23 — 2026-11-18
+
+- Assistant d'actions : en mode IA, choisissez « Action » et demandez en mots courants (« caviarde le nom du client », « surligne les dates », « tourne la page 2 ») ; l'IA propose des actions, montrées en aperçu sur les pages.
+- Rien n'est appliqué sans votre accord : décochez ce que vous ne voulez pas, puis « Appliquer » ; une seule annulation (Ctrl+Z) défait toutes les actions appliquées.
+- Le texte visé est cherché dans le document : une proposition introuvable ou hors de la portée choisie est écartée, avec la raison.
+- L'assistant distingue caviarder (suppression réelle, à l'enregistrement) et masquer, qu'il ne propose pas ; avec un modèle qui ne sait pas proposer d'actions, il explique et « Comment faire ? » montre l'outil.
+
 ## 0.0.22 — 2026-11-18
 
 - Palette de commandes (Ctrl+K) : toutes les actions de l'éditeur par leur nom, avec leur raccourci ; Entrée exécute l'action, dans le bon mode.

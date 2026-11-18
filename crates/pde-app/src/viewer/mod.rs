@@ -1,5 +1,6 @@
 //! Visionneuse : documents ouverts, images et texte de leurs pages.
 
+pub(crate) mod assistant;
 mod edit;
 mod existing;
 mod form;

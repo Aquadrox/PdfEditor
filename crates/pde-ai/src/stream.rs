@@ -3,8 +3,62 @@
 
 use std::io::BufRead;
 
-use pde_core::ai::{AiError, CancelFlag, ChatReply, Usage};
+use pde_core::ai::{AiError, CancelFlag, ChatReply, ToolCall, Usage};
 use serde_json::Value;
+
+/// Appels d'outils reçus en morceaux : le nom arrive d'abord, les arguments
+/// (texte JSON) par bouts, chaque appel repéré par son rang.
+#[derive(Default)]
+struct ToolCalls(Vec<ToolCall>);
+
+impl ToolCalls {
+    fn add_delta(&mut self, delta: &Value) {
+        for call in delta.as_array().into_iter().flatten() {
+            let index = call["index"].as_u64().map_or(self.0.len(), |i| i as usize);
+            if index >= self.0.len() {
+                // Un rang hors de la suite : un serveur fautif, pas une raison d'allouer sans fin.
+                if index > self.0.len() + 16 {
+                    continue;
+                }
+                self.0.resize_with(index + 1, || ToolCall {
+                    name: String::new(),
+                    arguments: String::new(),
+                });
+            }
+            let function = &call["function"];
+            if let Some(name) = function["name"].as_str() {
+                self.0[index].name.push_str(name);
+            }
+            if let Some(arguments) = function["arguments"].as_str() {
+                self.0[index].arguments.push_str(arguments);
+            }
+        }
+    }
+
+    fn finish(self) -> Vec<ToolCall> {
+        self.0.into_iter().filter(|c| !c.name.is_empty()).collect()
+    }
+}
+
+/// Appels d'outils d'une réponse JSON d'un bloc.
+fn whole_tool_calls(message: &Value) -> Vec<ToolCall> {
+    let mut calls = ToolCalls::default();
+    for (index, call) in message["tool_calls"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        let mut call = call.clone();
+        call["index"] = Value::from(index);
+        // Certains serveurs envoient les arguments en objet plutôt qu'en texte.
+        if call["function"]["arguments"].is_object() {
+            call["function"]["arguments"] = Value::from(call["function"]["arguments"].to_string());
+        }
+        calls.add_delta(&Value::Array(vec![call]));
+    }
+    calls.finish()
+}
 
 /// Texte et jetons de la réponse ; `on_delta` reçoit chaque morceau.
 pub fn read_reply(
@@ -16,6 +70,7 @@ pub fn read_reply(
     let mut usage = None;
     let mut whole = String::new();
     let mut streamed = false;
+    let mut tool_calls = ToolCalls::default();
     let mut line = String::new();
     loop {
         cancel.check()?;
@@ -49,24 +104,36 @@ pub fn read_reply(
             text.push_str(delta);
             on_delta(delta);
         }
+        tool_calls.add_delta(&chunk["choices"][0]["delta"]["tool_calls"]);
         if let Some(u) = parse_usage(&chunk["usage"]) {
             usage = Some(u);
         }
     }
     if streamed {
-        return Ok(ChatReply { text, usage });
+        return Ok(ChatReply {
+            text,
+            usage,
+            tool_calls: tool_calls.finish(),
+        });
     }
     // Serveur qui ignore `stream` : une réponse JSON d'un bloc.
     let value: Value = serde_json::from_str(whole.trim())
         .map_err(|_| AiError::Format("réponse illisible".into()))?;
-    let text = value["choices"][0]["message"]["content"]
-        .as_str()
-        .ok_or_else(|| AiError::Format("réponse sans texte".into()))?
-        .to_owned();
-    on_delta(&text);
+    let message = &value["choices"][0]["message"];
+    let tool_calls = whole_tool_calls(message);
+    let text = match message["content"].as_str() {
+        Some(text) => text.to_owned(),
+        // Une réponse faite seulement d'appels d'outils n'a pas de texte.
+        None if !tool_calls.is_empty() => String::new(),
+        None => return Err(AiError::Format("réponse sans texte".into())),
+    };
+    if !text.is_empty() {
+        on_delta(&text);
+    }
     Ok(ChatReply {
         text,
         usage: parse_usage(&value["usage"]),
+        tool_calls,
     })
 }
 
@@ -122,6 +189,46 @@ mod tests {
                 output_tokens: 2
             })
         );
+    }
+
+    #[test]
+    fn streamed_tool_calls_are_put_back_together() {
+        let body = "data: {\"choices\":[{\"delta\":{\"content\":\"Je propose\"}}]}\n\n\
+                    data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"a\",\"function\":{\"name\":\"redact\",\"arguments\":\"\"}}]}}]}\n\n\
+                    data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"{\\\"text\\\":\"}}]}}]}\n\n\
+                    data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"\\\"Dupont\\\"}\"}}]}}]}\n\n\
+                    data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":1,\"function\":{\"name\":\"rotate_pages\",\"arguments\":\"{}\"}}]}}]}\n\n\
+                    data: [DONE]\n\n";
+        let (reply, deltas) = read(body);
+        let reply = reply.unwrap();
+        assert_eq!(deltas, ["Je propose"]);
+        assert_eq!(
+            reply.tool_calls,
+            [
+                ToolCall {
+                    name: "redact".into(),
+                    arguments: r#"{"text":"Dupont"}"#.into()
+                },
+                ToolCall {
+                    name: "rotate_pages".into(),
+                    arguments: "{}".into()
+                }
+            ]
+        );
+    }
+
+    #[test]
+    fn whole_json_tool_calls_without_text_are_accepted() {
+        let body = r#"{"choices":[{"message":{"content":null,"tool_calls":[
+            {"type":"function","function":{"name":"redact","arguments":"{\"text\":\"A\"}"}},
+            {"type":"function","function":{"name":"add_note","arguments":{"text":"B"}}}
+        ]}}]}"#;
+        let (reply, deltas) = read(body);
+        let reply = reply.unwrap();
+        assert!(reply.text.is_empty() && deltas.is_empty());
+        assert_eq!(reply.tool_calls.len(), 2);
+        assert_eq!(reply.tool_calls[0].arguments, r#"{"text":"A"}"#);
+        assert_eq!(reply.tool_calls[1].arguments, r#"{"text":"B"}"#);
     }
 
     #[test]

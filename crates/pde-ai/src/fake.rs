@@ -79,6 +79,7 @@ impl ChatModel for FakeChatModel {
                 output_tokens: (reply.chars().count() / 4) as u64,
             }),
             text: reply,
+            tool_calls: Vec::new(),
         })
     }
 

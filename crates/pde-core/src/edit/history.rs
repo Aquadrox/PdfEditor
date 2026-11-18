@@ -355,6 +355,47 @@ impl Edits {
         Ok(self.record(Operation::Remove { id, element }))
     }
 
+    /// Fait plusieurs opérations comme une seule (actions acceptées de
+    /// l'assistant) : une entrée de l'historique, annulée d'un coup. En cas
+    /// d'échec de l'une d'elles, toutes sont défaites et l'historique reste
+    /// tel qu'avant.
+    pub fn grouped<T>(
+        &mut self,
+        operations: impl FnOnce(&mut Self) -> Result<T, String>,
+    ) -> Result<(T, Change), String> {
+        let mark = self.done.len();
+        let undone = self.undone.clone();
+        match operations(self) {
+            Ok(value) => {
+                let done: Vec<Operation> = self.done.drain(mark..).map(|(_, op)| op).collect();
+                let operation = match done.len() {
+                    0 => return Ok((value, Change::default())),
+                    1 => done
+                        .into_iter()
+                        .next()
+                        .unwrap_or(Operation::Batch(Vec::new())),
+                    _ => Operation::Batch(done),
+                };
+                let change = Change {
+                    pages: operation.pages(),
+                    layout: operation.changes_layout(),
+                    all_pages: operation.touches_document(),
+                };
+                // Déjà appliquées une à une : on ne garde que leur trace commune.
+                self.next_seq += 1;
+                self.done.push((self.next_seq, operation));
+                Ok((value, change))
+            }
+            Err(error) => {
+                while self.done.len() > mark {
+                    self.rollback();
+                }
+                self.undone = undone;
+                Err(error)
+            }
+        }
+    }
+
     /// Annule la dernière opération ; `None` s'il n'y en a pas.
     pub fn undo(&mut self) -> Option<Change> {
         let (seq, operation) = self.done.pop()?;
@@ -452,6 +493,51 @@ mod tests {
                 _ => String::new(),
             })
             .collect()
+    }
+
+    #[test]
+    fn grouped_operations_are_undone_at_once() {
+        let mut edits = Edits::with_pages(vec![PageSize::new(595.0, 842.0); 2]);
+        edits.add(text(0, "avant"));
+        let (ids, change) = edits
+            .grouped(|e| {
+                let (a, _) = e.add(text(0, "a"));
+                let (b, _) = e.add(text(0, "b"));
+                e.rotate_pages(&[1], 1)?;
+                Ok([a, b])
+            })
+            .unwrap();
+        assert_eq!(ids.len(), 2);
+        assert!(change.layout && change.pages.contains(&0), "{change:?}");
+        assert_eq!(texts(&edits), ["avant", "a", "b"]);
+        assert_eq!(edits.plan().pages()[1].rotation, 1);
+
+        edits.undo().unwrap();
+        assert_eq!(texts(&edits), ["avant"]);
+        assert_eq!(edits.plan().pages()[1].rotation, 0);
+        edits.redo().unwrap();
+        assert_eq!(texts(&edits), ["avant", "a", "b"]);
+        edits.undo().unwrap();
+        edits.undo().unwrap();
+        assert!(
+            !edits.can_undo(),
+            "le groupe ne compte que pour une opération"
+        );
+    }
+
+    #[test]
+    fn failed_group_leaves_nothing_behind() {
+        let mut edits = Edits::with_pages(vec![PageSize::new(595.0, 842.0)]);
+        edits.add(text(0, "garde"));
+        edits.undo();
+        let failed = edits.grouped(|e| {
+            e.add(text(0, "a"));
+            e.rotate_pages(&[5], 1)
+        });
+        assert!(failed.is_err());
+        assert!(texts(&edits).is_empty() && !edits.can_undo());
+        assert!(edits.can_redo(), "« rétablir » reste possible");
+        assert!(!edits.is_dirty());
     }
 
     #[test]

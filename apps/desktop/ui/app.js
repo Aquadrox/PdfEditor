@@ -65,8 +65,13 @@ const settingsView = attachSettings({
   onFill: (draft) => aiSettings.fill(draft),
 });
 const aiSettings = attachAiSettings(settingsView);
-// IA (v0.5) : panneau Assistant IA en mode IA.
-const ai = new AiMode(viewer, { openSettings: () => openSettings("ai") });
+// IA (v0.5) : panneau Assistant IA en mode IA ; actions acceptées de
+// l'assistant appliquées comme une opération d'édition.
+const ai = new AiMode(viewer, {
+  openSettings: () => openSettings("ai"),
+  applied: (result) => edit.session.apply(result.edit, result.document),
+  howTo: (query) => palette.open("help", query),
+});
 const edit = new EditMode(viewer, (view, changed) => {
   if (changed.length > 0) thumbnails.setRevisions(view.revisions, changed);
   showSaveState(view.dirty);

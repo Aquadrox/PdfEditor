@@ -5,9 +5,11 @@
 use std::sync::Arc;
 
 use pde_ai::tasks::Task;
+use pde_app::actions::assistant::Proposal;
 use pde_app::ai::{AiStatus, EstimateView, Scope, TestView};
 use pde_app::app::App;
 use pde_app::error::AppError;
+use pde_app::viewer::PagesView;
 use pde_core::settings::Provider;
 use pde_core::usage::UsageSummary;
 use serde::Serialize;
@@ -88,4 +90,16 @@ pub fn ai_start(
 #[tauri::command(async)]
 pub fn ai_cancel(app: AppState<'_>, run: u64) {
     app.ai_cancel(run);
+}
+
+/// Applique les propositions acceptées de l'assistant (IA-15), en une
+/// opération de l'historique.
+#[tauri::command(async)]
+pub fn assistant_apply(
+    app: AppState<'_>,
+    id: u64,
+    scope: Scope,
+    proposals: Vec<Proposal>,
+) -> Result<PagesView, AppError> {
+    app.assistant_apply(id, &scope, &proposals)
 }

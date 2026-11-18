@@ -38,12 +38,32 @@ impl ChatMessage {
     }
 }
 
-/// Demande au modèle.
+/// Outil que le modèle peut appeler (« function calling ») : une action du
+/// catalogue de l'éditeur, proposée à l'utilisateur, jamais exécutée seule.
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ToolSpec {
+    pub name: String,
+    pub description: String,
+    /// Paramètres en JSON Schema (texte JSON d'un objet).
+    pub parameters: String,
+}
+
+/// Appel d'outil proposé par le modèle.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ToolCall {
+    pub name: String,
+    /// Arguments en texte JSON, tels qu'envoyés (à vérifier avant tout usage).
+    pub arguments: String,
+}
+
+/// Demande au modèle.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ChatRequest {
     pub messages: Vec<ChatMessage>,
     /// Plus longue réponse acceptée, en jetons.
     pub max_tokens: usize,
+    /// Outils proposés au modèle (aucun : réponse en texte seulement).
+    pub tools: Vec<ToolSpec>,
 }
 
 /// Jetons facturés pour une requête.
@@ -65,11 +85,13 @@ impl Usage {
 }
 
 /// Réponse complète du modèle.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ChatReply {
     pub text: String,
     /// Jetons facturés, si le fournisseur les indique.
     pub usage: Option<Usage>,
+    /// Outils que le modèle demande d'appeler, dans l'ordre.
+    pub tool_calls: Vec<ToolCall>,
 }
 
 /// Échec d'un appel au modèle, en mots d'utilisateur.

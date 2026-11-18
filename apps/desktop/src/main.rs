@@ -130,6 +130,7 @@ fn main() {
             commands::ai::ai_estimate,
             commands::ai::ai_start,
             commands::ai::ai_cancel,
+            commands::ai::assistant_apply,
             commands::sign::identities,
             commands::sign::create_identity,
             commands::sign::import_identity,

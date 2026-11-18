@@ -16,7 +16,7 @@ pub const MAX_SEARCH_HITS: usize = 1000;
 
 impl Viewer {
     /// Texte d'une page, lu une fois puis gardé jusqu'à la fermeture.
-    fn text(&self, doc: DocumentId, page: PageIndex) -> Result<Arc<PageText>, AppError> {
+    pub(super) fn text(&self, doc: DocumentId, page: PageIndex) -> Result<Arc<PageText>, AppError> {
         if let Some(text) = lock(&self.texts).get(&(doc, page)) {
             return Ok(text.clone());
         }
