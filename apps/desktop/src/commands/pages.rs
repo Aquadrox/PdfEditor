@@ -8,7 +8,7 @@ use pde_app::edit_view::SavedView;
 use pde_app::error::{AppError, ErrorKind};
 use pde_app::view::DocumentView;
 use pde_app::viewer::PagesView;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tauri_plugin_dialog::DialogExt;
 
 use super::AppState;
@@ -82,9 +82,7 @@ pub fn insert_pdf(
     if let Some(dir) = app.dialog_dir() {
         dialog = dialog.set_directory(dir);
     }
-    if let Some(window) = handle.get_webview_window("main") {
-        dialog = dialog.set_parent(&window);
-    }
+    dialog = super::dialog::over_main_window(&handle, dialog);
     let Some(files) = dialog.blocking_pick_files() else {
         return Ok(None);
     };
@@ -125,9 +123,7 @@ pub fn extract_pages(
     if let Some(dir) = dir {
         dialog = dialog.set_directory(dir);
     }
-    if let Some(window) = handle.get_webview_window("main") {
-        dialog = dialog.set_parent(&window);
-    }
+    dialog = super::dialog::over_main_window(&handle, dialog);
     let Some(path) = dialog.blocking_save_file() else {
         return Ok(None);
     };

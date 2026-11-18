@@ -12,6 +12,7 @@ use pde_core::render::{Bitmap, RenderRequest};
 use pde_core::text::PageText;
 use pdfium_render::prelude::Pdfium;
 
+#[cfg(not(target_os = "android"))]
 use crate::library::current_candidates;
 use crate::worker::serve;
 
@@ -215,7 +216,17 @@ impl PdfEngine for PdfiumEngine {
     }
 }
 
+/// Android : PDFium est une bibliothèque native de l'APK, chargée par son
+/// nom (le système la cherche dans le dossier des bibliothèques de l'app).
+#[cfg(target_os = "android")]
+fn bind() -> Result<Pdfium, EngineError> {
+    Pdfium::bind_to_library("libpdfium.so")
+        .map(Pdfium::new)
+        .map_err(|e| EngineError::Unavailable(format!("libpdfium.so : {e:?}")))
+}
+
 /// Charge la bibliothèque PDFium depuis le premier dossier qui la contient.
+#[cfg(not(target_os = "android"))]
 fn bind() -> Result<Pdfium, EngineError> {
     let mut tried = Vec::new();
     for dir in current_candidates() {

@@ -6,6 +6,12 @@ edition.workspace = true
 publish.workspace = true
 license.workspace = true
 
+# Bibliothèque partagée par le PC (main.rs) et Android (point d'entrée
+# mobile de Tauri, chargé par l'APK ; pas de staticlib : iOS n'est pas visé).
+[lib]
+name = "pdfeditor_lib"
+crate-type = ["cdylib", "rlib"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -24,12 +30,15 @@ simplelog = "0.12"
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
-# Mises à jour signées (minisign), comme VoiceToText.
-tauri-plugin-updater = "2"
 # Horodatage du journal (macro de format utilisée par simplelog).
 time = { version = "0.3", features = ["formatting", "local-offset", "macros"] }
 # Attente entre deux vérifications des mises à jour.
 tokio = { version = "1", features = ["time"] }
+
+# Mises à jour signées (minisign), comme VoiceToText : PC seulement (le
+# module de Tauri n'existe pas sur mobile).
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
 
 [lints]
 workspace = true

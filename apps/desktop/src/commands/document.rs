@@ -65,9 +65,7 @@ pub fn pick_pdf(handle: AppHandle) -> Result<Option<String>, AppError> {
     {
         dialog = dialog.set_directory(dir);
     }
-    if let Some(window) = handle.get_webview_window("main") {
-        dialog = dialog.set_parent(&window);
-    }
+    dialog = super::dialog::over_main_window(&handle, dialog);
     let Some(path) = dialog.blocking_pick_file() else {
         return Ok(None);
     };

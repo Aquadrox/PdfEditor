@@ -147,9 +147,7 @@ fn recipe_dialog(
         .file()
         .set_title(title)
         .add_filter("Recettes PdfEditor", &["toml"]);
-    if let Some(window) = handle.get_webview_window("main") {
-        dialog = dialog.set_parent(&window);
-    }
+    dialog = super::dialog::over_main_window(handle, dialog);
     dialog
 }
 

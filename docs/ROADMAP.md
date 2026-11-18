@@ -108,14 +108,27 @@ Première livraison : v0.0.26 (modification, anonymisation).
 - ✅ Annulation d'une action en cours (IA-12) : depuis v0.0.21, bouton « Annuler » de chaque action IA (analyse, question, assistant, traduction, modification)
 - ⬜ Serveur MCP local optionnel, sur le catalogue des actions (IA-17)
 
-## v0.8 — Cycle de signature
+## v0.8 — Android 🚧
+
+Avancée (18/11/2026) : prévue d'abord en v1.1, faite dès maintenant, avant
+le cycle de signature. Même code Rust et même interface (Tauri 2 en version
+mobile), adaptée au tactile. Fonctions A-01 à A-05 de `FONCTIONS.md`.
+
+- ✅ Application Android Tauri 2 (arm64), PDFium pour Android figé et vérifié (SHA-256) (v0.0.27) : `apps/desktop` devient une bibliothèque partagée (`lib.rs`, point d'entrée mobile de Tauri ; `main.rs` pour le PC), application assemblée dans `setup` (dossiers de données donnés par Tauri sur Android), mises à jour Tauri et dialogues rattachés à la fenêtre réservés au PC ; projet Gradle généré versionné (`gen/android`) ; `scripts/build-android.sh` ; CLI Tauri figée (`apps/desktop/package.json`)
+- ⬜ Interface tactile : panneaux en tiroirs, barre d'outils compacte, pincer pour zoomer, sélection au doigt (A-01)
+- ⬜ Fichiers : sélecteur de documents Android, « Ouvrir avec » et « Partager vers PdfEditor », enregistrement (A-02)
+- ⬜ Lecture, recherche, annotations, signature et IA ; secrets dans le Keystore Android (A-03)
+- ⬜ Mises à jour : APK signé (clé du propriétaire dans les secrets GitHub), manifeste `latest-android.json` avec taille et SHA-256, comme VoiceToText (A-04)
+- 🚧 CI : APK de test à chaque PR (job `android`, artefact `PdfEditor-android-test`) ✅ ; APK signé sur un tag ⬜ ; tests sur émulateur des parcours principaux ⬜ (A-05)
+
+## v0.9 — Cycle de signature
 
 - ⬜ `pde-workflow` : plan, machine à états, manifeste embarqué, journal d'audit (C-01, C-02, C-05)
 - ⬜ Assistant de création du cycle, champs attribués (C-01)
 - ⬜ « À vous de signer », envoi au suivant, suivi, refus (C-03, C-04)
 - ⬜ Clôture et verrouillage (C-06), modèles de cycles (C-07)
 
-## v0.9 — Finition et distribution
+## v0.10 — Finition et distribution
 
 - ⬜ Version Linux (AppImage)
 - ⬜ Accessibilité (clavier complet, lecteurs d'écran, contrastes), performances sur gros documents
@@ -125,18 +138,6 @@ Première livraison : v0.0.26 (modification, anonymisation).
 ## v1.0 — Version stable
 
 - ⬜ Toutes les fonctions **M** livrées, testées, documentées
-
-## v1.1 — Android
-
-Même code Rust et même interface (Tauri 2 en version mobile), adaptée au
-tactile. Fonctions A-01 à A-05 de `FONCTIONS.md`.
-
-- ⬜ Application Android Tauri 2 (arm64), PDFium pour Android figé et vérifié (SHA-256)
-- ⬜ Interface tactile : panneaux en tiroirs, barre d'outils compacte, pincer pour zoomer, sélection au doigt (A-01)
-- ⬜ Fichiers : sélecteur de documents Android, « Ouvrir avec » et « Partager vers PdfEditor », enregistrement (A-02)
-- ⬜ Lecture, recherche, annotations, signature et IA ; secrets dans le Keystore Android (A-03)
-- ⬜ Mises à jour : APK signé (clé du propriétaire dans les secrets GitHub), manifeste `latest-android.json` avec taille et SHA-256, comme VoiceToText (A-04)
-- ⬜ CI : APK de test à chaque PR, APK signé sur un tag ; tests sur émulateur des parcours principaux (A-05)
 
 ## Plus tard
 

@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "description": "CLI Tauri (version figée) pour construire l'APK Android : le projet Gradle (gen/android) l'appelle par « npm run tauri ».",
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.6"
+  }
+}

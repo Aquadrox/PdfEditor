@@ -113,7 +113,7 @@ Aucune modification n'est appliquée sans aperçu ni accord de l'utilisateur.
 | IA-16 | **Recettes** (compétences sur mesure) : une consigne enregistrée avec les seules actions qu'elle peut proposer (« Anonymiser selon le RGPD », « Préparer pour signature », « Relire les montants ») ; recettes intégrées et personnelles, modifiables, exportables en fichier pour les partager | S |
 | IA-17 | **Serveur MCP local**, désactivé par défaut : le même catalogue d'actions offert aux assistants externes (Claude Desktop, autres clients MCP) sur le document ouvert ; lecture seule par défaut, chaque modification confirmée dans PdfEditor | P |
 
-## A — Android (v1.1)
+## A — Android (v0.8)
 
 Même application, sur téléphone et tablette Android.
 

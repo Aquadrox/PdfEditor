@@ -3,6 +3,8 @@
 # vérifie son empreinte SHA-256 et la place dans vendor/pdfium/.
 #
 # Utilisé par la CI et en développement (Linux, ou Windows avec Git Bash).
+# `fetch-pdfium.sh android` : bibliothèque Android ARM64, placée dans
+# vendor/pdfium-android/ (l'APK la reçoit dans ses bibliothèques natives).
 # La version doit correspondre à la fonction `pdfium_XXXX` choisie pour
 # pdfium-render dans crates/pde-pdf/Cargo.toml.
 #
@@ -14,11 +16,23 @@ set -euo pipefail
 PDFIUM_BUILD=8125
 SHA256_LINUX_X64=e1c3ce6e270cb5e0c20816b379ad9f2c1309972697c505f508de92bf5e7d6659
 SHA256_WIN_X64=9a964261760cff52570aabf038ab346d3a5034dd8b30d0d5fe8861235d356b8b
+SHA256_ANDROID_ARM64=0495e57163429937caaee1bdd9b07924a7098dbd51d1b97645d124e349f097b4
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 dest="$root/vendor/pdfium"
 
-case "$(uname -s)" in
+platform="$(uname -s)"
+if [ "${1:-}" = "android" ]; then
+  platform=android
+  dest="$root/vendor/pdfium-android"
+fi
+
+case "$platform" in
+  android)
+    archive=pdfium-android-arm64.tgz
+    expected=$SHA256_ANDROID_ARM64
+    library=lib/libpdfium.so
+    ;;
   Linux)
     archive=pdfium-linux-x64.tgz
     expected=$SHA256_LINUX_X64

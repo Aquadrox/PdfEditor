@@ -1,7 +1,8 @@
 /target
-/apps/desktop/gen
+/apps/desktop/gen/schemas
 # Binaires PDFium téléchargés (jamais committés, voir docs/ARCHITECTURE.md)
 /vendor/pdfium
+/vendor/pdfium-android
 
 # Secrets : ne jamais committer
 .env

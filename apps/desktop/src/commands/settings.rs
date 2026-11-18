@@ -6,7 +6,8 @@ use pde_app::settings_store::SettingsView;
 use pde_core::settings::Settings;
 use pde_platform::dirs::AppDirs;
 use serde::Serialize;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, State};
+#[cfg(desktop)]
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
@@ -15,10 +16,20 @@ use super::AppState;
 /// Choix d'un dossier (réglage Fichiers : dossier par défaut) ; `None` si annulé.
 #[tauri::command(async)]
 pub fn pick_folder(handle: AppHandle) -> Result<Option<String>, AppError> {
-    let mut dialog = handle.dialog().file().set_title("Dossier par défaut");
-    if let Some(window) = handle.get_webview_window("main") {
-        dialog = dialog.set_parent(&window);
+    // Android : pas de sélecteur de dossier ; le réglage n'y sert pas.
+    #[cfg(mobile)]
+    {
+        let _ = handle;
+        Ok(None)
     }
+    #[cfg(desktop)]
+    pick_folder_desktop(handle)
+}
+
+#[cfg(desktop)]
+fn pick_folder_desktop(handle: AppHandle) -> Result<Option<String>, AppError> {
+    let mut dialog = handle.dialog().file().set_title("Dossier par défaut");
+    dialog = super::dialog::over_main_window(&handle, dialog);
     let Some(folder) = dialog.blocking_pick_folder() else {
         return Ok(None);
     };
