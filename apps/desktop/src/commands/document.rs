@@ -2,11 +2,16 @@
 
 use std::path::PathBuf;
 
-use pde_app::error::{AppError, ErrorKind};
+use pde_app::error::AppError;
+#[cfg(desktop)]
+use pde_app::error::ErrorKind;
 use pde_app::recent::RecentView;
 use pde_app::text_view::{PageTextView, SearchResults};
 use pde_app::view::DocumentView;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
+#[cfg(desktop)]
+use tauri::Manager;
+#[cfg(desktop)]
 use tauri_plugin_dialog::DialogExt;
 
 use super::AppState;
@@ -51,9 +56,18 @@ pub fn clear_recent_files(app: AppState<'_>) -> Result<(), AppError> {
     app.clear_recent_files()
 }
 
-/// Dialogue « Ouvrir » ; `None` si l'utilisateur annule.
+/// Dialogue « Ouvrir » ; `None` si l'utilisateur annule. Android : le
+/// sélecteur de documents, document copié dans l'application.
 #[tauri::command(async)]
 pub fn pick_pdf(handle: AppHandle) -> Result<Option<String>, AppError> {
+    #[cfg(mobile)]
+    return crate::mobile_files::pick_pdf(&handle);
+    #[cfg(desktop)]
+    pick_pdf_desktop(handle)
+}
+
+#[cfg(desktop)]
+fn pick_pdf_desktop(handle: AppHandle) -> Result<Option<String>, AppError> {
     let mut dialog = handle
         .dialog()
         .file()
@@ -72,6 +86,19 @@ pub fn pick_pdf(handle: AppHandle) -> Result<Option<String>, AppError> {
     path.into_path()
         .map(|p| Some(p.display().to_string()))
         .map_err(|e| AppError::new(ErrorKind::Io, e.to_string()))
+}
+
+/// Document reçu d'une autre application depuis le dernier appel (Android :
+/// « Ouvrir avec », « Partager ») ; toujours vide sur PC.
+#[tauri::command(async)]
+pub fn shared_files(handle: AppHandle) -> Vec<String> {
+    #[cfg(mobile)]
+    return crate::mobile_files::shared_files(&handle);
+    #[cfg(desktop)]
+    {
+        let _ = handle;
+        Vec::new()
+    }
 }
 
 /// Fichiers passés en ligne de commande (« Ouvrir avec PdfEditor »).

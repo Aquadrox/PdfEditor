@@ -153,6 +153,13 @@ test("Réglages IA : préréglage, clé au trousseau, test, profil", async () =>
     await page.click("#ai-test");
     await page.locator("#ai-test-result.ok", { hasText: "Réglages valides" }).waitFor();
     assert.equal(await page.locator("#ai-models option").count(), 2);
+    // Modèles du serveur en boutons : un clic choisit le modèle.
+    const models = page.locator("#ai-test-result .ai-model-list button");
+    assert.deepEqual(await models.allTextContents(), ["deepseek-flash", "deepseek-pro"]);
+    await models.nth(1).click();
+    assert.equal(await page.inputValue("#set-ai-model"), "deepseek-pro");
+    assert.equal(await models.nth(1).getAttribute("aria-pressed"), "true");
+    assert.equal(await models.nth(0).getAttribute("aria-pressed"), "false");
 
     await page.fill("#ai-profile-name", "DeepSeek");
     await page.click("#ai-profile-save");
@@ -161,9 +168,51 @@ test("Réglages IA : préréglage, clé au trousseau, test, profil", async () =>
     await page.click("#settings-save");
     const [saved] = await waitForCalls(app, "save_settings");
     assert.equal(saved.settings.ai.provider.base_url, "https://api.deepseek.com");
+    assert.equal(saved.settings.ai.provider.model, "deepseek-pro");
     assert.equal(saved.settings.ai.profiles[0].name, "DeepSeek");
     assert.equal(saved.settings.ai.fallback, "DeepSeek");
     assert.equal(JSON.stringify(saved).includes("sk-test"), false, "la clé n'est jamais dans les réglages");
+  } finally {
+    await app.close();
+  }
+});
+
+test("Panneau IA : bas du panneau utilisable, largeur réglable, réponse supprimable", async () => {
+  const app = await openDocument({ ai_estimate: [{ ok: { ...ESTIMATE, needs_confirmation: false } }], ai_start: [{ ok: 5 }] });
+  const { page } = app;
+  try {
+    await page.click("#mode-ai");
+    // Type de demande, champ et bouton : chacun assez large pour servir.
+    const mode = await page.locator(".ai-ask-mode").boundingBox();
+    const field = await page.locator("#ai-question").boundingBox();
+    const send = await page.locator("#ai-send").boundingBox();
+    assert.ok(mode.y + mode.height <= field.y + 1, "le type de demande est au-dessus du champ");
+    assert.ok(field.width > 180, `champ trop étroit : ${field.width}`);
+    assert.ok(send.x >= field.x + field.width - 1, "le bouton est à côté du champ");
+
+    // Poignée du bord gauche : tirer vers la gauche élargit le panneau.
+    const before = (await page.locator("#ai-panel").boundingBox()).width;
+    const handle = await page.locator("#ai-resizer").boundingBox();
+    await page.mouse.move(handle.x + 2, handle.y + 200);
+    await page.mouse.down();
+    await page.mouse.move(handle.x - 150, handle.y + 200, { steps: 5 });
+    await page.mouse.up();
+    const after = (await page.locator("#ai-panel").boundingBox()).width;
+    assert.ok(after > before + 100, `${before} → ${after}`);
+    // Au clavier aussi.
+    await page.focus("#ai-resizer");
+    await page.keyboard.press("ArrowRight");
+    assert.ok((await page.locator("#ai-panel").boundingBox()).width < after);
+
+    // Une réponse finie se supprime ; pas pendant qu'elle s'écrit.
+    await page.click('[data-task="summary"]');
+    await waitForCalls(app, "ai_start");
+    const answer = page.locator(".ai-answer").first();
+    assert.equal(await answer.locator(".ai-remove").isVisible(), false);
+    await app.emit("ai-done", { run: 5, Ok: { text: "Résumé.", cost: 0, currency: "USD", model: "m", fallback_used: false } });
+    await answer.locator(".ai-remove").click();
+    assert.equal(await page.locator(".ai-answer").count(), 0);
+    assert.deepEqual(app.errors, []);
   } finally {
     await app.close();
   }

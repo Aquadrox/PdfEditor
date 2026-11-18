@@ -4,6 +4,14 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]`, `[Linux]` ou `[Android]` devant ce
 qui ne concerne qu'une plateforme.
 
+## 0.0.28 — 2026-11-18
+
+- [Android] Ouvrir un PDF depuis le sélecteur de documents du téléphone ; « Enregistrer » le réécrit à son emplacement d'origine, « Enregistrer sous » propose de choisir où.
+- [Android] PdfEditor apparaît dans « Ouvrir avec » et « Partager » pour les PDF : le document s'ouvre aussitôt, même si l'application était déjà lancée.
+- Mode IA : le bas du panneau (type de demande, recette, champ) est enfin utilisable, sur plusieurs lignes ; le panneau s'élargit en tirant son bord gauche (ou avec les flèches), et seule la liste des réponses défile.
+- Mode IA : chaque réponse (résumé, question…) peut être supprimée du panneau avec son bouton ×.
+- Réglages IA : « Tester » affiche les modèles du serveur en boutons, comme VoiceToText ; un clic choisit le modèle.
+
 ## 0.0.27 — 2026-11-18
 
 - [Android] Première version de test de l'application Android (téléphones ARM64), construite à chaque modification : même moteur et même interface que sur PC. L'ouverture des documents depuis le téléphone, l'interface tactile et les mises à jour arrivent dans les versions suivantes.

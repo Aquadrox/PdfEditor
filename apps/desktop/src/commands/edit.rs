@@ -1,12 +1,16 @@
 //! Édition : éléments ajoutés, annuler / rétablir, enregistrer.
 
+#[cfg(desktop)]
 use std::path::PathBuf;
 
 use pde_app::edit_view::{EditView, SavedView};
-use pde_app::error::{AppError, ErrorKind};
+use pde_app::error::AppError;
+#[cfg(desktop)]
+use pde_app::error::ErrorKind;
 use pde_core::edit::Element;
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
+#[cfg(desktop)]
 use tauri_plugin_dialog::DialogExt;
 
 use super::AppState;
@@ -106,14 +110,33 @@ pub fn redo_edit(app: AppState<'_>, id: u64) -> Result<EditView, AppError> {
 
 /// « Enregistrer » : à la place du fichier ouvert.
 #[tauri::command(async)]
-pub fn save_document(app: AppState<'_>, id: u64) -> Result<SavedView, AppError> {
-    app.save_document(id, None)
+pub fn save_document(handle: AppHandle, app: AppState<'_>, id: u64) -> Result<SavedView, AppError> {
+    // Android : la copie locale, puis le document d'origine.
+    #[cfg(mobile)]
+    return crate::mobile_files::save(&handle, &app, id);
+    #[cfg(desktop)]
+    {
+        let _ = handle;
+        app.save_document(id, None)
+    }
 }
 
 /// « Enregistrer sous » : dialogue (dossier du document, nom de copie
 /// proposé par `pde-app`), puis enregistrement ; `None` si annulé.
 #[tauri::command(async)]
 pub fn save_document_as(
+    handle: AppHandle,
+    app: AppState<'_>,
+    id: u64,
+) -> Result<Option<SavedView>, AppError> {
+    #[cfg(mobile)]
+    return crate::mobile_files::save_as(&handle, &app, id);
+    #[cfg(desktop)]
+    save_as_desktop(handle, app, id)
+}
+
+#[cfg(desktop)]
+fn save_as_desktop(
     handle: AppHandle,
     app: AppState<'_>,
     id: u64,

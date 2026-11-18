@@ -1,6 +1,31 @@
 /* Assistant IA : sarcelle = ce que propose l'IA (docs/DESIGN.md). */
 .ai-panel {
+  position: relative;
   width: 340px;
+  min-width: 300px;
+  /* Seule la liste des réponses défile : commandes, champ du bas et
+     poignée restent en place. */
+  overflow: hidden;
+}
+
+/* Poignée du bord gauche : glisser (ou flèches) pour élargir le panneau. */
+.panel-resizer {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  /* À l'intérieur du bord : le défilement du panneau masque ce qui dépasse. */
+  left: 0;
+  width: 6px;
+  cursor: col-resize;
+}
+
+.panel-resizer:hover,
+.panel-resizer:focus-visible,
+.panel-resizer.dragging {
+  background: var(--ai);
+  opacity: 0.5;
+  outline: none;
 }
 
 .ai-provider {
@@ -27,6 +52,7 @@
 .ai-answers {
   display: flex;
   flex: 1;
+  min-height: 6em;
   flex-direction: column;
   gap: var(--space-3);
   margin: 0;
@@ -112,16 +138,26 @@
   cursor: help;
 }
 
+/* Bas du panneau : type de demande, recette, puis champ et bouton, chacun
+   sur sa ligne (sur une seule ligne, rien n'était utilisable). */
 .ai-ask {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--line);
 }
 
+.ai-ask .ai-ask-mode,
+.ai-ask .ai-recipe {
+  grid-column: 1 / -1;
+}
+
 .ai-ask textarea {
-  flex: 1;
   min-width: 0;
+  min-height: 3.2em;
+  max-height: 40vh;
   resize: vertical;
 }
 
@@ -156,7 +192,7 @@
 
 /* Assistant d'actions (IA-15). */
 .ai-ask-mode {
-  align-self: flex-start;
+  justify-self: start;
 }
 
 .ai-ask-mode .btn.on {
@@ -282,4 +318,22 @@
 
 .ai-preview.rewrite {
   border-style: dotted;
+}
+
+.ai-remove {
+  flex: none;
+  margin-left: auto;
+}
+
+/* Réglages IA : modèles du serveur, à choisir d'un clic. */
+.ai-models .caption {
+  margin: var(--space-2) 0 var(--space-1);
+}
+
+.ai-model-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  max-height: 14em;
+  overflow-y: auto;
 }
