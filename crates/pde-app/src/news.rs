@@ -120,10 +120,18 @@ mod tests {
 
     #[test]
     fn bundled_notes_cover_the_running_version() {
-        let path = temp("bundled");
+        // Une version peut ne concerner qu'une plateforme (0.0.27 : Android
+        // seulement) : elle doit figurer dans les notes d'au moins une.
         let version = env!("CARGO_PKG_VERSION");
-        let news = News::launch(path.clone(), version, Platform::Windows, false);
-        assert_eq!(news.view().releases[0].version, version);
-        std::fs::remove_file(path).unwrap();
+        let covered = [Platform::Windows, Platform::Linux, Platform::Android]
+            .into_iter()
+            .any(|platform| {
+                let path = temp("bundled");
+                let news = News::launch(path.clone(), version, platform, false);
+                let first = news.view().releases.first().map(|r| r.version.clone());
+                std::fs::remove_file(path).unwrap();
+                first.as_deref() == Some(version)
+            });
+        assert!(covered, "CHANGELOG.md n'a pas de section {version}");
     }
 }

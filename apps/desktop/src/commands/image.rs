@@ -4,8 +4,8 @@ use std::path::PathBuf;
 
 use pde_app::edit_view::ImportedImage;
 use pde_app::error::{AppError, ErrorKind};
+use tauri::AppHandle;
 use tauri::ipc::{InvokeBody, Request};
-use tauri::{AppHandle, Manager};
 use tauri_plugin_dialog::DialogExt;
 
 use super::AppState;
@@ -32,9 +32,7 @@ pub fn pick_image(
     if let Some(dir) = app.dialog_dir() {
         dialog = dialog.set_directory(dir);
     }
-    if let Some(window) = handle.get_webview_window("main") {
-        dialog = dialog.set_parent(&window);
-    }
+    dialog = super::dialog::over_main_window(&handle, dialog);
     let Some(path) = dialog.blocking_pick_file() else {
         return Ok(None);
     };

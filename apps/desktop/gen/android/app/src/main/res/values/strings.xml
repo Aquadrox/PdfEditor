@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">"PdfEditor"</string>
+    <string name="main_activity_title">"PdfEditor"</string>
+</resources>

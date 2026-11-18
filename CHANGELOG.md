@@ -1,8 +1,12 @@
 # Notes de version
 
 Une section par version, la plus récente en tête. Une ligne `- ` par
-changement, en mots d'utilisateur ; `[Windows]` ou `[Linux]` devant ce qui ne
-concerne qu'une plateforme.
+changement, en mots d'utilisateur ; `[Windows]`, `[Linux]` ou `[Android]` devant ce
+qui ne concerne qu'une plateforme.
+
+## 0.0.27 — 2026-11-18
+
+- [Android] Première version de test de l'application Android (téléphones ARM64), construite à chaque modification : même moteur et même interface que sur PC. L'ouverture des documents depuis le téléphone, l'interface tactile et les mises à jour arrivent dans les versions suivantes.
 
 ## 0.0.26 — 2026-11-18
 

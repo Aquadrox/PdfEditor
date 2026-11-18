@@ -17,6 +17,7 @@ installée, et seulement les changements de sa plateforme. Format :
   - Changement visible partout.
   - [Windows] Changement propre à la version Windows.
   - [Linux] Changement propre à la version Linux.
+  - [Android] Changement propre à la version Android.
 """
 
 import re
@@ -31,7 +32,7 @@ HEADING = re.compile(r"^## +\[?v?(\d+)\.(\d+)\.(\d+)\]?(?=\s|$)")
 DATE = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
 ITEM = re.compile(r"^\s*[-*] +(.*)$")
 TAG = re.compile(r"^\[([^\]]*)\]")
-TAGS = {"windows", "linux"}
+TAGS = {"windows", "linux", "android"}
 
 # Taille du champ `changelog` : garde un manifeste de mise à jour léger ;
 # les sections les plus anciennes sont retirées en premier.
@@ -78,7 +79,7 @@ def sections(text: str) -> tuple[list[dict], list[str]]:
             tag = TAG.match(item.group(1))
             if tag and tag.group(1).strip().lower() not in TAGS:
                 problems.append(
-                    f"ligne {number} : préfixe [{tag.group(1)}] inconnu ([Windows] ou [Linux])"
+                    f"ligne {number} : préfixe [{tag.group(1)}] inconnu ([Windows], [Linux] ou [Android])"
                 )
         elif not current["items"]:
             problems.append(f"ligne {number} : texte hors liste (« - » attendu) : {line}")

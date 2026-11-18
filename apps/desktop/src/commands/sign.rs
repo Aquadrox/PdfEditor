@@ -5,7 +5,7 @@ use pde_app::error::{AppError, ErrorKind};
 use pde_app::signing::{DrawingView, IdentityView, SignRequest, SignatureView};
 use pde_sign::Subject;
 use serde::Deserialize;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tauri_plugin_dialog::DialogExt;
 
 use super::AppState;
@@ -56,9 +56,7 @@ pub fn pick_certificate(handle: AppHandle) -> Result<Option<String>, AppError> {
         .file()
         .set_title("Importer un certificat")
         .add_filter("Certificats PKCS#12", &["p12", "pfx"]);
-    if let Some(window) = handle.get_webview_window("main") {
-        dialog = dialog.set_parent(&window);
-    }
+    dialog = super::dialog::over_main_window(&handle, dialog);
     let Some(path) = dialog.blocking_pick_file() else {
         return Ok(None);
     };

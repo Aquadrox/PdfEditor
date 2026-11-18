@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-Application **Rust + Tauri 2** (Windows d'abord, puis Linux, puis Android en v1.1),
+Application **Rust + Tauri 2** (Windows d'abord, puis Linux, puis Android en v0.8),
 organisée en couches : un **domaine pur** au centre, des **adaptateurs**
 autour (PDFium, cryptographie, LLM, système), une **couche application** qui
 orchestre les cas d'usage, et une **interface web** mince.
@@ -69,7 +69,7 @@ adaptateur (il passe par un trait de `pde-core`) ; seul `apps/desktop` connaît 
 | Secrets | Trousseau du système (code de VoiceToText `secrets_windows.rs` / `secrets_linux.rs`) | Jamais en clair sur le disque, jamais dans le dépôt |
 | Journaux | Fichier tournant dans le dossier local de l'application ; **jamais le contenu des documents** ni les prompts (longueurs et durées seulement) | Diagnostic sans fuite de données |
 | Mises à jour | Module de mise à jour Tauri, paquets signés minisign (clé privée du propriétaire dans les secrets GitHub), comme VoiceToText | Processus déjà validé |
-| Android (v1.1) | Tauri 2 en version mobile : mêmes crates Rust, même interface web (WebView Android) adaptée au tactile ; PDFium précompilé pour Android (arm64) ; secrets dans le Keystore Android (`pde-platform`) ; mises à jour par APK signé et `latest-android.json` (taille, SHA-256), le module de mise à jour de Tauri n'existant pas sur mobile | Un seul code pour PC et téléphone. VoiceToText a dû passer par Kotlin pour son clavier Android ; un éditeur de PDF n'en a pas besoin. Garde-fou dès la v0.2 : la CI compile le cœur pour Android |
+| Android (v0.8) | Tauri 2 en version mobile : mêmes crates Rust, même interface web (WebView Android) adaptée au tactile ; PDFium précompilé pour Android (arm64) ; secrets dans le Keystore Android (`pde-platform`) ; mises à jour par APK signé et `latest-android.json` (taille, SHA-256), le module de mise à jour de Tauri n'existant pas sur mobile | Un seul code pour PC et téléphone. VoiceToText a dû passer par Kotlin pour son clavier Android ; un éditeur de PDF n'en a pas besoin. Garde-fou dès la v0.2 : la CI compile le cœur pour Android |
 
 ## Modèle d'édition
 

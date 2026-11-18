@@ -20,6 +20,7 @@ pub fn library_candidates(env_dir: Option<&Path>, exe_dir: Option<&Path>) -> Vec
 }
 
 /// Dossiers candidats pour le processus en cours.
+#[cfg(not(target_os = "android"))]
 pub(crate) fn current_candidates() -> Vec<PathBuf> {
     let env_dir = std::env::var_os(LIBRARY_DIR_ENV).map(PathBuf::from);
     let exe_dir = std::env::current_exe()

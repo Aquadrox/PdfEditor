@@ -9,6 +9,7 @@
 //! - Changement visible partout.
 //! - [Windows] Changement propre à la version Windows.
 //! - [Linux] Changement propre à la version Linux.
+//! - [Android] Changement propre à la version Android.
 //! ```
 //!
 //! Le même texte sert deux fois :
@@ -54,6 +55,7 @@ const MONTHS: [&str; 12] = [
 pub enum Platform {
     Windows,
     Linux,
+    Android,
 }
 
 /// Version « X.Y.Z » comparable (ordre lexicographique du triplet).
@@ -208,6 +210,7 @@ fn platform_tag(item: &str) -> (Option<Platform>, &str) {
     let platform = match tag.trim().to_lowercase().as_str() {
         "windows" => Platform::Windows,
         "linux" => Platform::Linux,
+        "android" => Platform::Android,
         _ => return (None, item),
     };
     (Some(platform), text.trim_start())
@@ -257,7 +260,8 @@ Texte d'introduction, ignoré.
 ## v0.20.0
 
 * [Windows] Le **PC**, `code` retiré.
-- [Android] Préfixe inconnu : gardé, pour les deux.
+- [Android] Seulement sur Android.
+- [iOS] Préfixe inconnu : gardé, pour tous.
 ";
 
     fn versions(releases: &[Release]) -> Vec<&str> {
@@ -279,7 +283,7 @@ Texte d'introduction, ignoré.
             windows[1].items,
             [
                 "Le PC, code retiré.",
-                "[Android] Préfixe inconnu : gardé, pour les deux."
+                "[iOS] Préfixe inconnu : gardé, pour tous."
             ]
         );
 
@@ -291,6 +295,16 @@ Texte d'introduction, ignoré.
         );
         assert_eq!(linux[1].items, ["Linux seul (casse ignorée)."]);
         assert_eq!(linux[2].items.len(), 1);
+
+        let android = releases(SAMPLE, Platform::Android, None, None);
+        assert_eq!(versions(&android), ["0.22.0", "0.20.0"]);
+        assert_eq!(
+            android[1].items,
+            [
+                "Seulement sur Android.",
+                "[iOS] Préfixe inconnu : gardé, pour tous."
+            ]
+        );
     }
 
     #[test]

@@ -5,6 +5,7 @@
 //! pendant la lecture d'un gros fichier.
 
 pub mod ai;
+mod dialog;
 pub mod document;
 pub mod edit;
 pub mod form;

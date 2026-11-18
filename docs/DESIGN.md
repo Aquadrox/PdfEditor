@@ -106,7 +106,7 @@ titre, sur-titres décoratifs au-dessus des sections.
 - Fenêtre minimale 960 × 600 ; en dessous de 1200 px de large, le panneau
   droit passe en tiroir par-dessus la table.
 
-## Tactile (Android, v1.1)
+## Tactile (Android, v0.8)
 
 Même identité visuelle (jetons, typographie, sceau). Ce qui change :
 
