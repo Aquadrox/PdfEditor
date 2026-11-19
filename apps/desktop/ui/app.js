@@ -9,7 +9,8 @@ import { confirmDiscard, saveDocument, saveDocumentAs } from "./features/edit/sa
 import { showHome, watchDrops } from "./features/home/home.js";
 import { offerRecoveries } from "./features/recovery/recovery.js";
 import { renderRecent } from "./features/home/recent.js";
-import { openPath, pickPdf } from "./features/open/open.js";
+import { isImportable, openPath, pickDocument, pickPdf } from "./features/open/open.js";
+import { attachNewDocument } from "./features/open/new-document.js";
 import { PagesMode } from "./features/pages/pages-mode.js";
 import { FormLayer } from "./features/form/form-layer.js";
 import { FormDesign } from "./features/form-design/form-design.js";
@@ -104,11 +105,7 @@ attachProperties(
 // verrouillé par sa signature n'est plus modifiable.
 const sign = new SignMode(viewer, {
   session: edit.session,
-  save: async () => {
-    const saved = await saveDocument(edit.session);
-    renamed(saved);
-    return saved;
-  },
+  save: saveCurrent,
   reopen: open,
   onState: applyLock,
   onSeal: () => setMode("sign"),
@@ -144,8 +141,10 @@ function relayout(doc) {
 function showSaveState(dirty) {
   if (!dirty) backedUpAt = null;
   byId("doc-dirty").hidden = !dirty;
-  byId("save-button").disabled = !dirty;
-  byId("menu-save").disabled = !dirty;
+  // Sans titre (nouveau, importé) : « Enregistrer » sert même sans modification.
+  const savable = dirty || Boolean(current?.untitled);
+  byId("save-button").disabled = !savable;
+  byId("menu-save").disabled = !savable;
   const time = backedUpAt?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const state = !dirty ? "status.saved" : time ? "status.unsavedBackup" : "status.unsaved";
   byId("save-state").textContent = current ? t(state, { time }) : "";
@@ -215,23 +214,34 @@ function show(doc) {
   return editLoading;
 }
 
+/**
+ * Enregistre le document affiché ; un document sans titre (nouveau ou
+ * importé) demande d'abord où l'écrire.
+ */
+async function saveCurrent() {
+  const saved = current?.untitled ? await saveDocumentAs(edit.session) : await saveDocument(edit.session);
+  renamed(saved);
+  return saved;
+}
+
 /** Avant de quitter le document : enregistrer, abandonner ou rester. */
 async function canLeave() {
   if (!current) return true;
   edit.layer.commitText();
-  return confirmDiscard(edit.session, () => saveDocument(edit.session));
+  return confirmDiscard(edit.session, saveCurrent);
 }
 
 function renamed(saved) {
   if (!saved || !current) return;
   current.file_name = saved.file_name;
+  current.untitled = false;
   byId("doc-name").textContent = saved.file_name;
 }
 
 async function save() {
   if (!current) return;
   edit.layer.commitText();
-  if (edit.session.dirty) renamed(await saveDocument(edit.session));
+  if (edit.session.dirty || current.untitled) await saveCurrent();
 }
 
 async function saveAs() {
@@ -264,6 +274,22 @@ async function close() {
 async function chooseAndOpen() {
   const path = await pickPdf();
   if (path) await open(path);
+}
+
+/** Document Word choisi, converti puis ouvert sans titre. */
+async function chooseAndImport() {
+  byId("main-menu").hidden = true;
+  const path = await pickDocument();
+  if (path) await open(path);
+}
+
+/** Document déjà décrit (nouveau, importé) affiché à la place de l'actuel. */
+async function showCreated(doc, { form = false } = {}) {
+  const previous = current;
+  const loading = show(doc);
+  if (previous) invoke("close_document", { id: previous.id });
+  await loading;
+  if (form) setMode("form");
 }
 
 async function refreshRecent() {
@@ -332,6 +358,9 @@ const palette = new Palette(
 );
 
 byId("home-open").addEventListener("click", chooseAndOpen);
+byId("home-import").addEventListener("click", chooseAndImport);
+byId("menu-import").addEventListener("click", chooseAndImport);
+attachNewDocument(canLeave, showCreated);
 byId("menu-open").addEventListener("click", chooseAndOpen);
 byId("menu-close").addEventListener("click", close);
 byId("menu-save").addEventListener("click", save);
@@ -359,7 +388,7 @@ attachMenu(byId("menu-button"), byId("main-menu"));
  */
 function dropped(path, point, paths = [path]) {
   if (!isImagePath(path)) {
-    if (current && mode === "pages") return pages.insertFiles(paths.filter((p) => !isImagePath(p)), point);
+    if (current && mode === "pages" && !isImportable(path)) return pages.insertFiles(paths.filter((p) => !isImagePath(p)), point);
     return open(path);
   }
   if (!current) return toast(t("edit.openFirst"), "error");

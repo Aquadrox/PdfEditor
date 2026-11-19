@@ -31,7 +31,8 @@ pub use annotation::{
 };
 pub use detect::{Suggestion, detect_fields, kind_for_label, name_for_label};
 pub use element::{
-    Align, Color, Element, ElementId, FONT_SIZE_RANGE, MIN_WIDTH, StandardFont, TextBox, TextStyle,
+    Align, Color, Element, ElementId, FONT_SIZE_RANGE, MAX_TEXT_CHARS, MIN_WIDTH, StandardFont,
+    TextBox, TextStyle,
 };
 pub use existing::{ExistingImage, MIN_EXISTING_SIDE};
 pub use field_box::{

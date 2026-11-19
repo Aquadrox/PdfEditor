@@ -1,5 +1,53 @@
 [
   {
+    "id": "new_document",
+    "group": "Fichier",
+    "title": "Nouveau document",
+    "help": "Créer un PDF vierge (A4, Lettre…), par exemple pour y concevoir un formulaire.",
+    "keywords": [
+      "créer",
+      "vierge",
+      "page blanche",
+      "nouveau",
+      "formulaire"
+    ],
+    "mode": null,
+    "tool": "#menu-new",
+    "needs_document": false,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "import_document",
+    "group": "Fichier",
+    "title": "Importer un document Word",
+    "help": "Convertir un document .docx, .doc, .odt ou .rtf en PDF (par Word ou LibreOffice s'ils sont installés), pour le modifier ou en faire un formulaire.",
+    "keywords": [
+      "word",
+      "docx",
+      "doc",
+      "odt",
+      "libreoffice",
+      "convertir",
+      "importer"
+    ],
+    "mode": null,
+    "tool": "#menu-import",
+    "needs_document": false,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
     "id": "open",
     "group": "Fichier",
     "title": "Ouvrir un PDF",

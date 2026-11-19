@@ -2,6 +2,8 @@
 
 use std::path::PathBuf;
 
+use pde_app::app::ImportedView;
+use pde_app::drafts::NewDocument;
 use pde_app::error::AppError;
 #[cfg(desktop)]
 use pde_app::error::ErrorKind;
@@ -72,7 +74,11 @@ fn pick_pdf_desktop(handle: AppHandle) -> Result<Option<String>, AppError> {
         .dialog()
         .file()
         .set_title("Ouvrir un PDF")
-        .add_filter("Documents PDF", &["pdf"]);
+        .add_filter("Documents PDF", &["pdf"])
+        .add_filter(
+            "Documents Word, OpenDocument, RTF (importés)",
+            pde_core::convert::IMPORTABLE,
+        );
     if let Some(dir) = handle
         .state::<std::sync::Arc<pde_app::app::App>>()
         .dialog_dir()
@@ -110,4 +116,53 @@ pub fn initial_files() -> Vec<String> {
         .filter(|p| p.is_file())
         .map(|p| p.display().to_string())
         .collect()
+}
+
+/// Nouveau document vierge (E-13), ouvert sans titre.
+#[tauri::command(async)]
+pub fn new_document(app: AppState<'_>, request: NewDocument) -> Result<DocumentView, AppError> {
+    app.new_document(&request)
+}
+
+/// Document Word, OpenDocument ou RTF converti en PDF et ouvert sans titre.
+#[tauri::command(async)]
+pub fn import_document(app: AppState<'_>, path: String) -> Result<ImportedView, AppError> {
+    app.import_document(&PathBuf::from(path))
+}
+
+/// Dialogue « Importer un document » ; `None` si l'utilisateur annule.
+#[tauri::command(async)]
+pub fn pick_document_to_import(handle: AppHandle) -> Result<Option<String>, AppError> {
+    #[cfg(mobile)]
+    {
+        let _ = handle;
+        Err(AppError::new(
+            pde_app::error::ErrorKind::InvalidRequest,
+            "l'import des documents Word n'est pas encore disponible sur Android",
+        ))
+    }
+    #[cfg(desktop)]
+    {
+        let mut dialog = handle
+            .dialog()
+            .file()
+            .set_title("Importer un document")
+            .add_filter(
+                "Documents Word, OpenDocument, RTF",
+                pde_core::convert::IMPORTABLE,
+            );
+        if let Some(dir) = handle
+            .state::<std::sync::Arc<pde_app::app::App>>()
+            .dialog_dir()
+        {
+            dialog = dialog.set_directory(dir);
+        }
+        dialog = super::dialog::over_main_window(&handle, dialog);
+        let Some(path) = dialog.blocking_pick_file() else {
+            return Ok(None);
+        };
+        path.into_path()
+            .map(|p| Some(p.display().to_string()))
+            .map_err(|e| AppError::new(ErrorKind::Io, e.to_string()))
+    }
 }

@@ -1,0 +1,16 @@
+[package]
+name = "pde-docx"
+description = "Import intégré des documents Word (.docx) : lecture et mise en page simplifiée, en Rust pur"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+# Décompression des entrées de l'archive .docx (deflate, Rust pur ; déjà
+# utilisé par le décodeur PNG).
+miniz_oxide = "0.9"
+pde-core = { path = "../pde-core" }
+
+[lints]
+workspace = true

@@ -6,7 +6,9 @@
 
 pub mod ai;
 pub mod apk_update;
+pub mod blank;
 pub mod changelog;
+pub mod convert;
 pub mod document;
 pub mod edit;
 pub mod engine;

@@ -4,6 +4,21 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]`, `[Linux]` ou `[Android]` devant ce
 qui ne concerne qu'une plateforme.
 
+## 0.0.31 — 2026-11-19
+
+- Nouveau mode « Formulaire » : créez un formulaire sur n'importe quel PDF en traçant ses champs — texte, zone sur plusieurs lignes, date, montant, e-mail, téléphone, case à cocher, boutons radio, liste déroulante, liste, emplacement de signature. Chaque champ se déplace, se redimensionne, se duplique et se supprime ; tout s'annule avec Ctrl+Z.
+- Champs intelligents : une date se tape librement (« 19/11/26 », « 2026-11-19 ») ou se choisit dans un calendrier, et s'écrit au format choisi ; un montant s'affiche « 1234,50 € » ; un téléphone s'écrit « 06 12 34 56 78 » ; une adresse e-mail est vérifiée. Une saisie impossible (31 février…) est refusée avec un exemple.
+- Champs calculés : un total peut faire la somme, la moyenne, le minimum… d'autres champs ; il se met à jour à chaque saisie.
+- Réglages d'un champ dans le panneau : nom, libellé, obligatoire, lecture seule, options d'une liste, taille et alignement du texte, contour, fond.
+- « Détecter les champs » : sur un formulaire « papier » (traits ____, pointillés, cases ☐, « Nom : »), PdfEditor propose les champs à créer, avec leur genre deviné (date, e-mail, signature…) ; vous cochez ceux à garder.
+- Les champs d'un formulaire existant se modifient aussi : déplacés, renommés, rendus obligatoires, mis au format date ou montant, supprimés.
+- Les formulaires créés suivent les conventions d'Acrobat : dates, montants et totaux fonctionnent aussi dans Adobe Reader, Chrome ou Edge.
+- Nouveau document : « Nouveau document » sur l'accueil ou dans le menu crée un PDF vierge (A4, Lettre, A5…, portrait ou paysage), prêt pour un formulaire ; « Enregistrer » demande où l'écrire.
+- Importer un document Word (.docx, .doc, .odt, .rtf) : converti en PDF par Microsoft Word ou LibreOffice s'ils sont installés ; sinon, un .docx est repris par PdfEditor dans une mise en page simplifiée (texte, titres, listes, tableaux). On peut aussi l'ouvrir ou le déposer comme un PDF.
+- Remplissage : listes où l'on peut écrire une autre valeur, listes à plusieurs choix, champs obligatoires signalés, champs calculés et mots de passe protégés.
+- Corrige « Aplatir le formulaire », qui effaçait le texte tapé dans les champs.
+- [Android] Les pages des documents s'affichent : elles restaient sur « Cette page n'a pas pu être affichée ».
+
 ## 0.0.30 — 2026-11-19
 
 - [Android] Mises à jour automatiques : PdfEditor annonce les nouvelles versions et s'installe tout seul après un appui sur « Mettre à jour » (paquet signé, vérifié avant l'installation). La première fois, Android demande d'autoriser PdfEditor à installer des applications.

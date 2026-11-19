@@ -27,6 +27,8 @@ pub struct DocumentView {
     pub title: String,
     pub pages: Vec<PageView>,
     pub outline: Vec<OutlineView>,
+    /// Document sans titre (nouveau, ou importé) : « Enregistrer » demande où.
+    pub untitled: bool,
 }
 
 impl DocumentView {
@@ -35,6 +37,7 @@ impl DocumentView {
             id,
             title: info.title.clone().unwrap_or_else(|| file_name.clone()),
             file_name,
+            untitled: false,
             pages: info
                 .page_sizes
                 .iter()
@@ -100,7 +103,7 @@ mod tests {
         let json = serde_json::to_string(&DocumentView::new(1, "a.pdf".into(), &info)).unwrap();
         assert_eq!(
             json,
-            r#"{"id":1,"file_name":"a.pdf","title":"T","pages":[{"width":10.0,"height":20.0}],"outline":[]}"#
+            r#"{"id":1,"file_name":"a.pdf","title":"T","pages":[{"width":10.0,"height":20.0}],"outline":[],"untitled":false}"#
         );
     }
 }

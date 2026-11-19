@@ -46,6 +46,7 @@ adaptateur (il passe par un trait de `pde-core`) ; seul `apps/desktop` connaît 
 | `pde-sign` | Signature PAdES, vérification, identités (PKCS#12, auto-signé), DocMDP (plus tard FieldMDP, horodatage RFC 3161), écriture incrémentale ; ni PDFium ni système | `lopdf`, RustCrypto (`cms`, `x509-cert`, `x509-tsp`, `rsa`, `p256`, `p384`, `sha2`), `p12-keystore` | v0.4 |
 | `pde-workflow` | Cycle de signature : plan, machine à états, manifeste embarqué, journal d'audit chaîné | `pde-core`, `serde_json`, `sha2` | v0.8 |
 | `pde-ai` | Client LLM compatible OpenAI (repris de VoiceToText), réponses en flux, transport HTTP abstrait (`ureq` en option `http`, pour l'application seulement), prompts, découpage du document, tâches analyse / questions (plus tard traduction, modification), estimation des coûts | `serde_json`, `ureq` (option) | v0.5 |
+| `pde-docx` | Import intégré des documents Word (E-13) quand ni Word ni LibreOffice ne sont là : archive ZIP et XML lus en Rust pur, paragraphes, titres, listes, tableaux, format de page ; mise en page simplifiée en éléments de l'éditeur (zones de texte, cadres) | `pde-core`, `miniz_oxide` | v0.0.31 |
 | `pde-platform` | Dossiers de l'application, protection des données par le système (`DataProtector`) : DPAPI de Windows ; sous Linux, chiffrement authentifié (ChaCha20-Poly1305) avec une clé gardée dans le trousseau Secret Service ; plus tard le trousseau pour les clés API | `windows`, `secret-service`, `chacha20poly1305` | v0.1 |
 | `pde-app` | Cas d'usage testables sans interface : `DocumentSession` (document + historique + sauvegarde auto), services signature, cycle, IA | tous les crates ci-dessus | v0.1 |
 | `apps/desktop` | Tauri : commandes, événements, fenêtres, protocole `pde://` pour les images de pages, mises à jour | `tauri` | v0.1 |
@@ -143,13 +144,54 @@ Les retraits d'images et de texte d'une page se font ensemble, du dernier
 rang au premier (`writer/existing.rs`).
 
 Formulaires et propriétés (E-08, E-11, `pde-core::edit::form`, `pde-pdf`
-`form/`) : la structure du formulaire (champs, genres, options, valeur) est
-lue avec `lopdf`, la place des widgets par PDFium sur les pages arrangées.
+`form/`) : la structure du formulaire (champs, genres, options, valeur,
+drapeaux, `/DA`, `/MK`, scripts `/AA`) est lue avec `lopdf`
+(`structure.rs`, `look.rs`), la place des widgets par PDFium sur les pages
+arrangées, rattachée à son emplacement par son rectangle (`widgets.rs`).
 Les valeurs saisies et les propriétés sont écrites avec `lopdf` sur le
-contenu enregistré par PDFium (valeur, état des cases, apparence retirée,
-`NeedAppearances`), puis le document est rechargé : PDFium redessine les
-champs. L'aplatissement passe par PDFium. Un document chiffré est refusé
-pour ces deux opérations.
+contenu enregistré par PDFium (valeur, état des cases), puis les champs
+texte et listes sans apparence reçoivent la leur, dessinée par PdfEditor
+(`text_appearance.rs`, Helvetica WinAnsi : sans elle, l'aplatissement par
+PDFium perdait le texte saisi) ; `NeedAppearances` reste demandé aux autres
+lecteurs. Un document chiffré est refusé pour ces opérations.
+
+Champs intelligents (E-08, E-12, `pde-core::formats`) : un format (date,
+heure, nombre, montant, pourcentage, masque, e-mail) ou un calcul est
+décrit dans le PDF par les scripts standard d'Acrobat (`AFDate_FormatEx`,
+`AFNumber_Format`, `AFSimple_Calculate`…), que les autres lecteurs
+exécutent. PdfEditor n'exécute aucun JavaScript : `formats::js` reconnaît
+ces appels (petit lecteur d'arguments littéraux) et fait le même travail
+en Rust — saisie vérifiée et réécrite (`normalize`), valeur affichée
+(`display`), résultat d'un calcul (`canonical`). Un nombre est rangé brut
+(« 1234.5 », ce que lisent ces scripts) et affiché mis en forme par
+l'apparence. Les calculs sont refaits par `pde-app` à chaque saisie, dans
+la même opération de l'historique.
+
+Conception (E-12, `pde-core::edit::field_box`, `form_design`, `detect` ;
+`pde-pdf` `form/design.rs`, `tree.rs`, `appearance.rs`) : un champ créé,
+ou un emplacement d'un champ du document modifié ou supprimé (désigné par
+le nom du champ et son rang), est un élément `FieldBox` de l'historique.
+`designed_fields` réunit les champs du document et ces éléments, et refuse
+un formulaire incohérent (deux champs du même nom, genre changé, valeurs
+de boutons radio en double) : c'est la liste que l'interface montre et
+remplit. À la pose, `design.rs` écrit d'abord la conception avec `lopdf`
+(`AcroForm` créé au besoin avec ses polices `/Helv` et `/ZaDb`, champ et
+annotations, `/MK`, `/DA`, `/Q`, drapeaux, `/Opt`, `/AA`, `/CO`), en
+gardant ce que PdfEditor ne règle pas ; puis les valeurs. La détection
+(`detect.rs`) lit le texte de la page (traits, pointillés, cases,
+« Libellé : ») et propose des champs, de genre deviné du libellé ; rien
+n'est ajouté sans accord.
+
+Documents sans titre (E-13, `pde-core::blank`, `pde-core::convert`,
+`pde-app::drafts`, `pde-platform::office`, `pde-docx`) : un nouveau
+document est un PDF vierge écrit octet par octet ; un document Word est
+converti par le premier convertisseur qui réussit (Microsoft Word par
+PowerShell et COM sous Windows, puis LibreOffice sans fenêtre, profil à
+part, délai borné), sinon un `.docx` passe par `pde-docx` dont la mise en
+page (zones de texte, cadres) est posée par le moteur sur des pages
+blanches. Le PDF obtenu est rangé dans `drafts/` du dossier de données et
+ouvert sans titre : « Enregistrer » demande où l'écrire, le brouillon est
+effacé à l'enregistrement, à la fermeture, ou après 30 jours.
 
 Pages d'autres PDF (P-03, `pde-core::edit::import`) : un PDF inséré est lu
 une fois, décrit par le moteur (taille des pages) puis gardé en mémoire

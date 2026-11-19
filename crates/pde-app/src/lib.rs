@@ -9,6 +9,7 @@ pub mod app;
 pub mod autosave;
 pub mod cache;
 pub mod copies;
+pub mod drafts;
 pub mod edit_view;
 pub mod error;
 pub mod files;

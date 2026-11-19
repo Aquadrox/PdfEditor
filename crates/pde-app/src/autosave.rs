@@ -73,7 +73,16 @@ impl App {
 
     /// Ferme un document : ses modifications abandonnées ne sont plus à récupérer.
     pub fn close_document(&self, id: u64) {
+        // Brouillon sans titre abandonné : son fichier part avec lui.
+        let draft = self
+            .viewer
+            .is_untitled(id)
+            .then(|| self.viewer.document_path(id).ok())
+            .flatten();
         self.viewer.close(id);
+        if let (Some(draft), Some(drafts)) = (draft, &self.drafts) {
+            drafts.remove(&draft);
+        }
         if let Some(recovery) = &self.recovery {
             recovery.remove(id);
         }

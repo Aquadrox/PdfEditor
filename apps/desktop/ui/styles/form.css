@@ -227,3 +227,13 @@
     transition: none;
   }
 }
+
+/* Libellés courts du panneau Champ (« Décimales », « Devise ») : en entier. */
+.form-panel .inline .caption {
+  width: auto;
+  white-space: nowrap;
+}
+
+.form-panel .inline .input.num {
+  width: 72px;
+}

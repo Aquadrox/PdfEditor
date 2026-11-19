@@ -1,10 +1,23 @@
-//! Actions du mode Formulaire (E-12) : créer des champs, les détecter,
-//! essayer le formulaire.
+//! Actions de création (E-12, E-13) : nouveau document, import d'un
+//! document Word, mode Formulaire (créer des champs, les détecter, essayer
+//! le formulaire).
 
 use super::super::{ActionInfo, Mode};
 use super::action;
 
 const FORM: &str = "Formulaire";
+
+/// Créer un document : rubrique Fichier.
+pub(super) fn create() -> Vec<ActionInfo> {
+    vec![
+        action("new_document", super::FILE, "Nouveau document", "Créer un PDF vierge (A4, Lettre…), par exemple pour y concevoir un formulaire.", "#menu-new")
+            .keywords(&["créer", "vierge", "page blanche", "nouveau", "formulaire"])
+            .anytime(),
+        action("import_document", super::FILE, "Importer un document Word", "Convertir un document .docx, .doc, .odt ou .rtf en PDF (par Word ou LibreOffice s'ils sont installés), pour le modifier ou en faire un formulaire.", "#menu-import")
+            .keywords(&["word", "docx", "doc", "odt", "libreoffice", "convertir", "importer"])
+            .anytime(),
+    ]
+}
 
 pub(super) fn form() -> Vec<ActionInfo> {
     vec![

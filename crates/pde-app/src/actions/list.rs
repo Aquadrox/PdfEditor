@@ -105,7 +105,8 @@ fn rect_param(what: &str) -> Value {
 }
 
 pub(super) fn all() -> Vec<ActionInfo> {
-    let mut actions = file();
+    let mut actions = forms::create();
+    actions.extend(file());
     actions.extend(view());
     actions.extend(edit());
     actions.extend(forms::form());
