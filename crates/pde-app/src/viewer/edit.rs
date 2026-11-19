@@ -100,6 +100,11 @@ impl Viewer {
     /// atomique : en cas d'échec, le fichier existant reste intact.
     pub fn save(&self, id: u64, target: Option<PathBuf>) -> Result<SavedView, AppError> {
         self.with_document(id, |open, doc| {
+            if open.untitled && target.is_none() {
+                return Err(invalid(
+                    "nouveau document : choisissez où l'enregistrer (Enregistrer sous)",
+                ));
+            }
             let target = target.unwrap_or_else(|| open.path.clone());
             let bytes = self.engine.save(doc)?;
             // Document signé : les modifications sont ajoutées à la suite (F-03).
@@ -111,6 +116,7 @@ impl Viewer {
             open.signatures = super::signatures::read_signatures(&bytes, open.password.as_deref());
             open.edits.mark_saved();
             open.path.clone_from(&target);
+            open.untitled = false;
             Ok(SavedView {
                 file_name: file_name(&target),
                 path: target.display().to_string(),

@@ -17,6 +17,8 @@ lopdf = { version = "0.47", default-features = false }
 pdfium-render = { version = "0.9.5", default-features = false, features = ["pdfium_8125", "thread_safe"] }
 
 [dev-dependencies]
+# Parcours complet d'un formulaire importé de Word (tests seulement).
+pde-docx = { path = "../pde-docx" }
 # Fichiers JPEG fabriqués par les tests d'images.
 image = { version = "0.25", default-features = false, features = ["jpeg"] }
 # Images de référence des tests de rendu.

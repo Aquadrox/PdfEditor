@@ -104,7 +104,7 @@ export class SignMode {
     });
     // Verrouillé par sa signature : ni Éditer, ni Pages, ni propriétés
     // (« formulaires » laisse remplir les champs et signer).
-    for (const id of ["mode-edit", "mode-pages", "menu-properties"]) byId(id).disabled = !this.doc || Boolean(info.lock);
+    for (const id of ["mode-edit", "mode-form", "mode-pages", "menu-properties"]) byId(id).disabled = !this.doc || Boolean(info.lock);
     this.hooks.onState(info);
   }
 

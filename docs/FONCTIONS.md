@@ -29,10 +29,12 @@ Toute modification est annulable (Ctrl+Z / Ctrl+Y, historique illimité dans la 
 | E-05 | Modifier le texte existant du PDF (bloc par bloc), en gardant la police si elle contient les caractères, sinon police de remplacement signalée | M |
 | E-06 | Déplacer, remplacer, supprimer une image existante du PDF | S |
 | E-07 | Caviardage : suppression réelle du texte et des images sous la zone (pas un simple rectangle noir), avec confirmation | M |
-| E-08 | Remplir un formulaire PDF (AcroForm) ; aplatir le formulaire | S |
+| E-08 | Remplir un formulaire PDF (AcroForm) : texte, cases, boutons radio, listes (modifiables, à choix multiples), champs obligatoires signalés, formats et calculs d'Acrobat appliqués (date, montant, masque, total) ; aplatir le formulaire | S |
 | E-09 | Tampons (« Approuvé », « Brouillon », date…) et filigranes | S |
 | E-10 | En-têtes, pieds de page, numérotation des pages | P |
 | E-11 | Métadonnées (titre, auteur, sujet, mots-clés) | S |
+| E-12 | **Concevoir un formulaire** (mode Formulaire) : créer, déplacer, redimensionner, régler, dupliquer, supprimer des champs — texte, zone sur plusieurs lignes, case, boutons radio, liste déroulante, liste, emplacement de signature ; **champs intelligents** : date (saisie souple, calendrier, format choisi), heure, nombre, montant, pourcentage, téléphone, code postal, masque, e-mail vérifié, champs calculés (somme, moyenne…) ; obligatoire, lecture seule, libellé, apparence ; modifier les champs d'un formulaire existant ; **détection des champs** d'un formulaire « papier » (traits, pointillés, cases, « Libellé : »), genre deviné du libellé | S |
+| E-13 | Partir d'un **nouveau document vierge** (A4, Lettre, A5, A3, Légal ; portrait ou paysage) ou d'un **document Word importé** (.docx, .doc, .odt, .rtf : Microsoft Word ou LibreOffice s'ils sont installés, sinon import intégré du .docx en mise en page simplifiée) ; document sans titre jusqu'au premier enregistrement | S |
 
 ## P — Pages
 

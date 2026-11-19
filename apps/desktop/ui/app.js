@@ -9,9 +9,11 @@ import { confirmDiscard, saveDocument, saveDocumentAs } from "./features/edit/sa
 import { showHome, watchDrops } from "./features/home/home.js";
 import { offerRecoveries } from "./features/recovery/recovery.js";
 import { renderRecent } from "./features/home/recent.js";
-import { openPath, pickPdf } from "./features/open/open.js";
+import { isImportable, openPath, pickDocument, pickPdf } from "./features/open/open.js";
+import { attachNewDocument } from "./features/open/new-document.js";
 import { PagesMode } from "./features/pages/pages-mode.js";
 import { FormLayer } from "./features/form/form-layer.js";
+import { FormDesign } from "./features/form-design/form-design.js";
 import { attachProperties } from "./features/form/properties-dialog.js";
 import { attachSearch } from "./features/search/search-bar.js";
 import { SignMode } from "./features/sign/sign-mode.js";
@@ -54,6 +56,7 @@ const viewer = new Viewer(byId("desk"), {
   onPageShown: (frame, page) => {
     edit.layer.pageShown(frame, page);
     form.pageShown(frame, page);
+    formDesign.pageShown(frame, page);
     sign.pageShown(frame, page);
   },
 });
@@ -87,6 +90,11 @@ const pages = new PagesMode(edit.session, (page) => {
 edit.session.onLayout(relayout);
 // Formulaire en mode Lire, propriétés du document dans le menu.
 const form = new FormLayer(edit.session, viewer);
+// Conception de formulaires (E-12) : mode Formulaire ; « Tester » passe en mode Lire.
+const formDesign = new FormDesign(edit.session, viewer, {
+  test: () => setMode("read"),
+  fieldsChanged: (fields) => form.setFields(fields),
+});
 attachProperties(
   () => current,
   edit.session,
@@ -97,18 +105,14 @@ attachProperties(
 // verrouillé par sa signature n'est plus modifiable.
 const sign = new SignMode(viewer, {
   session: edit.session,
-  save: async () => {
-    const saved = await saveDocument(edit.session);
-    renamed(saved);
-    return saved;
-  },
+  save: saveCurrent,
   reopen: open,
   onState: applyLock,
   onSeal: () => setMode("sign"),
 });
 
 function applyLock(info) {
-  if (info.lock && (mode === "edit" || mode === "pages")) setMode("read");
+  if (info.lock && (mode === "edit" || mode === "pages" || mode === "form")) setMode("read");
   form.flattenAllowed = !info.lock;
   form.setActive(mode === "read" && info.lock !== "all");
 }
@@ -129,6 +133,7 @@ function relayout(doc) {
   statusbar.setPage(page);
   pages.load(current);
   form.load(current);
+  formDesign.load(current);
   search.reset();
 }
 
@@ -136,8 +141,10 @@ function relayout(doc) {
 function showSaveState(dirty) {
   if (!dirty) backedUpAt = null;
   byId("doc-dirty").hidden = !dirty;
-  byId("save-button").disabled = !dirty;
-  byId("menu-save").disabled = !dirty;
+  // Sans titre (nouveau, importé) : « Enregistrer » sert même sans modification.
+  const savable = dirty || Boolean(current?.untitled);
+  byId("save-button").disabled = !savable;
+  byId("menu-save").disabled = !savable;
   const time = backedUpAt?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const state = !dirty ? "status.saved" : time ? "status.unsavedBackup" : "status.unsaved";
   byId("save-state").textContent = current ? t(state, { time }) : "";
@@ -147,16 +154,17 @@ function showSaveState(dirty) {
 function setMode(next) {
   const previous = mode;
   mode = current ? next : "read";
-  for (const name of ["read", "edit", "pages", "sign", "ai"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
+  for (const name of ["read", "edit", "form", "pages", "sign", "ai"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
   byId(`mode-${mode}`).setAttribute("aria-current", "page");
   byId("save-button").hidden = mode === "read" || mode === "sign" || mode === "ai";
   if (mode !== "edit") edit.layer.commitText();
   edit.setActive(mode === "edit");
+  formDesign.setActive(mode === "form");
   pages.setActive(mode === "pages", viewer.page);
   sign.setActive(mode === "sign");
   ai.setActive(mode === "ai");
   form.setActive(mode === "read" && sign.info.lock !== "all");
-  if (mode === "edit" || mode === "pages") sign.warnIfSigned(current);
+  if (mode === "edit" || mode === "pages" || mode === "form") sign.warnIfSigned(current);
   // En quittant la grille, la page choisie est affichée.
   if (previous === "pages" && mode !== "pages" && current) viewer.goToPage(pages.firstSelected);
 }
@@ -172,6 +180,7 @@ function show(doc) {
   byId("menu-close").disabled = !doc;
   byId("menu-save-as").disabled = !doc;
   byId("mode-edit").disabled = !doc;
+  byId("mode-form").disabled = !doc;
   byId("mode-pages").disabled = !doc;
   byId("mode-sign").disabled = !doc;
   byId("mode-ai").disabled = !doc;
@@ -187,12 +196,13 @@ function show(doc) {
     statusbar.setPage(0);
     editLoading = edit
       .load(doc)
-      .then(() => Promise.all([pages.load(doc), form.load(doc), sign.load(doc)]))
+      .then(() => Promise.all([pages.load(doc), form.load(doc), formDesign.load(doc), sign.load(doc)]))
       .catch((e) => toast(t("error.unexpected", { message: e?.message ?? String(e) }), "error"));
   } else {
     edit.load(null);
     pages.load(null);
     form.load(null);
+    formDesign.load(null);
     sign.load(null);
     viewer.unload();
     thumbnails.clear();
@@ -204,23 +214,34 @@ function show(doc) {
   return editLoading;
 }
 
+/**
+ * Enregistre le document affiché ; un document sans titre (nouveau ou
+ * importé) demande d'abord où l'écrire.
+ */
+async function saveCurrent() {
+  const saved = current?.untitled ? await saveDocumentAs(edit.session) : await saveDocument(edit.session);
+  renamed(saved);
+  return saved;
+}
+
 /** Avant de quitter le document : enregistrer, abandonner ou rester. */
 async function canLeave() {
   if (!current) return true;
   edit.layer.commitText();
-  return confirmDiscard(edit.session, () => saveDocument(edit.session));
+  return confirmDiscard(edit.session, saveCurrent);
 }
 
 function renamed(saved) {
   if (!saved || !current) return;
   current.file_name = saved.file_name;
+  current.untitled = false;
   byId("doc-name").textContent = saved.file_name;
 }
 
 async function save() {
   if (!current) return;
   edit.layer.commitText();
-  if (edit.session.dirty) renamed(await saveDocument(edit.session));
+  if (edit.session.dirty || current.untitled) await saveCurrent();
 }
 
 async function saveAs() {
@@ -253,6 +274,22 @@ async function close() {
 async function chooseAndOpen() {
   const path = await pickPdf();
   if (path) await open(path);
+}
+
+/** Document Word choisi, converti puis ouvert sans titre. */
+async function chooseAndImport() {
+  byId("main-menu").hidden = true;
+  const path = await pickDocument();
+  if (path) await open(path);
+}
+
+/** Document déjà décrit (nouveau, importé) affiché à la place de l'actuel. */
+async function showCreated(doc, { form = false } = {}) {
+  const previous = current;
+  const loading = show(doc);
+  if (previous) invoke("close_document", { id: previous.id });
+  await loading;
+  if (form) setMode("form");
 }
 
 async function refreshRecent() {
@@ -321,6 +358,9 @@ const palette = new Palette(
 );
 
 byId("home-open").addEventListener("click", chooseAndOpen);
+byId("home-import").addEventListener("click", chooseAndImport);
+byId("menu-import").addEventListener("click", chooseAndImport);
+attachNewDocument(canLeave, showCreated);
 byId("menu-open").addEventListener("click", chooseAndOpen);
 byId("menu-close").addEventListener("click", close);
 byId("menu-save").addEventListener("click", save);
@@ -330,6 +370,7 @@ byId("edit-undo").addEventListener("click", () => edit.undo());
 byId("edit-redo").addEventListener("click", () => edit.redo());
 byId("mode-read").addEventListener("click", () => setMode("read"));
 byId("mode-edit").addEventListener("click", () => setMode("edit"));
+byId("mode-form").addEventListener("click", () => setMode("form"));
 byId("mode-pages").addEventListener("click", () => setMode("pages"));
 byId("mode-sign").addEventListener("click", () => setMode("sign"));
 byId("mode-ai").addEventListener("click", () => setMode("ai"));
@@ -347,7 +388,7 @@ attachMenu(byId("menu-button"), byId("main-menu"));
  */
 function dropped(path, point, paths = [path]) {
   if (!isImagePath(path)) {
-    if (current && mode === "pages") return pages.insertFiles(paths.filter((p) => !isImagePath(p)), point);
+    if (current && mode === "pages" && !isImportable(path)) return pages.insertFiles(paths.filter((p) => !isImagePath(p)), point);
     return open(path);
   }
   if (!current) return toast(t("edit.openFirst"), "error");

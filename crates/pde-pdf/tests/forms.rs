@@ -6,10 +6,11 @@ mod common;
 
 use std::collections::BTreeMap;
 
-use common::{ENCRYPTED, FORM, TEST_PASSWORD, engine};
+use common::{ENCRYPTED, FORM, SMART_FORM, TEST_PASSWORD, engine};
 use pde_core::document::DocumentId;
-use pde_core::edit::{FieldKind, FieldValue, FormField, Images, Metadata, PagePlan};
+use pde_core::edit::{Align, FieldKind, FieldValue, FormField, Images, Metadata, PagePlan};
 use pde_core::engine::{Edition, OpenedDocument, PdfEngine};
+use pde_core::formats::{CalcOp, FieldFormat, Separator};
 use pde_core::render::{Bitmap, RenderRequest};
 
 fn open_form() -> OpenedDocument {
@@ -105,7 +106,9 @@ fn fields_are_listed_with_their_kind_value_and_place() {
         city.kind,
         FieldKind::Choice {
             options: vec!["Paris".into(), "Lyon".into()],
-            editable: false
+            editable: false,
+            list: false,
+            multi: false,
         }
     );
     assert_eq!(doc.info.metadata.title, "Formulaire de test");
@@ -233,5 +236,209 @@ fn a_protected_document_refuses_values_and_properties() {
     };
     let error = engine().apply_edits(doc.id, with_title).unwrap_err();
     assert!(error.to_string().contains("mot de passe"), "{error}");
+    engine().close(doc.id);
+}
+
+#[test]
+fn smart_fields_are_recognized_from_their_scripts_and_flags() {
+    let doc = engine()
+        .open(SMART_FORM.to_vec(), None)
+        .expect("formulaire");
+    let fields = fields_of(doc.id);
+    let names: Vec<&str> = fields.iter().map(|f| f.name.as_str()).collect();
+    // Le bouton poussoir n'est pas un champ à remplir.
+    assert!(!names.contains(&"imprimer"), "{names:?}");
+    let date = field(&fields, "date");
+    assert!(date.required);
+    assert_eq!(date.tooltip, "Date de naissance");
+    assert_eq!(date.look.font_size, 10.0);
+    assert_eq!(date.look.align, Align::Center);
+    assert_eq!(date.look.border.map(|c| c.b), Some(255));
+    assert_eq!(
+        date.kind.format(),
+        Some(&FieldFormat::Date {
+            pattern: "dd/mm/yyyy".into()
+        })
+    );
+    assert_eq!(
+        field(&fields, "prix").kind.format(),
+        Some(&FieldFormat::Number {
+            decimals: 2,
+            separator: Separator::Comma,
+            currency: " €".into(),
+            currency_before: false,
+        })
+    );
+    let total = field(&fields, "total");
+    assert!(total.read_only);
+    let calc = total.kind.calc().expect("calcul");
+    assert_eq!(
+        (calc.op, calc.fields.clone()),
+        (CalcOp::Sum, vec!["prix".into(), "quantite".into()])
+    );
+    assert_eq!(
+        field(&fields, "pays").kind,
+        FieldKind::Choice {
+            options: vec!["France".into(), "Belgique".into()],
+            editable: true,
+            list: false,
+            multi: false,
+        }
+    );
+    assert_eq!(
+        field(&fields, "pays").value,
+        Some(FieldValue::Choice("Suisse".into()))
+    );
+    let languages = field(&fields, "langues");
+    assert!(matches!(
+        languages.kind,
+        FieldKind::Choice {
+            list: true,
+            multi: true,
+            ..
+        }
+    ));
+    assert_eq!(
+        languages.value,
+        Some(FieldValue::Choices(vec!["fr".into(), "de".into()]))
+    );
+    assert!(matches!(
+        field(&fields, "secret").kind,
+        FieldKind::Text { password: true, .. }
+    ));
+    assert_eq!(field(&fields, "signature").kind, FieldKind::Signature);
+    let city = field(&fields, "client.ville");
+    assert!(matches!(
+        city.kind,
+        FieldKind::Text {
+            max_len: Some(30),
+            ..
+        }
+    ));
+    assert_eq!(city.widgets[0].index, 0);
+    engine().close(doc.id);
+}
+
+#[test]
+fn several_options_are_chosen_and_read_back() {
+    let doc = engine()
+        .open(SMART_FORM.to_vec(), None)
+        .expect("formulaire");
+    let values = [
+        (
+            "langues",
+            FieldValue::Choices(vec!["en".into(), "de".into()]),
+        ),
+        ("pays", FieldValue::Choice("Italie".into())),
+    ];
+    engine()
+        .apply_edits(doc.id, edition(&values, None, false))
+        .expect("listes remplies");
+    let saved = reopen(doc.id);
+    let fields = fields_of(saved.id);
+    assert_eq!(
+        field(&fields, "langues").value,
+        Some(FieldValue::Choices(vec!["en".into(), "de".into()]))
+    );
+    assert_eq!(
+        field(&fields, "pays").value,
+        Some(FieldValue::Choice("Italie".into()))
+    );
+    engine().close(saved.id);
+    engine().close(doc.id);
+}
+
+#[test]
+fn flattened_amounts_show_their_format() {
+    let doc = engine()
+        .open(SMART_FORM.to_vec(), None)
+        .expect("formulaire");
+    let values = [("prix", FieldValue::Text("1234.5".into()))];
+    engine()
+        .apply_edits(doc.id, edition(&values, None, true))
+        .expect("aplati");
+    let text: String = engine()
+        .page_text(doc.id, 0)
+        .expect("texte")
+        .chars
+        .iter()
+        .map(|c| c.ch)
+        .collect();
+    assert!(text.contains("1234,50"), "{text}");
+    engine().close(doc.id);
+}
+
+#[test]
+fn a_flattened_text_field_keeps_its_typed_value() {
+    let doc = open_form();
+    let values = [("nom", FieldValue::Text("Jean Dupont".into()))];
+    engine()
+        .apply_edits(doc.id, edition(&values, None, true))
+        .expect("aplati");
+    assert!(
+        dark(&render(doc.id), (122, 318), (702, 720)) > 30,
+        "texte dessiné"
+    );
+    let saved = reopen(doc.id);
+    assert!(
+        dark(&render(saved.id), (122, 318), (702, 720)) > 30,
+        "texte gardé"
+    );
+    engine().close(saved.id);
+    engine().close(doc.id);
+}
+
+/// Apparence enregistrée du premier emplacement du champ `name`.
+fn saved_appearance(bytes: &[u8], name: &str) -> String {
+    let doc = lopdf::Document::load_mem(bytes).expect("lecture");
+    for object in doc.objects.values() {
+        let Ok(dict) = object.as_dict() else { continue };
+        let Ok(title) = dict.get(b"T").and_then(lopdf::Object::as_str) else {
+            continue;
+        };
+        if title != name.as_bytes() {
+            continue;
+        }
+        let ap = dict
+            .get(b"AP")
+            .and_then(lopdf::Object::as_dict)
+            .expect("AP");
+        let id = ap
+            .get(b"N")
+            .and_then(lopdf::Object::as_reference)
+            .expect("N");
+        let stream = doc
+            .get_object(id)
+            .and_then(lopdf::Object::as_stream)
+            .expect("flux");
+        let content = stream
+            .decompressed_content()
+            .unwrap_or_else(|_| stream.content.clone());
+        return String::from_utf8_lossy(&content).into_owned();
+    }
+    panic!("champ {name} absent");
+}
+
+#[test]
+fn a_filled_amount_is_kept_plain_and_shown_formatted() {
+    let doc = engine()
+        .open(SMART_FORM.to_vec(), None)
+        .expect("formulaire");
+    let values = [("prix", FieldValue::Text("1234.5".into()))];
+    engine()
+        .apply_edits(doc.id, edition(&values, None, false))
+        .expect("rempli");
+    let bytes = engine().save(doc.id).expect("enregistrement");
+    let shown = saved_appearance(&bytes, "prix");
+    assert!(
+        shown.contains("(1234,50 \u{80}) Tj") || shown.contains("1234,50"),
+        "{shown}"
+    );
+    let saved = engine().open(bytes, None).expect("réouverture");
+    assert_eq!(
+        field(&fields_of(saved.id), "prix").value,
+        Some(FieldValue::Text("1234.5".into()))
+    );
+    engine().close(saved.id);
     engine().close(doc.id);
 }

@@ -83,7 +83,7 @@ titre, sur-titres décoratifs au-dessus des sections.
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
-│ ≡  contrat-bail.pdf •      Lire  Éditer  Pages  Signer  IA      [◉ sceau] │ barre du haut
+│ ≡  contrat-bail.pdf •  Lire Éditer Formulaire Pages Signer IA  [◉ sceau] │ barre du haut
 ├───────────────────────────────────────────────────────────────────────────┤
 │ T Texte  ▣ Image  ✎ Dessin  ▭ Forme  ▤ Caviarder  │ Police 11 pt  ■  ⟲ ⟳ │ outils du mode
 ├────────┬─────────────────────────────────────────────────┬────────────────┤
@@ -98,8 +98,11 @@ titre, sur-titres décoratifs au-dessus des sections.
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Modes** (Lire, Éditer, Pages, Signer, IA) dans la barre du haut : chacun
-  n'affiche que ses outils ; on sait toujours dans quel mode on est.
+- **Modes** (Lire, Éditer, Formulaire, Pages, Signer, IA) dans la barre du haut : chacun
+  n'affiche que ses outils ; on sait toujours dans quel mode on est. En mode
+  Formulaire, les champs sont des cadres à l'encre bleue (nom au-dessus),
+  les emplacements de signature à la cire bordeaux en pointillés, un champ
+  obligatoire a un liseré rouge à gauche (et le dit à l'info-bulle).
 - Panneau gauche : miniatures / plan, repliable. Panneau droit : contextuel,
   repliable, redimensionnable. Les deux se ferment pour lire (`F11` plein écran).
 - Contenu aligné à gauche partout ; seules les pages sont centrées sur la table.

@@ -15,6 +15,8 @@ log = "0.4"
 pde-core = { path = "../pde-core" }
 # IA : tâches sur le document, client compatible OpenAI (sans transport réel).
 pde-ai = { path = "../pde-ai" }
+# Import intégré des documents Word (.docx), sans Word ni LibreOffice.
+pde-docx = { path = "../pde-docx" }
 # Caractères qu'aucune police ne couvre (signalés dans l'interface).
 pde-fonts = { path = "../pde-fonts" }
 png = "0.18"

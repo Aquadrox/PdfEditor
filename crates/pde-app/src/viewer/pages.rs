@@ -121,7 +121,9 @@ pub(super) fn document_view(open: &OpenDocument, doc: DocumentId) -> DocumentVie
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| open.path.display().to_string());
-    DocumentView::new(doc.0, file_name, &open.info)
+    let mut view = DocumentView::new(doc.0, file_name, &open.info);
+    view.untitled = open.untitled;
+    view
 }
 
 /// Le document d'origine décrit selon le plan : tailles des pages, et

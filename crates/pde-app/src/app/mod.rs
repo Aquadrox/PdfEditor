@@ -8,8 +8,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 mod ai;
 mod blocks;
+mod drafts;
 
 pub use blocks::{AcceptedRewrite, RewriteProposal, RewriteResult, TranslationResult};
+pub use drafts::ImportedView;
 
 use pde_core::engine::PdfEngine;
 use pde_core::settings::Settings;
@@ -44,6 +46,10 @@ pub struct App {
     ai: Option<AiService>,
     /// Recettes de l'assistant (IA-16).
     recipes: Option<RecipeStore>,
+    /// Documents sans titre : nouveaux ou importés (E-13).
+    pub(crate) drafts: Option<crate::drafts::Drafts>,
+    /// Logiciels de bureautique qui convertissent en PDF (E-13).
+    converters: Vec<Arc<dyn pde_core::convert::DocumentConverter>>,
 }
 
 fn megabytes(mb: u32) -> usize {
@@ -71,7 +77,25 @@ impl App {
             drawings: None,
             ai: None,
             recipes: None,
+            drafts: None,
+            converters: Vec::new(),
         }
+    }
+
+    /// Brouillons rangés dans `drafts` ; les plus anciens sont effacés.
+    pub fn with_drafts(mut self, drafts: crate::drafts::Drafts) -> Self {
+        drafts.purge(crate::drafts::DRAFT_LIFETIME);
+        self.drafts = Some(drafts);
+        self
+    }
+
+    /// Convertisseurs installés, du préféré au moins fidèle.
+    pub fn with_converters(
+        mut self,
+        converters: Vec<Arc<dyn pde_core::convert::DocumentConverter>>,
+    ) -> Self {
+        self.converters = converters;
+        self
     }
 
     /// Identités de signature et signatures manuscrites rangées dans `data_dir`.
@@ -122,7 +146,18 @@ impl App {
     /// Enregistre ; « Enregistrer sous » (`target`) met la copie dans les récents.
     pub fn save_document(&self, id: u64, target: Option<PathBuf>) -> Result<SavedView, AppError> {
         let save_as = target.is_some();
+        let draft = self
+            .viewer
+            .is_untitled(id)
+            .then(|| self.viewer.document_path(id).ok())
+            .flatten();
         let saved = self.viewer.save(id, target)?;
+        // Le brouillon a maintenant son fichier : il n'a plus lieu d'être.
+        if let (Some(draft), Some(drafts)) = (draft, &self.drafts)
+            && Path::new(&saved.path) != draft
+        {
+            drafts.remove(&draft);
+        }
         if let Some(recovery) = &self.recovery {
             recovery.remove(id);
         }
@@ -142,13 +177,18 @@ impl App {
         (!dir.as_os_str().is_empty() && dir.is_dir()).then_some(dir)
     }
 
-    /// « Enregistrer sous » : dossier du document et nom de copie proposé.
+    /// « Enregistrer sous » : dossier du document et nom de copie proposé ;
+    /// un document sans titre est proposé sous son nom, dans le dossier des
+    /// dialogues (réglage).
     pub fn save_as_proposal(&self, id: u64) -> Result<(Option<PathBuf>, String), AppError> {
         let path = self.viewer.document_path(id)?;
         let file_name = path
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default();
+        if self.viewer.is_untitled(id) {
+            return Ok((self.dialog_dir(), file_name));
+        }
         let name = copy_name(&file_name, &self.settings.get().files.copy_suffix);
         Ok((path.parent().map(Path::to_path_buf), name))
     }

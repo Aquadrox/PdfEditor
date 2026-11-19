@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::sync::mpsc::Receiver;
 
 use pde_core::document::DocumentId;
+use pde_core::edit::{Element, FieldBox};
 use pde_core::engine::{Edition, EngineError, OpenedDocument, Placed};
 use pdfium_render::prelude::{PdfDocument, Pdfium};
 
@@ -194,20 +195,55 @@ fn arranged<'a>(
     Ok(fresh)
 }
 
-/// Formulaire et propriétés (E-08, E-11) : valeurs écrites par `lopdf`,
-/// document rechargé (PDFium redessine les champs), puis aplati si demandé.
+/// Formulaire et propriétés (E-08, E-11, E-12) : champs conçus et valeurs
+/// écrits par `lopdf`, document rechargé (PDFium redessine les champs),
+/// puis aplati si demandé.
 fn finish<'a>(
     pdfium: &'a Pdfium,
     slot: &Slot<'a>,
     doc: PdfDocument<'a>,
     edition: &Edition,
 ) -> Result<PdfDocument<'a>, EngineError> {
-    if edition.fields.is_empty() && edition.metadata.is_none() && !edition.flatten {
+    let boxes: Vec<&FieldBox> = edition
+        .elements
+        .iter()
+        .filter_map(|(_, e)| match e {
+            Element::Field(field) => Some(&**field),
+            _ => None,
+        })
+        .collect();
+    if edition.fields.is_empty()
+        && edition.metadata.is_none()
+        && !edition.flatten
+        && boxes.is_empty()
+    {
         return Ok(doc);
     }
+    let designed = boxes
+        .into_iter()
+        .map(|field| {
+            let (_, display) = writer::page_of(&doc, field.page)?;
+            let rect = field.rect();
+            let (x0, y0) = display.page_point(rect.min());
+            let (x1, y1) = display.page_point(rect.max());
+            Ok(form::Designed {
+                field,
+                page: field.page,
+                rect: [x0.min(x1), y0.min(y1), x0.max(x1), y0.max(y1)],
+            })
+        })
+        .collect::<Result<Vec<_>, EngineError>>()?;
     let bytes = doc.save_to_bytes().map_err(internal)?;
     drop(doc);
-    let bytes = form::patch(bytes, &edition.fields, edition.metadata.as_ref())?;
+    let bytes = form::patch(
+        bytes,
+        &form::FormPatch {
+            values: &edition.fields,
+            metadata: edition.metadata.as_ref(),
+            designed: &designed,
+            flatten: edition.flatten,
+        },
+    )?;
     let doc = load(pdfium, &bytes, slot.password.as_deref()).map_err(internal)?;
     if edition.flatten {
         for index in 0..doc.pages().len() {

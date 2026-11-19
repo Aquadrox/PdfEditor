@@ -22,6 +22,7 @@ use serde_json::Value;
 pub enum Mode {
     Read,
     Edit,
+    Form,
     Pages,
     Sign,
     Ai,
@@ -147,6 +148,16 @@ mod tests {
     /// doit rester identique à ce qu'envoie l'application.
     #[test]
     fn interface_test_fixture_matches_catalog() {
+        // `PDE_UPDATE_EXPECTED=1` récrit le fichier après un changement du catalogue.
+        if std::env::var_os("PDE_UPDATE_EXPECTED").is_some() {
+            let path = concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../apps/desktop/ui-tests/fixtures/action-catalog.json"
+            );
+            let json = serde_json::to_string_pretty(&catalog()).unwrap();
+            std::fs::write(path, json + "\n").unwrap();
+            return;
+        }
         let fixture =
             include_str!("../../../../apps/desktop/ui-tests/fixtures/action-catalog.json");
         let fixture: Value = serde_json::from_str(fixture).unwrap();

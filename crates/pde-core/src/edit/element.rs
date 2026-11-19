@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use super::annotation::{InkBox, MarkupBox, ShapeBox};
 use super::existing::ExistingImage;
+use super::field_box::FieldBox;
 use super::image::{ImageBox, Images};
 use super::note::NoteBox;
 use super::original_text::OriginalText;
@@ -126,6 +127,8 @@ pub enum Element {
     Redact(RedactBox),
     ExistingImage(ExistingImage),
     OriginalText(OriginalText),
+    /// Champ de formulaire créé, modifié ou supprimé (E-12).
+    Field(Box<FieldBox>),
 }
 
 impl Element {
@@ -140,6 +143,7 @@ impl Element {
             Element::Redact(redact) => redact.page,
             Element::ExistingImage(image) => image.page,
             Element::OriginalText(block) => block.page,
+            Element::Field(field) => field.page,
         }
     }
 
@@ -155,6 +159,7 @@ impl Element {
             Element::Redact(redact) => redact.page = page,
             Element::ExistingImage(image) => image.page = page,
             Element::OriginalText(block) => block.page = page,
+            Element::Field(field) => field.page = page,
         }
         self
     }
@@ -174,6 +179,7 @@ impl Element {
             Element::Redact(redact) => redact.validate(),
             Element::ExistingImage(image) => image.validate(),
             Element::OriginalText(block) => block.validate(),
+            Element::Field(field) => field.validate(),
             Element::Text(text) => {
                 let numbers = [
                     text.top_left.x,

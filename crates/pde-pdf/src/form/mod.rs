@@ -6,11 +6,19 @@
 //! qui demande aux lecteurs de redessiner les champs (`NeedAppearances`) ;
 //! le document est ensuite rechargé par PDFium, qui les redessine. L'arbre
 //! des champs est lu par `lopdf` (`structure.rs`) et placé sur les pages
-//! par PDFium (`widgets.rs`).
+//! par PDFium (`widgets.rs`). Les champs créés, déplacés, réglés ou
+//! supprimés (E-12) sont écrits avant les valeurs (`design.rs`).
 
+mod appearance;
+mod design;
+mod field_settings;
+mod look;
 mod patch;
 mod structure;
+mod text_appearance;
+mod tree;
 mod widgets;
 
-pub(crate) use patch::patch;
+pub(crate) use design::Designed;
+pub(crate) use patch::{FormPatch, patch};
 pub(crate) use widgets::form_fields;

@@ -4,6 +4,10 @@
 Usage : python3 make_fixtures.py
   - simple.pdf    : écrit à la main, sans dépendance ;
   - form.pdf      : formulaire écrit à la main (texte, case, radios, liste) ;
+  - form-smart.pdf : formulaire « intelligent » écrit à la main (date,
+                    montant, total calculé, liste modifiable, liste à choix
+                    multiples, mot de passe, champ obligatoire, signature,
+                    bouton poussoir, nom à deux niveaux) ;
   - a4.pdf        : vrai format A4 (595,2756 × 841,8898 pt, dimensions non
                     entières comme chez LibreOffice ou Word) ;
   - encrypted.pdf : simple.pdf chiffré en AES-256, nécessite `pypdf` et
@@ -131,6 +135,47 @@ def build_form() -> bytes:
     return write_pdf(objects, 16)
 
 
+def js(script: str) -> bytes:
+    """Action JavaScript (texte seulement : PdfEditor ne l'exécute jamais)."""
+    return b"<< /S /JavaScript /JS (" + script.encode() + b") >>"
+
+
+def build_smart_form() -> bytes:
+    """Champs reconnus par leurs scripts d'Acrobat et leurs drapeaux."""
+    page = b"BT /F1 18 Tf 72 760 Td (Formulaire intelligent) Tj ET\n"
+    widget = lambda name, rect, extra: (
+        b"<< /Type /Annot /Subtype /Widget /T (" + name + b") /Rect [" + rect + b"] /P 3 0 R /F 4 "
+        b"/DA (/Helv 10 Tf 0 g) " + extra + b" >>"
+    )
+    objects = {
+        1: b"<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R "
+        b"12 0 R 13 0 R 14 0 R 15 0 R] /DR << /Font << /Helv 5 0 R >> >> /DA (/Helv 0 Tf 0 g) /CO [9 0 R] >> >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> "
+        b"/Contents 4 0 R /Annots [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 16 0 R] >>",
+        4: stream(page),
+        5: b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+        6: widget(b"date", b"72 700 232 718", b"/FT /Tx /Ff 2 /TU (Date de naissance) /Q 1 "
+           b"/MK << /BC [0 0 1] /BG [1 1 0.8] >> /AA << /F " + js('AFDate_FormatEx("dd/mm/yyyy");')
+           + b" /K " + js('AFDate_KeystrokeEx("dd/mm/yyyy");') + b" >>"),
+        7: widget(b"prix", b"72 670 232 688", b"/FT /Tx /AA << /F " + js('AFNumber_Format(2, 3, 0, 0, " \\240", false);')
+           + b" >>"),
+        8: widget(b"quantite", b"250 670 330 688", b"/FT /Tx /V (3)"),
+        9: widget(b"total", b"72 640 232 658", b"/FT /Tx /Ff 1 /AA << /C "
+           + js('AFSimple_Calculate("SUM", new Array("prix", "quantite"));') + b" >>"),
+        10: widget(b"pays", b"72 610 232 628", b"/FT /Ch /Ff 393216 /Opt [(France) (Belgique)] /V (Suisse)"),
+        11: widget(b"langues", b"72 540 232 600", b"/FT /Ch /Ff 2097152 /Opt [(fr) (en) (de)] /V [(fr) (de)]"),
+        12: widget(b"secret", b"72 510 232 528", b"/FT /Tx /Ff 8192"),
+        13: widget(b"signature", b"300 450 500 500", b"/FT /Sig"),
+        14: widget(b"imprimer", b"72 450 150 470", b"/FT /Btn /Ff 65536"),
+        15: b"<< /T (client) /Kids [16 0 R] >>",
+        16: b"<< /Type /Annot /Subtype /Widget /Parent 15 0 R /T (ville) /FT /Tx /Rect [72 420 232 438] "
+        b"/P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /MaxLen 30 >>",
+        17: b"<< /Title " + text_string("Formulaire intelligent") + b" >>",
+    }
+    return write_pdf(objects, 17)
+
+
 def build_a4() -> bytes:
     """Page A4 aux dimensions exactes, non entières : PDFium arrondit ses
     pixels et la page ne doit pas pour autant passer pour tournée."""
@@ -168,6 +213,8 @@ def main() -> None:
     print(f"écrit : {simple.name}")
     (HERE / "form.pdf").write_bytes(build_form())
     print("écrit : form.pdf")
+    (HERE / "form-smart.pdf").write_bytes(build_smart_form())
+    print("écrit : form-smart.pdf")
     (HERE / "a4.pdf").write_bytes(build_a4())
     print("écrit : a4.pdf")
     try:

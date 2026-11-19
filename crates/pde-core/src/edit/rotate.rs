@@ -24,7 +24,8 @@ pub fn can_rotate(element: &Element) -> bool {
         | Element::Ink(_)
         | Element::Note(_)
         | Element::Redact(_)
-        | Element::ExistingImage(_) => true,
+        | Element::ExistingImage(_)
+        | Element::Field(_) => true,
     }
 }
 
@@ -88,6 +89,11 @@ fn quarter_turn(element: Element, size: PageSize) -> Element {
         Element::Redact(mut redact) => {
             redact.areas = turned_areas(&redact.areas, size);
             Element::Redact(redact)
+        }
+        Element::Field(mut field) => {
+            field.top_left = top_left(field.top_left, field.height, size);
+            std::mem::swap(&mut field.width, &mut field.height);
+            Element::Field(field)
         }
         Element::ExistingImage(mut image) => {
             image.original = turned_areas(&[image.original], size)[0];

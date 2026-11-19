@@ -143,3 +143,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Créer un document vierge ou importer un document Word (E-13). */
+.home-create {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}

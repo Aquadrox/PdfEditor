@@ -97,7 +97,9 @@ fn assemble(dirs: &AppDirs) -> (Arc<App>, Arc<News>, bool) {
     let app = Arc::new(
         app.with_identities(identities, DrawingStore::new(&dirs.data))
             .with_ai(ai)
-            .with_recipes(RecipeStore::new(&dirs.data)),
+            .with_recipes(RecipeStore::new(&dirs.data))
+            .with_drafts(pde_app::drafts::Drafts::new(&dirs.data.join("drafts")))
+            .with_converters(pde_platform::office::installed()),
     );
     (app, news, check_updates)
 }
@@ -144,6 +146,9 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::document::open_document,
+            commands::document::new_document,
+            commands::document::import_document,
+            commands::document::pick_document_to_import,
             commands::document::close_document,
             commands::document::page_text,
             commands::document::search_document,
@@ -165,6 +170,11 @@ pub fn run() {
             commands::form::set_flatten,
             commands::form::document_metadata,
             commands::form::set_metadata,
+            commands::form::add_form_fields,
+            commands::form::set_form_field,
+            commands::form::place_form_widgets,
+            commands::form::delete_form_widgets,
+            commands::form::suggest_form_fields,
             commands::ai::ai_status,
             commands::ai::ai_set_key,
             commands::ai::ai_test,

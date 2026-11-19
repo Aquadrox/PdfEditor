@@ -4,6 +4,7 @@ pub(crate) mod assistant;
 mod edit;
 mod existing;
 mod form;
+mod form_design;
 mod group;
 mod images;
 mod import;
@@ -13,6 +14,7 @@ pub mod translation;
 
 pub use existing::PageImageView;
 pub use form::{FieldView, WidgetView};
+pub use form_design::{WidgetPlace, WidgetTarget};
 pub use import::ImportFile;
 pub use original_text::TextBlockView;
 pub use pages::PagesView;
@@ -48,6 +50,8 @@ pub const DEFAULT_CACHE_BYTES: usize = 256 * 1024 * 1024;
 struct OpenDocument {
     /// Fichier enregistré par « Enregistrer » (« Enregistrer sous » le change).
     path: PathBuf,
+    /// Brouillon sans titre (E-13) : « Enregistrer » demande où l'écrire.
+    untitled: bool,
     /// Le document tel qu'ouvert (tailles, signets).
     original: DocumentInfo,
     /// Le document arrangé selon le plan des pages : ce qui est affiché.
@@ -156,6 +160,7 @@ impl Viewer {
             opened.id,
             OpenDocument {
                 path: path.to_path_buf(),
+                untitled: false,
                 revisions: vec![0; opened.info.page_count()],
                 edits: Edits::with_pages(opened.info.page_sizes.clone()),
                 original: opened.info.clone(),
@@ -176,6 +181,48 @@ impl Viewer {
             },
         );
         Ok(view)
+    }
+
+    /// PDF construit par le moteur : `bytes` (pages blanches) avec les
+    /// éléments posés (import intégré d'un document Word).
+    pub fn build_pdf(
+        &self,
+        bytes: Vec<u8>,
+        elements: Vec<pde_core::edit::Element>,
+    ) -> Result<Vec<u8>, AppError> {
+        let opened = self.engine.open(bytes, None)?;
+        let edition = pde_core::engine::Edition::new(
+            pde_core::edit::PagePlan::identity(opened.info.page_count()),
+            elements
+                .into_iter()
+                .enumerate()
+                .map(|(i, e)| (ElementId(i as u64 + 1), e))
+                .collect(),
+            Images::new(),
+        );
+        let built = self
+            .engine
+            .apply_edits(opened.id, edition)
+            .and_then(|_| self.engine.save(opened.id));
+        self.engine.close(opened.id);
+        Ok(built?)
+    }
+
+    /// Ouvre un brouillon sans titre (nouveau document, document importé).
+    pub fn open_draft(&self, path: &Path) -> Result<DocumentView, AppError> {
+        let mut view = self.open_file(path, None)?;
+        if let Some(open) = lock(&self.documents).get_mut(&DocumentId(view.id)) {
+            open.untitled = true;
+        }
+        view.untitled = true;
+        Ok(view)
+    }
+
+    /// Le document n'a pas encore de fichier choisi par l'utilisateur.
+    pub fn is_untitled(&self, id: u64) -> bool {
+        lock(&self.documents)
+            .get(&DocumentId(id))
+            .is_some_and(|open| open.untitled)
     }
 
     /// Fichier du document ouvert (celui qu'« Enregistrer » remplace).
@@ -256,7 +303,7 @@ fn unknown_document() -> AppError {
 }
 
 /// Lit un fichier entier, refusé au-delà de `limit` octets.
-fn read_file(path: &Path, limit: u64) -> Result<Vec<u8>, AppError> {
+pub(crate) fn read_file(path: &Path, limit: u64) -> Result<Vec<u8>, AppError> {
     let io_error = |e: std::io::Error| {
         let kind = if e.kind() == std::io::ErrorKind::NotFound {
             ErrorKind::FileNotFound

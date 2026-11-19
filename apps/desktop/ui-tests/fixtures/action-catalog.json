@@ -1,5 +1,53 @@
 [
   {
+    "id": "new_document",
+    "group": "Fichier",
+    "title": "Nouveau document",
+    "help": "Créer un PDF vierge (A4, Lettre…), par exemple pour y concevoir un formulaire.",
+    "keywords": [
+      "créer",
+      "vierge",
+      "page blanche",
+      "nouveau",
+      "formulaire"
+    ],
+    "mode": null,
+    "tool": "#menu-new",
+    "needs_document": false,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "import_document",
+    "group": "Fichier",
+    "title": "Importer un document Word",
+    "help": "Convertir un document .docx, .doc, .odt ou .rtf en PDF (par Word ou LibreOffice s'ils sont installés), pour le modifier ou en faire un formulaire.",
+    "keywords": [
+      "word",
+      "docx",
+      "doc",
+      "odt",
+      "libreoffice",
+      "convertir",
+      "importer"
+    ],
+    "mode": null,
+    "tool": "#menu-import",
+    "needs_document": false,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
     "id": "open",
     "group": "Fichier",
     "title": "Ouvrir un PDF",
@@ -467,9 +515,9 @@
       "additionalProperties": false,
       "properties": {
         "instruction": {
-          "type": "string",
+          "description": "Consigne complète de modification, par exemple « Remplace Jean Dupont par Paul Martin »",
           "minLength": 1,
-          "description": "Consigne complète de modification, par exemple « Remplace Jean Dupont par Paul Martin »"
+          "type": "string"
         },
         "pages": {
           "description": "Numéros des pages à modifier (toutes celles de la portée si absent), à partir de 1",
@@ -733,6 +781,208 @@
       "required": [
         "text"
       ],
+      "type": "object"
+    }
+  },
+  {
+    "id": "mode_form",
+    "group": "Formulaire",
+    "title": "Mode Formulaire",
+    "help": "Créer ou modifier les champs d'un formulaire : texte, date, montant, cases, listes, signatures.",
+    "keywords": [
+      "formulaire",
+      "champ",
+      "créer",
+      "concevoir",
+      "modifier"
+    ],
+    "mode": null,
+    "tool": "#mode-form",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "add_text_field",
+    "group": "Formulaire",
+    "title": "Champ texte",
+    "help": "Ajouter un champ à remplir : choisissez l'outil Texte puis tracez son cadre sur la page.",
+    "keywords": [
+      "champ",
+      "zone",
+      "saisie",
+      "remplir",
+      "texte"
+    ],
+    "mode": "form",
+    "tool": "[data-field-tool=\"text\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "add_date_field",
+    "group": "Formulaire",
+    "title": "Champ date",
+    "help": "Ajouter un champ date vérifié, écrit au format choisi (jj/mm/aaaa), avec un calendrier.",
+    "keywords": [
+      "date",
+      "calendrier",
+      "jour",
+      "naissance"
+    ],
+    "mode": "form",
+    "tool": "[data-field-tool=\"date\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "add_amount_field",
+    "group": "Formulaire",
+    "title": "Champ montant",
+    "help": "Ajouter un champ montant (euros, deux décimales) ; un total peut en faire la somme.",
+    "keywords": [
+      "montant",
+      "prix",
+      "euros",
+      "total",
+      "somme",
+      "nombre"
+    ],
+    "mode": "form",
+    "tool": "[data-field-tool=\"amount\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "add_checkbox_field",
+    "group": "Formulaire",
+    "title": "Case à cocher",
+    "help": "Ajouter une case à cocher au formulaire.",
+    "keywords": [
+      "case",
+      "cocher",
+      "oui",
+      "non"
+    ],
+    "mode": "form",
+    "tool": "[data-field-tool=\"checkbox\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "add_choice_field",
+    "group": "Formulaire",
+    "title": "Liste déroulante",
+    "help": "Ajouter une liste d'options à choisir.",
+    "keywords": [
+      "liste",
+      "menu",
+      "options",
+      "choix"
+    ],
+    "mode": "form",
+    "tool": "[data-field-tool=\"dropdown\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "add_signature_field",
+    "group": "Formulaire",
+    "title": "Emplacement de signature",
+    "help": "Placer un champ de signature vide, à signer ensuite dans le mode Signer.",
+    "keywords": [
+      "signature",
+      "signer",
+      "signataire",
+      "visa"
+    ],
+    "mode": "form",
+    "tool": "[data-field-tool=\"signature\"]",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "detect_form_fields",
+    "group": "Formulaire",
+    "title": "Détecter les champs",
+    "help": "Proposer des champs là où la page attend une écriture (traits, pointillés, cases, « Libellé : »), à accepter.",
+    "keywords": [
+      "détecter",
+      "automatique",
+      "reconnaître",
+      "scanner",
+      "formulaire papier"
+    ],
+    "mode": "form",
+    "tool": "#form-detect",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    }
+  },
+  {
+    "id": "test_form",
+    "group": "Formulaire",
+    "title": "Tester le formulaire",
+    "help": "Passer en mode Lire pour remplir le formulaire et l'essayer.",
+    "keywords": [
+      "essayer",
+      "remplir",
+      "aperçu"
+    ],
+    "mode": "form",
+    "tool": "#form-test",
+    "needs_document": true,
+    "shortcut": null,
+    "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
       "type": "object"
     }
   },

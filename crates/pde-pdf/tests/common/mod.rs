@@ -12,6 +12,8 @@ pub const SIMPLE: &[u8] = include_bytes!("../fixtures/simple.pdf");
 pub const ENCRYPTED: &[u8] = include_bytes!("../fixtures/encrypted.pdf");
 /// Formulaire : champ texte, case à cocher, boutons radio, liste (make_fixtures.py).
 pub const FORM: &[u8] = include_bytes!("../fixtures/form.pdf");
+/// Formulaire « intelligent » : date, montant, total, listes, signature (make_fixtures.py).
+pub const SMART_FORM: &[u8] = include_bytes!("../fixtures/form-smart.pdf");
 /// Vraie page A4 (595,2756 × 841,8898 pt), comme chez LibreOffice ou Word.
 pub const A4: &[u8] = include_bytes!("../fixtures/a4.pdf");
 /// Mot de passe fictif du PDF chiffré de test (voir make_fixtures.py).

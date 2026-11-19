@@ -1,0 +1,82 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R] /DR << /Font << /Helv 5 0 R >> >> /DA (/Helv 0 Tf 0 g) /CO [9 0 R] >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R /Annots [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 16 0 R] >>
+endobj
+4 0 obj
+<< /Length 54 >>
+stream
+BT /F1 18 Tf 72 760 Td (Formulaire intelligent) Tj ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Widget /T (date) /Rect [72 700 232 718] /P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /FT /Tx /Ff 2 /TU (Date de naissance) /Q 1 /MK << /BC [0 0 1] /BG [1 1 0.8] >> /AA << /F << /S /JavaScript /JS (AFDate_FormatEx("dd/mm/yyyy");) >> /K << /S /JavaScript /JS (AFDate_KeystrokeEx("dd/mm/yyyy");) >> >> >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /T (prix) /Rect [72 670 232 688] /P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /FT /Tx /AA << /F << /S /JavaScript /JS (AFNumber_Format(2, 3, 0, 0, " \240", false);) >> >> >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Widget /T (quantite) /Rect [250 670 330 688] /P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /FT /Tx /V (3) >>
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Widget /T (total) /Rect [72 640 232 658] /P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /FT /Tx /Ff 1 /AA << /C << /S /JavaScript /JS (AFSimple_Calculate("SUM", new Array("prix", "quantite"));) >> >> >>
+endobj
+10 0 obj
+<< /Type /Annot /Subtype /Widget /T (pays) /Rect [72 610 232 628] /P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /FT /Ch /Ff 393216 /Opt [(France) (Belgique)] /V (Suisse) >>
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Widget /T (langues) /Rect [72 540 232 600] /P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /FT /Ch /Ff 2097152 /Opt [(fr) (en) (de)] /V [(fr) (de)] >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Widget /T (secret) /Rect [72 510 232 528] /P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /FT /Tx /Ff 8192 >>
+endobj
+13 0 obj
+<< /Type /Annot /Subtype /Widget /T (signature) /Rect [300 450 500 500] /P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /FT /Sig >>
+endobj
+14 0 obj
+<< /Type /Annot /Subtype /Widget /T (imprimer) /Rect [72 450 150 470] /P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /FT /Btn /Ff 65536 >>
+endobj
+15 0 obj
+<< /T (client) /Kids [16 0 R] >>
+endobj
+16 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 15 0 R /T (ville) /FT /Tx /Rect [72 420 232 438] /P 3 0 R /F 4 /DA (/Helv 10 Tf 0 g) /MaxLen 30 >>
+endobj
+17 0 obj
+<< /Title <FEFF0046006F0072006D0075006C006100690072006500200069006E00740065006C006C006900670065006E0074> >>
+endobj
+xref
+0 18
+0000000000 65535 f 
+0000000015 00000 n 
+0000000223 00000 n 
+0000000280 00000 n 
+0000000482 00000 n 
+0000000586 00000 n 
+0000000683 00000 n 
+0000001017 00000 n 
+0000001230 00000 n 
+0000001370 00000 n 
+0000001603 00000 n 
+0000001782 00000 n 
+0000001963 00000 n 
+0000002103 00000 n 
+0000002239 00000 n 
+0000002383 00000 n 
+0000002432 00000 n 
+0000002588 00000 n 
+trailer
+<< /Size 18 /Root 1 0 R /Info 17 0 R >>
+startxref
+2712
+%%EOF
