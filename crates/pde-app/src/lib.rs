@@ -4,6 +4,7 @@
 
 pub mod actions;
 pub mod ai;
+pub mod apk_download;
 pub mod app;
 pub mod autosave;
 pub mod cache;

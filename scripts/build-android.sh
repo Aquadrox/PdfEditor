@@ -5,8 +5,10 @@
 #
 # Prérequis : ANDROID_HOME (SDK avec platforms;android-37.0 et
 # ndk;29.0.14206865), Java 17 ou plus, Node, cible Rust aarch64-linux-android.
-# `build-android.sh` : APK de test (debug) ; `build-android.sh release` :
-# APK non signé à signer ensuite (A-04).
+# `build-android.sh` : APK de test (debug, identifiant `.test`) ;
+# `build-android.sh release` : APK publié, signé si ANDROID_KEYSTORE_FILE,
+# ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS et ANDROID_KEY_PASSWORD sont
+# fournis (CI des tags, A-04), sinon non signé.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"

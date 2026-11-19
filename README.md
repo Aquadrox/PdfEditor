@@ -31,6 +31,17 @@ Les versions publiées sont dans les
 l'installeur `PdfEditor_X.Y.Z_x64-setup.exe`. Ensuite, PdfEditor propose
 lui-même ses mises à jour (vérifiées par signature, installées sur votre clic).
 
+Android (téléphones ARM 64 bits) : installer `PdfEditor_X.Y.Z_android.apk`
+depuis les Releases (autoriser l'installation d'applications depuis le
+navigateur). Les versions suivantes s'annoncent dans PdfEditor : **Mettre à
+jour** télécharge, vérifie et installe. La première fois, Android demande
+d'autoriser PdfEditor à installer des applications (l'installation reprend au
+retour) ; selon le téléphone (Xiaomi…), une fenêtre de confirmation
+d'Android s'ouvre : toucher **Mettre à jour**. Android ferme PdfEditor le
+temps de l'installation ; une notification le rouvre. Documents et réglages
+sont gardés. L'APK de test des PR (« PdfEditor (test) ») s'installe à côté et
+ne se met pas à jour.
+
 ## Construire
 
 Rust stable (voir `rust-toolchain.toml`). Le moteur PDF a besoin de la

@@ -110,6 +110,22 @@ and variables → Actions). La clé **publique** (`pdfeditor.key.pub`) va dans
 secrète. Perdre la clé privée empêcherait toute mise à jour automatique des
 versions déjà installées : la sauvegarder.
 
+Clé de signature de l'APK Android (une fois, par le propriétaire uniquement ;
+celle de VoiceToText peut servir) :
+
+```bash
+keytool -genkeypair -v -keystore pdfeditor.jks -alias pdfeditor \
+  -keyalg RSA -keysize 4096 -validity 10000
+base64 -w0 pdfeditor.jks    # Git Bash ; macOS : base64 -i pdfeditor.jks
+```
+
+Secrets GitHub Actions : `ANDROID_KEYSTORE_BASE64` (sortie de `base64`),
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`pdfeditor`),
+`ANDROID_KEY_PASSWORD`. La CI les lit seulement sur un tag, signe l'APK et
+publie `latest-android.json`. Android n'installe une mise à jour que signée
+avec la même clé : la perdre oblige chaque utilisateur à désinstaller puis
+réinstaller ; la sauvegarder, hors du dépôt.
+
 ## Secrets
 
 - Clés API, jetons, mots de passe, clés privées et certificats ne vont

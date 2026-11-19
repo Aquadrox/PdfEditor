@@ -1,6 +1,7 @@
 // Mises à jour : bandeau quand une version est disponible, bandeau de
 // nouveautés après une mise à jour, section des réglages. Rien n'est
-// installé sans clic (voir apps/desktop/src/updates.rs).
+// installé sans clic (voir apps/desktop/src/updates.rs ; Android :
+// updates_mobile.rs, l'installateur du système prend ensuite le relais).
 
 import { byId } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
@@ -39,17 +40,30 @@ export function attachUpdates() {
     showStatus(await invoke("update_status"));
   }
 
+  let lastButton = install;
+  // Android : suite déjà reçue du système (elle peut précéder la réponse).
+  let androidState = null;
+
+  function failed(message) {
+    byId("update-text").textContent = t("updates.failed", { message });
+    install.disabled = false;
+    settingsInstall.disabled = false;
+    lastButton.focus();
+  }
+
   async function installNow(button) {
+    lastButton = button;
+    androidState = null;
     install.disabled = true;
     settingsInstall.disabled = true;
     byId("update-text").textContent = t("updates.downloading");
     try {
+      // PC : l'application redémarre, la promesse ne se résout pas.
+      // Android : le paquet vérifié est confié à l'installateur du système.
       await invoke("install_update");
+      if (androidState === null) byId("update-text").textContent = t("updates.handedOver");
     } catch (error) {
-      byId("update-text").textContent = t("updates.failed", { message: String(error?.message ?? error) });
-      install.disabled = false;
-      settingsInstall.disabled = false;
-      button.focus();
+      failed(String(error?.message ?? error));
     }
   }
 
@@ -89,6 +103,15 @@ export function attachUpdates() {
     const percent = event.payload;
     byId("update-text").textContent =
       percent === null ? t("updates.downloading") : t("updates.progress", { percent });
+  });
+
+  // Android : suite de l'installation (fenêtre de confirmation, échec).
+  listen("update-install", (event) => {
+    const { state, message } = event.payload ?? {};
+    androidState = state;
+    if (state === "failed") failed(message || t("updates.unknownError"));
+    else if (state === "confirm") byId("update-text").textContent = t("updates.confirm");
+    else if (state === "installed") byId("update-text").textContent = t("updates.installed");
   });
 
   refresh().catch(() => {});

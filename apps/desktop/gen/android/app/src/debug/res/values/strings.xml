@@ -1,0 +1,5 @@
+<resources>
+    <!-- Version de test (PR) : nom distinct de la version publiée. -->
+    <string name="app_name">"PdfEditor (test)"</string>
+    <string name="main_activity_title">"PdfEditor (test)"</string>
+</resources>

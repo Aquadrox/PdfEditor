@@ -74,3 +74,41 @@ test("à jour : aucun bandeau ; recherche depuis les réglages", async () => {
     await app.close();
   }
 });
+
+test("Android : paquet confié au système, confirmation puis échec expliqués", async () => {
+  const app = await launch({ update_status: [{ ok: AVAILABLE }], install_update: [{ ok: null }] });
+  try {
+    await app.page.click("#update-install");
+    await app.page.locator("#update-text", { hasText: "PdfEditor se ferme le temps de la mise à jour" }).waitFor();
+    assert.equal(await app.page.isDisabled("#update-install"), true);
+
+    await app.emit("update-install", { state: "confirm", message: null });
+    assert.equal(await app.page.textContent("#update-text"), "Confirmez l'installation dans la fenêtre d'Android.");
+    assert.equal(await app.page.isDisabled("#update-install"), true);
+
+    // Confirmation refusée : le bouton revient, pour réessayer.
+    await app.emit("update-install", { state: "failed", message: "installation annulée" });
+    assert.equal(await app.page.textContent("#update-text"), "Mise à jour impossible : installation annulée");
+    assert.equal(await app.page.isDisabled("#update-install"), false);
+    assert.equal(await app.page.isDisabled("#settings-update-install"), false);
+    assert.deepEqual(app.errors, []);
+  } finally {
+    await app.close();
+  }
+});
+
+test("Android : autorisation d'installer refusée, bouton réutilisable", async () => {
+  const app = await launch({
+    update_status: [{ ok: AVAILABLE }],
+    install_update: [{ error: "PdfEditor n'est pas autorisé à installer des applications" }],
+  });
+  try {
+    await app.page.click("#update-install");
+    await app.page
+      .locator("#update-text", { hasText: "Mise à jour impossible : PdfEditor n'est pas autorisé" })
+      .waitFor();
+    assert.equal(await app.page.isDisabled("#update-install"), false);
+  } finally {
+    await app.close();
+  }
+});
