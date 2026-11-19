@@ -59,6 +59,10 @@ pub fn flip(element: &Element, page: PageSize) -> Element {
             block.original.top_left = flip_point(block.original.top_left, page);
             Element::OriginalText(block)
         }
+        Element::Field(mut field) => {
+            field.top_left = flip_point(field.top_left, page);
+            Element::Field(field)
+        }
     }
 }
 

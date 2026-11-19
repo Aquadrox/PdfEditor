@@ -67,6 +67,8 @@ pub(crate) fn apply(
             Element::Markup(markup) => annotation::write_markup(doc, markup)?,
             Element::Note(note) => note::write_note(doc, note)?,
             Element::ExistingImage(image) => image.bounds(),
+            // Écrit avec le formulaire, après les autres éléments (`form::patch`).
+            Element::Field(field) => field.rect(),
             Element::OriginalText(block) => match rewritten.remove(id) {
                 Some(Rewritten::Kept(bounds) | Rewritten::Removed(bounds)) => bounds,
                 Some(Rewritten::Replaced(replacement)) => {
@@ -98,7 +100,7 @@ pub(crate) fn apply(
 }
 
 /// Page d'un élément et passage de la page affichée à la page PDF.
-pub(super) fn page_of<'a>(
+pub(crate) fn page_of<'a>(
     doc: &PdfDocument<'a>,
     page: usize,
 ) -> Result<(PdfPage<'a>, DisplayTransform), EngineError> {

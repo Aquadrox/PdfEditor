@@ -1,27 +1,40 @@
 //! Valeurs des champs et propriétés du document écrites avec `lopdf` sur
-//! un contenu enregistré par PDFium. Les champs modifiés perdent leur
-//! ancienne apparence et le formulaire demande aux lecteurs de les
-//! redessiner (`NeedAppearances`) : PDFium le fait au rechargement.
+//! un contenu enregistré par PDFium, après la conception du formulaire
+//! (`design.rs`). Les champs modifiés perdent leur ancienne apparence et le
+//! formulaire demande aux lecteurs de les redessiner (`NeedAppearances`) :
+//! PDFium le fait au rechargement. Un nombre est rangé sans mise en forme
+//! (ce que lisent les scripts d'Acrobat), sauf si le formulaire est aplati :
+//! le texte fondu dans la page est alors celui qu'afficherait un lecteur.
 
 use std::collections::BTreeMap;
 
-use lopdf::{Dictionary, Document, Object, ObjectId, text_string};
+use lopdf::{Dictionary, Document, Object, text_string};
 use pde_core::edit::{FieldValue, Metadata};
 use pde_core::engine::EngineError;
+use pde_core::formats::read_actions;
 
+use super::design::{Designed, design};
 use super::structure::{FieldNode, NodeKind, fields};
+use super::text_appearance::draw_missing;
+use super::tree::{dict_mut, ensure_acroform, error};
 
-fn error(message: impl Into<String>) -> EngineError {
-    EngineError::Internal(message.into())
+/// Ce que `patch` écrit dans le formulaire et les propriétés.
+pub(crate) struct FormPatch<'a> {
+    pub values: &'a BTreeMap<String, FieldValue>,
+    pub metadata: Option<&'a Metadata>,
+    pub designed: &'a [Designed<'a>],
+    pub flatten: bool,
 }
 
 /// Le contenu `bytes`, champs remplis et propriétés changées.
-pub(crate) fn patch(
-    bytes: Vec<u8>,
-    values: &BTreeMap<String, FieldValue>,
-    metadata: Option<&Metadata>,
-) -> Result<Vec<u8>, EngineError> {
-    if values.is_empty() && metadata.is_none() {
+pub(crate) fn patch(bytes: Vec<u8>, changes: &FormPatch) -> Result<Vec<u8>, EngineError> {
+    let FormPatch {
+        values,
+        metadata,
+        designed,
+        flatten,
+    } = *changes;
+    if values.is_empty() && metadata.is_none() && designed.is_empty() && !flatten {
         return Ok(bytes);
     }
     let mut doc = Document::load_mem(&bytes).map_err(|e| error(format!("lecture : {e}")))?;
@@ -30,16 +43,25 @@ pub(crate) fn patch(
             "document protégé par mot de passe : formulaire et propriétés ne se modifient pas encore",
         ));
     }
-    if !values.is_empty() {
+    design(&mut doc, designed)?;
+    if !values.is_empty() || !designed.is_empty() || flatten {
         let nodes = fields(&doc);
         for (name, value) in values {
             let node = nodes
                 .iter()
                 .find(|n| &n.name == name)
                 .ok_or_else(|| error(format!("champ « {name} » introuvable")))?;
-            fill(&mut doc, node, value)?;
+            fill(&mut doc, node, value, flatten)?;
         }
-        need_appearances(&mut doc)?;
+        if flatten {
+            show_formatted(&mut doc, &nodes, values)?;
+        }
+        if !nodes.is_empty() {
+            ensure_acroform(&mut doc)?;
+            let filled = fields(&doc);
+            draw_missing(&mut doc, &filled)?;
+            need_appearances(&mut doc)?;
+        }
     }
     if let Some(metadata) = metadata {
         set_info(&mut doc, metadata);
@@ -50,17 +72,47 @@ pub(crate) fn patch(
     Ok(out)
 }
 
-fn dict_mut(doc: &mut Document, id: ObjectId) -> Result<&mut Dictionary, EngineError> {
-    doc.get_object_mut(id)
-        .and_then(Object::as_dict_mut)
-        .map_err(|e| error(format!("objet {} : {e}", id.0)))
+/// Texte affiché d'un champ mis en forme (nombre, pourcentage).
+fn displayed(node: &FieldNode, text: &str) -> String {
+    match read_actions(&node.actions).0 {
+        Some(format) => format.display(text),
+        None => text.to_string(),
+    }
 }
 
-fn fill(doc: &mut Document, node: &FieldNode, value: &FieldValue) -> Result<(), EngineError> {
+/// Formulaire aplati : les nombres des champs non remplis ici sont écrits
+/// tels qu'affichés, comme ceux remplis par `fill`.
+fn show_formatted(
+    doc: &mut Document,
+    nodes: &[FieldNode],
+    values: &BTreeMap<String, FieldValue>,
+) -> Result<(), EngineError> {
+    for node in nodes.iter().filter(|n| !values.contains_key(&n.name)) {
+        if let (NodeKind::Text { .. }, Some(FieldValue::Text(text))) = (&node.kind, &node.value) {
+            let shown = displayed(node, text);
+            if shown != *text {
+                fill(doc, node, &FieldValue::Text(shown), false)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn fill(
+    doc: &mut Document,
+    node: &FieldNode,
+    value: &FieldValue,
+    flatten: bool,
+) -> Result<(), EngineError> {
     match (&node.kind, value) {
         (NodeKind::Text { .. }, FieldValue::Text(text))
         | (NodeKind::Choice { .. }, FieldValue::Choice(text)) => {
-            dict_mut(doc, node.id)?.set("V", text_string(text));
+            let text = if flatten {
+                displayed(node, text)
+            } else {
+                text.clone()
+            };
+            dict_mut(doc, node.id)?.set("V", text_string(&text));
             // Ancienne apparence retirée : elle montrerait l'ancienne valeur.
             for widget in &node.widgets {
                 dict_mut(doc, *widget)?.remove(b"AP");
@@ -90,6 +142,27 @@ fn fill(doc: &mut Document, node: &FieldNode, value: &FieldValue) -> Result<(), 
                     "Off"
                 };
                 dict_mut(doc, *widget)?.set("AS", Object::Name(state.as_bytes().to_vec()));
+            }
+        }
+        (NodeKind::Choice { options, .. }, FieldValue::Choices(items)) => {
+            let field = dict_mut(doc, node.id)?;
+            field.set(
+                "V",
+                Object::Array(items.iter().map(|i| text_string(i)).collect()),
+            );
+            // Rangs des options choisies (`/I`), croissants.
+            let mut indices: Vec<i64> = items
+                .iter()
+                .filter_map(|i| options.iter().position(|o| o == i))
+                .filter_map(|i| i64::try_from(i).ok())
+                .collect();
+            indices.sort_unstable();
+            field.set(
+                "I",
+                Object::Array(indices.into_iter().map(Object::from).collect()),
+            );
+            for widget in &node.widgets {
+                dict_mut(doc, *widget)?.remove(b"AP");
             }
         }
         _ => {

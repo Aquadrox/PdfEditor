@@ -90,39 +90,44 @@ impl FakeEngine {
         let Some(page) = edition.plan.position_of(0) else {
             return Vec::new();
         };
-        let widget = |y: f64| Widget {
-            page,
-            bounds: Rect::from_corners(Point::new(100.0, y), Point::new(300.0, y + 20.0)),
-            option: None,
+        let widget = |y: f64| {
+            Widget::new(
+                page,
+                Rect::from_corners(Point::new(100.0, y), Point::new(300.0, y + 20.0)),
+                0,
+            )
+        };
+        let field = |name: &str, kind: FieldKind, y: f64| FormField {
+            widgets: vec![widget(y)],
+            ..FormField::new(name, kind)
         };
         vec![
-            FormField {
-                name: "nom".into(),
-                kind: FieldKind::Text {
+            field(
+                "nom",
+                FieldKind::Text {
                     multiline: false,
                     max_len: Some(30),
+                    password: false,
+                    comb: false,
+                    format: None,
+                    calc: None,
                 },
-                read_only: false,
-                value: None,
-                widgets: vec![widget(700.0)],
-            },
+                700.0,
+            ),
             FormField {
-                name: "accord".into(),
-                kind: FieldKind::Checkbox,
-                read_only: false,
                 value: Some(pde_core::edit::FieldValue::Checked(false)),
-                widgets: vec![widget(650.0)],
+                ..field("accord", FieldKind::Checkbox, 650.0)
             },
-            FormField {
-                name: "ville".into(),
-                kind: FieldKind::Choice {
+            field(
+                "ville",
+                FieldKind::Choice {
                     options: vec!["Paris".into(), "Lyon".into()],
                     editable: false,
+                    list: false,
+                    multi: false,
                 },
-                read_only: false,
-                value: None,
-                widgets: vec![widget(600.0)],
-            },
+                600.0,
+            ),
         ]
     }
 
@@ -199,6 +204,7 @@ impl PdfEngine for FakeEngine {
         let line = match page {
             0 => "Bonjour monde",
             1 => "le monde entier",
+            2 => "Date : ______________",
             _ => "",
         };
         let chars = line
@@ -219,7 +225,17 @@ impl PdfEngine for FakeEngine {
     /// ligne ; le texte UNWRITABLE échoue.
     fn apply_edits(&self, doc: DocumentId, edition: Edition) -> Result<Vec<Placed>, EngineError> {
         let sizes = self.arranged(doc, &edition)?;
-        let form = Self::form(&edition);
+        // Comme PDFium : les champs conçus sont écrits avant les valeurs.
+        let boxes: Vec<_> = edition
+            .elements
+            .iter()
+            .filter_map(|(id, e)| match e {
+                Element::Field(b) => Some((*id, &**b)),
+                _ => None,
+            })
+            .collect();
+        let form = pde_core::edit::designed_fields(&Self::form(&edition), &boxes)
+            .map_err(EngineError::Internal)?;
         if let Some(name) = edition
             .fields
             .keys()
@@ -247,6 +263,7 @@ impl PdfEngine for FakeEngine {
                     Element::Note(note) => note.bounds(),
                     Element::Redact(redact) => redact.bounds(),
                     Element::ExistingImage(image) => image.bounds(),
+                    Element::Field(field) => field.rect(),
                     // Police d'origine : Latin-1 seulement.
                     Element::OriginalText(block) => {
                         let replaced = block.text.chars().any(|c| u32::from(c) > 0xff);

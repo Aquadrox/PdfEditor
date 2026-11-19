@@ -4,6 +4,7 @@ pub(crate) mod assistant;
 mod edit;
 mod existing;
 mod form;
+mod form_design;
 mod group;
 mod images;
 mod import;
@@ -13,6 +14,7 @@ pub mod translation;
 
 pub use existing::PageImageView;
 pub use form::{FieldView, WidgetView};
+pub use form_design::{WidgetPlace, WidgetTarget};
 pub use import::ImportFile;
 pub use original_text::TextBlockView;
 pub use pages::PagesView;
