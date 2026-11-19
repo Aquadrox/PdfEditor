@@ -22,9 +22,18 @@ export function setWindowTitle(title) {
   return tauri().window.getCurrentWindow().setTitle(title);
 }
 
-/** Le WebView de Windows écrit les protocoles maison en http://nom.localhost. */
+/**
+ * Adresse du protocole maison selon le système : les WebView de Windows et
+ * d'Android l'écrivent http://nom.localhost (sur Android, pde://localhost
+ * n'aboutit pas : chaque page affichait « Cette page n'a pas pu être
+ * affichée »).
+ */
+export function protocolBaseFor(userAgent) {
+  return /Windows|Android/.test(userAgent) ? "http://pde.localhost/" : "pde://localhost/";
+}
+
 function protocolBase() {
-  return navigator.userAgent.includes("Windows") ? "http://pde.localhost/" : "pde://localhost/";
+  return protocolBaseFor(navigator.userAgent);
 }
 
 /**
