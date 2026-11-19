@@ -26,7 +26,31 @@ function editView(extra = {}) {
 
 const EMPTY = { ...editView(), revisions: [0, 0, 0], can_undo: false, dirty: false };
 /** État après une conception : un élément « field » change l'empreinte, les champs sont relus. */
-const designed = (id) => editView({ elements: [{ id, element: { kind: "field", page: 0 }, bounds: { x: 0, y: 0, width: 1, height: 1 }, missing_chars: "", replaced_font: false }] });
+/** Élément de conception tel que Rust l'envoie (`kind` : l'élément, `field_kind` : le genre du champ). */
+const fieldElement = (id) => ({
+  id,
+  element: {
+    kind: "field",
+    page: 0,
+    top_left: { x: 200, y: 500 },
+    width: 100,
+    height: 20,
+    name: "date_1",
+    field_kind: text({ format: { kind: "date", pattern: "dd/mm/yyyy" } }),
+    tooltip: "",
+    required: false,
+    read_only: false,
+    look,
+    value: null,
+    export: "",
+    origin: null,
+    deleted: false,
+  },
+  bounds: { x: 200, y: 500, width: 100, height: 20 },
+  missing_chars: "",
+  replaced_font: false,
+});
+const designed = (id) => editView({ elements: [fieldElement(id)] });
 
 async function openForm(commands = {}) {
   const app = await launch({
@@ -71,11 +95,11 @@ test("Mode Formulaire : un cadre par champ, réglages d'un champ renvoyés à Ru
     assert.equal(call.name, "date");
     assert.equal(call.field.tooltip, "Date de naissance");
     assert.equal(call.field.required, true);
-    assert.deepEqual(call.field.kind.format, { kind: "date", pattern: "dd/mm/yyyy" });
+    assert.deepEqual(call.field.field_kind.format, { kind: "date", pattern: "dd/mm/yyyy" });
     // Changement de format : un montant.
     await app.page.selectOption("#form-format", "amount");
     const calls = await waitForCalls(app, "set_form_field", 2);
-    assert.deepEqual(calls[1].field.kind.format, { kind: "number", decimals: 2, separator: "comma", currency: " €", currency_before: false });
+    assert.deepEqual(calls[1].field.field_kind.format, { kind: "number", decimals: 2, separator: "comma", currency: " €", currency_before: false });
     // L'édition a changé : champs relus.
     await waitForCalls(app, "form_fields", 2);
     assert.deepEqual(app.errors, []);
@@ -103,12 +127,17 @@ test("Mode Formulaire : outil Date, un clic crée un champ date", async () => {
     const [f] = call.fields;
     assert.equal(f.name, "date_1");
     assert.equal(f.page, 0);
-    assert.deepEqual(f.kind.format, { kind: "date", pattern: "dd/mm/yyyy" });
+    assert.deepEqual(f.field_kind.format, { kind: "date", pattern: "dd/mm/yyyy" });
     assert.equal(f.width, 100);
     // Le champ créé est choisi, l'outil revient à « Choisir ».
     await app.page.locator("#form-name").waitFor();
     await app.page.waitForFunction(() => document.getElementById("form-name").value === "date_1");
     assert.equal(await app.page.getAttribute('[data-field-tool="select"]', "aria-pressed"), "true");
+    // Le champ créé n'est pas un ajout du mode Éditer : rien ne casse en y passant.
+    await app.page.click("#mode-edit");
+    await app.page.click("#mode-form");
+    assert.equal(await app.page.locator(".edit-layer [data-id]").count(), 0);
+    assert.equal(await app.page.locator("#toast.error").count(), 0);
     assert.deepEqual(app.errors, []);
   } finally {
     await app.close();
@@ -122,7 +151,7 @@ test("Mode Formulaire : champs détectés proposés, ajoutés seulement s'ils so
     width: 150,
     height: 18,
     name,
-    kind: text(),
+    field_kind: text(),
     tooltip: name,
     required: false,
     read_only: false,

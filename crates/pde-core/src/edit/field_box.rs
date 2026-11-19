@@ -36,6 +36,10 @@ pub struct FieldBox {
     pub height: f64,
     /// Nom complet du champ (le désigne ; les boutons d'un groupe radio le partagent).
     pub name: String,
+    /// Genre du champ. Écrit `field_kind` en JSON : `kind` désigne déjà le
+    /// genre de l'élément (`"field"`) dans `Element`, et une clé en double
+    /// rendait l'élément illisible (interface, sauvegarde automatique).
+    #[serde(rename = "field_kind")]
     pub kind: FieldKind,
     #[serde(default)]
     pub tooltip: String,
@@ -225,11 +229,28 @@ mod tests {
     fn json_for_the_interface() {
         let json = serde_json::json!({
             "page": 0, "top_left": { "x": 10.0, "y": 50.0 }, "width": 80.0, "height": 18.0,
-            "name": "date", "kind": { "kind": "text", "format": { "kind": "date", "pattern": "dd/mm/yyyy" } }
+            "name": "date", "field_kind": { "kind": "text", "format": { "kind": "date", "pattern": "dd/mm/yyyy" } }
         });
         let f: FieldBox = serde_json::from_value(json).unwrap();
         assert_eq!(f.validate(), Ok(()));
         assert!(f.kind.format().is_some());
         assert!(f.origin.is_none() && !f.required);
+    }
+
+    /// Bogue : `Element::Field` s'écrivait avec deux clés `kind` (genre de
+    /// l'élément, genre du champ) ; l'interface ne reconnaissait plus le
+    /// champ et la sauvegarde automatique ne se relisait pas.
+    #[test]
+    fn a_field_element_is_written_and_read_back() {
+        let mut checkbox = field("accord", FieldKind::Checkbox);
+        checkbox.export = "Oui".into();
+        let element = crate::edit::Element::Field(Box::new(checkbox));
+        let text = serde_json::to_string(&element).unwrap();
+        assert_eq!(text.matches("\"kind\":").count(), 2, "{text}");
+        let json: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(json["kind"], "field");
+        assert_eq!(json["field_kind"]["kind"], "checkbox");
+        let back: crate::edit::Element = serde_json::from_str(&text).unwrap();
+        assert_eq!(back, element);
     }
 }

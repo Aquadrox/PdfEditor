@@ -382,6 +382,9 @@ byId("recent-clear").addEventListener("click", async () => {
   refreshRecent();
 });
 attachMenu(byId("menu-button"), byId("main-menu"));
+byId("default-app").addEventListener("click", () =>
+  invoke("open_default_apps").catch((e) => toast(t("settings.defaultApp.failed", { message: e?.message ?? String(e) }), "error")),
+);
 /**
  * Fichier déposé : une image s'ajoute au document ouvert ; un PDF s'ouvre,
  * sauf en mode Pages où ses pages sont insérées là où il tombe.
@@ -413,6 +416,8 @@ async function start() {
   invoke("app_info")
     .then((info) => {
       byId("app-version").textContent = t("settings.version", { version: info.version });
+      // Lecteur PDF par défaut : réglage propre à Windows.
+      byId("default-app-field").hidden = info.os !== "windows";
     })
     .catch(() => {});
   try {

@@ -230,6 +230,7 @@ pub fn run() {
             commands::settings::action_catalog,
             commands::settings::pick_folder,
             commands::settings::open_logs_folder,
+            commands::settings::open_default_apps,
             commands::settings::app_info,
             commands::updates::update_status,
             commands::updates::check_update,

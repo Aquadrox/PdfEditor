@@ -83,11 +83,31 @@ pub fn open_logs_folder(handle: AppHandle, dirs: State<'_, AppDirs>) -> Result<(
 #[derive(Serialize)]
 pub struct AppInfo {
     version: &'static str,
+    /// Système (`windows`, `linux`, `android`…) : ce que l'interface propose.
+    os: &'static str,
 }
 
 #[tauri::command]
 pub fn app_info() -> AppInfo {
     AppInfo {
         version: env!("CARGO_PKG_VERSION"),
+        os: std::env::consts::OS,
     }
+}
+
+/// Page « Applications par défaut » des Paramètres de Windows : l'installeur
+/// déclare PdfEditor pour les `.pdf`, mais Windows réserve à l'utilisateur le
+/// choix du lecteur par défaut.
+#[tauri::command(async)]
+pub fn open_default_apps(handle: AppHandle) -> Result<(), AppError> {
+    if !cfg!(windows) {
+        return Err(AppError::new(
+            ErrorKind::InvalidRequest,
+            "réglage propre à Windows",
+        ));
+    }
+    handle
+        .opener()
+        .open_url("ms-settings:defaultapps", None::<&str>)
+        .map_err(|e| AppError::new(ErrorKind::Io, e.to_string()))
 }

@@ -168,7 +168,7 @@ export class DesignPanel {
     const patch = {
       name: byId("form-name").value.trim() || field.name,
       tooltip: byId("form-tooltip").value.trim(),
-      kind: this.readKind(),
+      field_kind: this.readKind(),
       required: byId("form-required").checked,
       read_only: byId("form-read-only").checked,
       look,

@@ -196,7 +196,7 @@ export class FormDesign {
     const copy = {
       ...newField("text", box, widget.page, []),
       name: field.name,
-      kind,
+      field_kind: kind,
       tooltip: field.tooltip,
       required: field.required,
       read_only: field.read_only,

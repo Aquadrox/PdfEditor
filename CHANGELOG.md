@@ -4,6 +4,13 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]`, `[Linux]` ou `[Android]` devant ce
 qui ne concerne qu'une plateforme.
 
+## 0.0.32 — 2026-11-19
+
+- Mode Formulaire : corrige « Formulaire : Cannot read properties of undefined (reading 'replace') », qui empêchait d'ajouter le moindre champ ; une copie de secours d'un formulaire en cours se récupère de nouveau après un plantage.
+- [Windows] PdfEditor peut devenir le lecteur PDF par défaut : l'installeur le propose pour les fichiers .pdf (« Ouvrir avec »), et Réglages → Général → « Choisir PdfEditor par défaut… » ouvre la page de Windows où le confirmer.
+- Fermer le document revient à l'écran d'accueil : la fenêtre restait sur une table grise vide quand on avait fait défiler le document.
+- Accueil en thème sombre : les boutons « Nouveau document » et « Importer un document Word » sont lisibles (ils étaient sombres sur fond sombre, avec des icônes trop grandes).
+
 ## 0.0.31 — 2026-11-19
 
 - Nouveau mode « Formulaire » : créez un formulaire sur n'importe quel PDF en traçant ses champs — texte, zone sur plusieurs lignes, date, montant, e-mail, téléphone, case à cocher, boutons radio, liste déroulante, liste, emplacement de signature. Chaque champ se déplace, se redimensionne, se duplique et se supprime ; tout s'annule avec Ctrl+Z.
