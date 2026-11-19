@@ -1,0 +1,19 @@
+// Script d'initialisation Gradle de la CI (copié dans ~/.gradle/init.d) :
+// Maven Central renvoie souvent 429 (« Too Many Requests ») aux runners
+// GitHub. Gradle cherche d'abord dans le miroir de Google (mêmes artefacts,
+// sommes de contrôle vérifiées par Gradle), puis dans les dépôts habituels.
+// S'applique aussi à buildSrc. Utilisable tel quel en local.
+def mirror = "https://maven-central.storage-download.googleapis.com/maven2/"
+
+beforeSettings { settings ->
+    settings.pluginManagement.repositories {
+        maven { url mirror }
+        gradlePluginPortal()
+        google()
+    }
+}
+
+allprojects {
+    buildscript { repositories { maven { url mirror } } }
+    repositories { maven { url mirror } }
+}

@@ -124,7 +124,7 @@ mobile), adaptée au tactile. Fonctions A-01 à A-05 de `FONCTIONS.md`.
   - ✅ Version de test (debug) : identifiant `fr.aquadrox.pdfeditor.test`, nom « PdfEditor (test) », sans mise à jour (autre clé)
   - ✅ Vérifié sur le serveur : tests Rust (manifeste, téléchargement), parcours de l'interface, APK de release construit et signé avec une clé jetable (`apksigner verify`)
   - ⬜ À vérifier sur un téléphone (Xiaomi compris) : passage 0.0.30 → version suivante en un seul appui ; la première version signée s'installe à la main (la version de test a une autre clé)
-- 🚧 CI : APK de test à chaque PR (job `android`, artefact `PdfEditor-android-test`) et tests Kotlin ✅ ; APK signé sur un tag (secrets `ANDROID_KEYSTORE_*`), publié avec `latest-android.json` ✅ ; tests sur émulateur des parcours principaux ⬜ (A-05)
+- 🚧 CI : APK de test à chaque PR (job `android`, artefact `PdfEditor-android-test`) et tests Kotlin ✅ ; APK signé sur un tag (secrets `ANDROID_KEYSTORE_*`), publié avec `latest-android.json` ✅ ; Gradle passe par le miroir de Maven Central de Google (`.github/gradle/mirror.init.gradle`), Maven Central renvoyant souvent 429 aux runners ✅ ; tests sur émulateur des parcours principaux ⬜ (A-05)
 
 ## v0.9 — Cycle de signature
 
