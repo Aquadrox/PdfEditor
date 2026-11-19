@@ -173,6 +173,12 @@ export class PageGrid {
     if (!press) return;
     if (!press.dragging) {
       if (Math.hypot(event.clientX - press.x, event.clientY - press.y) < DRAG_THRESHOLD) return;
+      // Au doigt, seule une page déjà choisie se glisse (styles : elle ne
+      // fait pas défiler la grille) ; ailleurs, le doigt fait défiler.
+      if (event.pointerType === "touch" && !this.selection.pages.includes(press.index)) {
+        this.press = null;
+        return;
+      }
       press.dragging = true;
       // Une page non choisie se glisse seule.
       if (!this.selection.pages.includes(press.index)) this.select(selectOnly(press.index));

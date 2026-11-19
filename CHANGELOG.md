@@ -4,6 +4,15 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]`, `[Linux]` ou `[Android]` devant ce
 qui ne concerne qu'une plateforme.
 
+## 0.0.34 — 2026-11-19
+
+- [Android] Interface pensée pour le téléphone : elle occupe la largeur réelle de l'écran (elle s'affichait en miniature), avec les modes Lire, Éditer, Formulaire, Pages, Signer et IA dans une barre en bas, à portée du pouce, et des boutons assez grands pour le doigt.
+- [Android] Pages et plan dans un tiroir (bouton à côté du menu) ; les panneaux Propriétés, Assistant IA, Formulaire et Signatures montent du bas de l'écran et se replient d'un appui sur leur titre.
+- [Android] Pincez pour zoomer, touchez deux fois pour grossir ou revenir à la largeur de l'écran ; numéro de page et zoom dans une pastille au-dessus des modes.
+- [Android] Mode Éditer : faire défiler la page ne crée plus de zone de texte ; touchez la page pour ajouter un texte ou une note. Dessin, Forme, Surligner et Caviarder tracent au doigt sans faire défiler.
+- [Android] Mode Pages : touchez une page pour la choisir, puis faites-la glisser pour la déplacer.
+- [Android] Le bouton Retour ferme le tiroir des pages ou les Réglages au lieu de quitter l'application ; l'interface ne passe plus sous la barre d'état, et le clavier ne cache plus le champ en cours de saisie.
+
 ## 0.0.33 — 2026-11-19
 
 - Formulaires : « Une case par caractère » donne des cases lisibles. Le nombre de cases est proposé d'après la taille du champ ; trop de cases pour la largeur est refusé avec le nombre possible (les caractères s'empilaient).

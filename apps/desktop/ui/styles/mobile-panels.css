@@ -1,0 +1,289 @@
+/* Téléphone : tiroir des pages, feuilles, pastille de page, recherche,
+   menu, notifications, variante paysage. Cadre et barres : mobile.css. */
+
+/* Pages et plan : tiroir qui glisse de la gauche, par-dessus la page. */
+.compact .sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 25;
+  width: min(312px, 84vw);
+  padding: var(--safe-top) 0 var(--safe-bottom) var(--safe-left);
+  border-right: 0;
+  box-shadow: var(--shadow-float);
+  transform: translateX(-105%);
+  visibility: hidden;
+  transition:
+    transform var(--duration) ease-out,
+    visibility 0s linear var(--duration);
+}
+
+.compact .sidebar.open {
+  transform: none;
+  visibility: visible;
+  transition: transform var(--duration) ease-out;
+}
+
+.compact .sidebar-tabs {
+  padding: var(--space-3);
+}
+
+.compact .sidebar-body {
+  overscroll-behavior: contain;
+}
+
+.compact .sidebar-body:focus {
+  outline: none;
+}
+
+/* Miniatures sur deux colonnes : le tiroir est plus large que la colonne du PC. */
+.compact .thumbs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  justify-items: center;
+  align-items: end;
+  gap: var(--space-2);
+  padding: 0 var(--space-2) var(--space-6);
+}
+
+.compact .thumb {
+  padding: var(--space-2);
+}
+
+.compact .outline {
+  padding: 0 var(--space-2) var(--space-6);
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  background: var(--scrim);
+}
+
+/* Table : la page ne rebondit pas sur les panneaux voisins. */
+.compact .desk {
+  overscroll-behavior: contain;
+}
+
+/* Panneaux de droite : feuilles qui montent du bas, au-dessus des modes. */
+.compact .properties {
+  position: fixed;
+  top: auto;
+  right: 0;
+  bottom: calc(var(--nav-h) + var(--safe-bottom));
+  left: 0;
+  z-index: 14;
+  width: auto !important;
+  min-width: 0;
+  max-height: 55dvh;
+  padding: 0 var(--safe-right) 0 var(--safe-left);
+  border-top: 1px solid var(--line);
+  border-left: 0;
+  border-radius: 14px 14px 0 0;
+  box-shadow: var(--shadow-float);
+  overscroll-behavior: contain;
+}
+
+/* L'assistant IA est le cœur de son mode : feuille haute, la liste défile. */
+.compact .ai-panel {
+  height: 68dvh;
+  max-height: none;
+}
+
+/* Sans sélection, pas de Propriétés : la page reste dégagée. */
+.compact #properties:has(> #prop-empty:not([hidden])) {
+  display: none;
+}
+
+.compact .properties-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  gap: var(--space-2);
+  min-height: 52px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  border-radius: 14px 14px 0 0;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+/* Poignée de la feuille. */
+.compact .properties-header::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  transform: translateX(-50%);
+}
+
+.compact .properties-header .panel-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.compact .properties.collapsed {
+  height: auto;
+}
+
+.compact .properties.collapsed > :not(.properties-header) {
+  display: none !important;
+}
+
+.compact .properties.collapsed .properties-header {
+  border-bottom: 0;
+}
+
+.compact .panel-resizer {
+  display: none;
+}
+
+/* Page courante et zoom : pastille flottante au-dessus des modes. */
+.compact .statusbar {
+  position: fixed;
+  bottom: calc(var(--nav-h) + var(--safe-bottom) + var(--space-3));
+  left: 50%;
+  z-index: 12;
+  gap: var(--space-1);
+  height: 44px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--raised);
+  box-shadow: var(--shadow-float);
+  color: var(--ink);
+  font-size: var(--text-body);
+  transform: translateX(-50%);
+}
+
+.compact .statusbar label[for="page-input"],
+.compact #zoom-in,
+.compact #zoom-out,
+.compact #fit-page,
+.compact .statusbar .spacer,
+.compact #save-state {
+  display: none;
+}
+
+.compact .page-input {
+  width: 48px;
+  height: 34px;
+  font-size: 16px;
+}
+
+.compact .zoom-value {
+  width: auto;
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.compact #fit-width {
+  width: 40px;
+  height: 40px;
+}
+
+.compact #fit-width svg.icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Recherche : bandeau sur toute la largeur, sous la barre du haut. */
+.compact .search-bar {
+  top: 0;
+  right: 0;
+  left: 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+
+.compact .search-bar .input {
+  flex: 1;
+  width: auto;
+}
+
+.compact .search-count {
+  min-width: 0;
+}
+
+/* Menu principal : grandes lignes, sous la barre du haut. */
+.compact .menu {
+  position: fixed;
+  top: calc(var(--topbar-h) + var(--safe-top));
+  left: calc(var(--safe-left) + var(--space-2));
+  width: min(320px, calc(100vw - 16px));
+  max-height: calc(100dvh - var(--topbar-h) - var(--safe-top) - var(--space-4));
+}
+
+.compact .menu button {
+  height: 48px;
+}
+
+/* Notifications au-dessus de la pastille de page et des modes. */
+.compact .toast {
+  bottom: calc(var(--nav-h) + var(--safe-bottom) + 68px);
+}
+
+/* Bandeaux de mise à jour : boutons à la ligne si besoin. */
+.compact .banner {
+  padding: var(--space-2) var(--space-3);
+}
+
+/* Téléphone en paysage (peu de hauteur) : une seule bande d'outils, modes
+   sans libellé visible (lu par les lecteurs d'écran), barres plus basses. */
+@media (max-height: 500px) {
+  .compact {
+    --topbar-h: 44px;
+    --nav-h: 48px;
+  }
+
+  .compact .mode span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .compact .edit-toolbar:has(> .tool-strip) {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    overflow-x: auto;
+  }
+
+  .compact .edit-toolbar:has(> .tool-strip) > .separator {
+    display: block;
+  }
+
+  .compact .tool-strip {
+    display: contents;
+  }
+
+  .compact .tool-strip.tools .btn:not(.icon) {
+    flex-direction: row;
+    gap: 6px;
+    min-width: 0;
+    height: var(--control-h);
+    padding: 0 10px;
+    font-size: var(--text-body);
+  }
+
+  .compact .tool-strip > .pages-hint {
+    display: none;
+  }
+
+  .compact .properties {
+    max-height: 70dvh;
+  }
+
+  .compact .ai-panel {
+    height: 80dvh;
+  }
+}

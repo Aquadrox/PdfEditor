@@ -27,6 +27,9 @@ import { attachDeskInput } from "./features/viewer/desk-input.js";
 import { attachKeyboard } from "./features/palette/keyboard.js";
 import { Palette } from "./features/palette/palette.js";
 import { showSidebarTab } from "./features/viewer/sidebar.js";
+import { attachSidebarDrawer } from "./features/viewer/drawer.js";
+import { attachSheets } from "./features/viewer/sheets.js";
+import { attachTouchGestures } from "./features/viewer/touch-gestures.js";
 import { AiMode } from "./features/ai/ai-mode.js";
 import { attachAiSettings } from "./features/ai/ai-settings.js";
 import { attachRecipesSettings } from "./features/ai/recipes-settings.js";
@@ -36,8 +39,15 @@ import { t, translate } from "./lib/i18n.js";
 import { invoke, listen, setWindowTitle } from "./lib/ipc.js";
 import { shortcutLabel, keymap } from "./lib/shortcuts.js";
 import { applyTheme } from "./lib/theme.js";
+import { isTouch } from "./lib/compact.js";
+import { onBack } from "./lib/back.js";
 
 translate(document);
+// Au doigt : pas de fichier à déposer sur la fenêtre.
+if (isTouch()) {
+  document.querySelector(".drop-title").textContent = t("home.titleTouch");
+  document.querySelector(".pages-hint").textContent = t("pages.hintTouch");
+}
 
 let current = null;
 let settings = null;
@@ -61,6 +71,11 @@ const viewer = new Viewer(byId("desk"), {
   },
 });
 const statusbar = attachStatusbar(viewer);
+// Téléphone : pages et plan en tiroir, panneaux en feuilles, gestes au doigt.
+const drawer = attachSidebarDrawer();
+attachSheets();
+// Double tapotement : laissé aux éléments et aux outils là où la page s'édite.
+attachTouchGestures(viewer, () => mode === "read" || mode === "sign" || mode === "ai");
 const search = attachSearch(viewer);
 const thumbnails = new Thumbnails(byId("thumbs"), byId("sidebar-body"), (page) => viewer.goToPage(page));
 const settingsView = attachSettings({
@@ -154,6 +169,7 @@ function showSaveState(dirty) {
 function setMode(next) {
   const previous = mode;
   mode = current ? next : "read";
+  document.querySelector(".app").dataset.mode = mode;
   for (const name of ["read", "edit", "form", "pages", "sign", "ai"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
   byId(`mode-${mode}`).setAttribute("aria-current", "page");
   byId("save-button").hidden = mode === "read" || mode === "sign" || mode === "ai";
@@ -176,6 +192,9 @@ function show(doc) {
   let editLoading = Promise.resolve();
   showHome(!doc);
   byId("sidebar").hidden = !doc;
+  drawer.setDocument(Boolean(doc));
+  // Disposition compacte : barre des modes en bas, seulement avec un document.
+  document.querySelector(".app").classList.toggle("has-document", Boolean(doc));
   byId("doc-name").textContent = doc ? doc.file_name : "";
   byId("menu-close").disabled = !doc;
   byId("menu-save-as").disabled = !doc;
@@ -321,16 +340,25 @@ function applySettings(saved) {
   if (!current) refreshRecent();
 }
 
+/** Retour d'Android dans les Réglages : comme « Retour » (modifications en attente comprises). */
+let releaseSettingsBack = null;
+
 function openSettings(section = "general") {
   byId("main-menu").hidden = true;
   document.querySelector(".app").hidden = true;
   byId("settings-view").hidden = false;
   settingsView.open(section);
+  releaseSettingsBack ??= onBack(() => {
+    releaseSettingsBack = null;
+    byId("settings-back").click();
+  });
 }
 
 function closeSettings() {
   byId("settings-view").hidden = true;
   document.querySelector(".app").hidden = false;
+  releaseSettingsBack?.();
+  releaseSettingsBack = null;
 }
 
 const actions = {

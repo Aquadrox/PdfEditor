@@ -2,6 +2,8 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
+    <!-- Téléphone : largeur réelle de l'écran ; le zoom des pages est géré par la visionneuse (pincer). -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>PdfEditor</title>
     <link rel="stylesheet" href="styles/fonts.css" />
     <link rel="stylesheet" href="styles/tokens.css" />
@@ -18,6 +20,9 @@
     <link rel="stylesheet" href="styles/sign.css" />
     <link rel="stylesheet" href="styles/ai.css" />
     <link rel="stylesheet" href="styles/palette.css" />
+    <link rel="stylesheet" href="styles/mobile.css" />
+    <link rel="stylesheet" href="styles/mobile-panels.css" />
+    <link rel="stylesheet" href="styles/mobile-screens.css" />
     <script type="module" src="app.js"></script>
   </head>
   <body>
@@ -89,6 +94,8 @@
       <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 6h.01M3 12h.01M3 18h.01M8 6h13M8 12h13M8 18h13" /></symbol>
       <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8h8M7 12h10M7 16h6" /></symbol>
       <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3l14 9-14 9z" /></symbol>
+      <symbol id="i-panel-left" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" /></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" /><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7M7 3v4a1 1 0 0 0 1 1h7" /></symbol>
     </svg>
 
     <div class="app">
@@ -109,6 +116,9 @@
           <button id="menu-how-to" role="menuitem"><span data-i18n="menu.howTo"></span><kbd data-shortcut="how_to"></kbd></button>
           <button id="menu-settings" role="menuitem"><span data-i18n="menu.settings"></span><kbd data-shortcut="settings"></kbd></button>
         </div>
+        <button id="sidebar-toggle" class="btn ghost icon sidebar-toggle" aria-controls="sidebar" aria-expanded="false" data-i18n-label="sidebar.toggle" hidden>
+          <svg class="icon"><use href="#i-panel-left" /></svg>
+        </button>
         <span class="doc-title">
           <span id="doc-name" class="doc-name"></span>
           <span id="doc-dirty" class="dirty-dot" role="img" data-i18n-label="status.unsaved" hidden></span>
@@ -128,10 +138,11 @@
         <button id="search-button" class="btn ghost icon" disabled data-i18n-label="search.open" data-shortcut-hint="search">
           <svg class="icon"><use href="#i-search" /></svg>
         </button>
-        <button id="save-button" class="btn primary" data-i18n="menu.save" data-i18n-label="menu.save" data-shortcut-hint="save" hidden></button>
+        <button id="save-button" class="btn primary" data-i18n-label="menu.save" data-shortcut-hint="save" hidden><svg class="icon"><use href="#i-save" /></svg><span data-i18n="menu.save"></span></button>
       </header>
 
       <div id="edit-toolbar" class="edit-toolbar" role="toolbar" data-i18n-aria="edit.toolbar" hidden>
+        <div class="tool-strip tools">
         <button id="tool-text" class="btn on" aria-pressed="true"><svg class="icon"><use href="#i-type" /></svg><span data-i18n="edit.text"></span></button>
         <button id="tool-image" class="btn ghost" data-i18n-title="edit.imageHint"><svg class="icon"><use href="#i-image" /></svg><span data-i18n="edit.image"></span></button>
         <button id="tool-retext" class="btn ghost" aria-pressed="false" data-i18n-title="edit.retextHint"><svg class="icon"><use href="#i-retext" /></svg><span data-i18n="edit.retext"></span></button>
@@ -140,7 +151,9 @@
         <button id="tool-shape" class="btn ghost" aria-pressed="false" data-i18n-title="edit.shapeHint"><svg class="icon"><use href="#i-shapes" /></svg><span data-i18n="edit.shape"></span></button>
         <button id="tool-note" class="btn ghost" aria-pressed="false" data-i18n-title="edit.noteHint"><svg class="icon"><use href="#i-note" /></svg><span data-i18n="edit.note"></span></button>
         <button id="tool-redact" class="btn ghost" aria-pressed="false" data-i18n-title="edit.redactHint"><svg class="icon"><use href="#i-redact" /></svg><span data-i18n="edit.redact"></span></button>
+        </div>
         <span class="separator" aria-hidden="true"></span>
+        <div class="tool-strip options">
         <span class="tool-options" data-tool-options="text">
         <select class="input font-select" data-style="font" data-i18n-aria="edit.font" data-i18n-title="edit.font">
           <option value="sans" data-i18n="font.sans"></option>
@@ -193,9 +206,11 @@
         <span class="spacer"></span>
         <button id="edit-undo" class="btn ghost icon" disabled data-i18n-label="edit.undo" data-shortcut-hint="undo"><svg class="icon"><use href="#i-undo" /></svg></button>
         <button id="edit-redo" class="btn ghost icon" disabled data-i18n-label="edit.redo" data-shortcut-hint="redo"><svg class="icon"><use href="#i-redo" /></svg></button>
+        </div>
       </div>
 
       <div id="form-toolbar" class="edit-toolbar form-toolbar" role="toolbar" data-i18n-aria="formDesign.toolbar" hidden>
+        <div class="tool-strip tools">
         <button class="btn on" data-field-tool="select" aria-pressed="true" data-i18n-title="formDesign.toolHint.select"><svg class="icon"><use href="#i-pointer" /></svg><span data-i18n="formDesign.tool.select"></span></button>
         <span class="separator" aria-hidden="true"></span>
         <button class="btn ghost" data-field-tool="text" aria-pressed="false" data-i18n-title="formDesign.toolHint.text"><svg class="icon"><use href="#i-type" /></svg><span data-i18n="formDesign.tool.text"></span></button>
@@ -209,15 +224,19 @@
         <button class="btn ghost" data-field-tool="dropdown" aria-pressed="false" data-i18n-title="formDesign.toolHint.dropdown"><svg class="icon"><use href="#i-dropdown" /></svg><span data-i18n="formDesign.tool.dropdown"></span></button>
         <button class="btn ghost" data-field-tool="list" aria-pressed="false" data-i18n-title="formDesign.toolHint.list"><svg class="icon"><use href="#i-list" /></svg><span data-i18n="formDesign.tool.list"></span></button>
         <button class="btn ghost" data-field-tool="signature" aria-pressed="false" data-i18n-title="formDesign.toolHint.signature"><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="formDesign.tool.signature"></span></button>
+        </div>
         <span class="separator" aria-hidden="true"></span>
+        <div class="tool-strip options">
         <button id="form-detect" class="btn ghost" data-i18n-title="formDesign.detectHint"><svg class="icon"><use href="#i-scan" /></svg><span data-i18n="formDesign.detect"></span></button>
         <button id="form-test" class="btn ghost" data-i18n-title="formDesign.testHint"><svg class="icon"><use href="#i-play" /></svg><span data-i18n="formDesign.test"></span></button>
         <span class="spacer"></span>
         <button id="form-undo" class="btn ghost icon" disabled data-i18n-label="edit.undo" data-shortcut-hint="undo"><svg class="icon"><use href="#i-undo" /></svg></button>
         <button id="form-redo" class="btn ghost icon" disabled data-i18n-label="edit.redo" data-shortcut-hint="redo"><svg class="icon"><use href="#i-redo" /></svg></button>
+        </div>
       </div>
 
       <div id="pages-toolbar" class="edit-toolbar" role="toolbar" data-i18n-aria="pages.toolbar" hidden>
+        <div class="tool-strip tools">
         <button id="pages-insert" class="btn ghost" data-i18n-title="pages.insertHint"><svg class="icon"><use href="#i-file-plus" /></svg><span data-i18n="pages.insert"></span></button>
         <button id="pages-insert-pdf" class="btn ghost" data-i18n-title="pages.insertPdfHint"><svg class="icon"><use href="#i-file-up" /></svg><span data-i18n="pages.insertPdf"></span></button>
         <button id="pages-duplicate" class="btn ghost" data-i18n-title="pages.duplicateHint"><svg class="icon"><use href="#i-copy" /></svg><span data-i18n="pages.duplicate"></span></button>
@@ -227,11 +246,14 @@
         <span class="separator" aria-hidden="true"></span>
         <button id="pages-extract" class="btn ghost" data-i18n-title="pages.extractHint"><svg class="icon"><use href="#i-file-out" /></svg><span data-i18n="pages.extract"></span></button>
         <button id="pages-remove" class="btn ghost" data-i18n-title="pages.removeHint"><svg class="icon"><use href="#i-trash" /></svg><span data-i18n="pages.remove"></span></button>
+        </div>
+        <div class="tool-strip options">
         <span id="pages-count" class="pages-count" role="status"></span>
         <span class="spacer"></span>
         <span class="pages-hint" data-i18n="pages.hint"></span>
         <button id="pages-undo" class="btn ghost icon" disabled data-i18n-label="edit.undo" data-shortcut-hint="undo"><svg class="icon"><use href="#i-undo" /></svg></button>
         <button id="pages-redo" class="btn ghost icon" disabled data-i18n-label="edit.redo" data-shortcut-hint="redo"><svg class="icon"><use href="#i-redo" /></svg></button>
+        </div>
       </div>
 
       <div id="sign-toolbar" class="edit-toolbar" role="toolbar" data-i18n-aria="sign.toolbar" hidden>
@@ -267,6 +289,8 @@
             <nav id="outline" class="outline" hidden></nav>
           </div>
         </aside>
+
+        <div id="scrim" class="scrim" aria-hidden="true" hidden></div>
 
         <div id="search-bar" class="search-bar" role="search" hidden>
           <input id="search-input" class="input" type="search" data-i18n-aria="search.label" data-i18n-placeholder="search.placeholder" />

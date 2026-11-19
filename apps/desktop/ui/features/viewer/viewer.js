@@ -18,6 +18,7 @@ import {
 } from "./layout.js";
 import { highlightLayer, textLayer } from "./page-layers.js";
 import { scrollTopForRect } from "./text-geometry.js";
+import { scrollLeftForFocus } from "./touch-zoom.js";
 import { CSS_PX_PER_POINT, clampZoom, fitModeFor, fitPage, fitWidth } from "./zoom.js";
 
 /** Délai avant de redemander les images après un changement de zoom (ms). */
@@ -109,6 +110,31 @@ export class Viewer {
   setZoom(zoom) {
     this.fitMode = null;
     this.applyZoom(clampZoom(zoom));
+  }
+
+  /**
+   * Zoom au doigt : le point du document qui était sous `from` (px, dans la
+   * table) se retrouve sous `to` (les doigts ont pu glisser). `fitMode` :
+   * ajustement qui reprend ensuite ("width"), ou null pour un zoom libre.
+   */
+  zoomAt(zoom, from, to = from, fitMode = null) {
+    if (!this.doc) return;
+    const next = clampZoom(zoom);
+    const ratio = next / this.zoom;
+    const anchor = anchorAt(this.layout, this.desk.scrollTop + from.y);
+    const before = { offset: this.container.offsetLeft, size: this.container.offsetWidth };
+    const scroll = this.desk.scrollLeft;
+    this.fitMode = fitMode;
+    this.applyZoom(next, anchor);
+    this.desk.scrollTop = Math.max(0, scrollTopForAnchor(this.layout, anchor) - to.y);
+    const after = { offset: this.container.offsetLeft, size: this.container.offsetWidth };
+    this.desk.scrollLeft = scrollLeftForFocus({ scroll, from: from.x, to: to.x, ratio, before, after });
+    this.schedule();
+  }
+
+  /** Zoom qui ferait tenir la page la plus large dans la table (double tapotement). */
+  widthZoom() {
+    return this.doc && this.doc.pages.length > 0 ? fitWidth(this.doc.pages, this.desk.clientWidth) : this.zoom;
   }
 
   /** "width" : largeur de la page ; "page" : page entière. */

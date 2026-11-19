@@ -9,7 +9,7 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { chromium } from "playwright";
+import { chromium, devices } from "playwright";
 
 const UI = fileURLToPath(new URL("../ui/", import.meta.url));
 
@@ -57,14 +57,18 @@ function serve() {
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
 }
 
+/** Téléphone simulé (écran tactile, 412 × 915) : disposition compacte. */
+export const PHONE = devices["Pixel 7"];
+
 /**
  * Ouvre l'interface. `commands` : nom de commande → liste de réponses
  * successives ; une réponse `{ error: {...} }` est rejetée comme le ferait Tauri.
+ * `device` : fenêtre du PC par défaut, ou PHONE.
  */
-export async function launch(commands = {}) {
+export async function launch(commands = {}, { device = { viewport: { width: 1280, height: 820 } } } = {}) {
   const server = await serve();
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1280, height: 820 } });
+  const page = await browser.newPage(device);
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.addInitScript((script) => {
