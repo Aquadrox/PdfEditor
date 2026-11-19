@@ -144,11 +144,39 @@
   white-space: nowrap;
 }
 
-/* Créer un document vierge ou importer un document Word (E-13). */
+/* Créer un document vierge ou importer un document Word (E-13). Sur la
+   feuille, qui reste blanche en thème sombre : couleurs fixes du papier,
+   et icônes à la taille des boutons (pas celle de l'icône de la feuille). */
 .home-create {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-2);
   margin-top: var(--space-3);
+}
+
+.drop-sheet .home-create .btn {
+  border-color: #d5dae0;
+  background: #fff;
+  color: #1c2430;
+}
+
+.drop-sheet .home-create .btn:hover {
+  border-color: #566170;
+}
+
+.drop-sheet .home-create .btn:active {
+  background: #e3e6ea;
+}
+
+.drop-sheet .home-create .btn:focus-visible {
+  outline: 2px solid #2747b8;
+  outline-offset: 2px;
+}
+
+.drop-sheet .home-create .icon {
+  width: 16px;
+  height: 16px;
+  color: #2747b8;
+  stroke-width: 1.75;
 }

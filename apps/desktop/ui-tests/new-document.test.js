@@ -75,3 +75,40 @@ test("Document Word déposé ou refusé : message clair", async () => {
     await app.close();
   }
 });
+
+/** Rapport de contraste WCAG entre deux couleurs CSS « rgb(r, g, b) ». */
+function contrast(a, b) {
+  const lum = (css) => {
+    const [r, g, bl] = css.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map((v) => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+test("Accueil en thème sombre : « Nouveau document » et « Importer » restent lisibles", async () => {
+  const app = await launch();
+  try {
+    await app.page.locator("#home-new").waitFor();
+    for (const theme of ["dark", "light"]) {
+      await app.page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);
+      // Les boutons changent de couleur en transition : on mesure après.
+      await app.page.waitForTimeout(400);
+      for (const id of ["#home-new", "#home-import"]) {
+        const style = await app.page.$eval(id, (button) => {
+          const s = getComputedStyle(button);
+          const icon = button.querySelector(".icon").getBoundingClientRect();
+          return { color: s.color, background: s.backgroundColor, icon: icon.width };
+        });
+        const ratio = contrast(style.color, style.background);
+        assert.ok(ratio >= 4.5, `${theme} ${id} : contraste ${ratio.toFixed(2)} (${style.color} sur ${style.background})`);
+        assert.ok(style.icon <= 20, `${theme} ${id} : icône de ${style.icon} px`);
+      }
+    }
+  } finally {
+    await app.close();
+  }
+});

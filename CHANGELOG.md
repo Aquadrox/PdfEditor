@@ -4,6 +4,10 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]`, `[Linux]` ou `[Android]` devant ce
 qui ne concerne qu'une plateforme.
 
+## 0.0.32 — 2026-11-19
+
+- Accueil en thème sombre : les boutons « Nouveau document » et « Importer un document Word » sont lisibles (ils étaient sombres sur fond sombre, avec des icônes trop grandes).
+
 ## 0.0.31 — 2026-11-19
 
 - Nouveau mode « Formulaire » : créez un formulaire sur n'importe quel PDF en traçant ses champs — texte, zone sur plusieurs lignes, date, montant, e-mail, téléphone, case à cocher, boutons radio, liste déroulante, liste, emplacement de signature. Chaque champ se déplace, se redimensionne, se duplique et se supprime ; tout s'annule avec Ctrl+Z.
