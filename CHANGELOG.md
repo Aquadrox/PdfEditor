@@ -4,6 +4,10 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]`, `[Linux]` ou `[Android]` devant ce
 qui ne concerne qu'une plateforme.
 
+## 0.0.33 — 2026-11-19
+
+- Formulaires : « Une case par caractère » donne des cases lisibles. Le nombre de cases est proposé d'après la taille du champ ; trop de cases pour la largeur est refusé avec le nombre possible (les caractères s'empilaient).
+
 ## 0.0.32 — 2026-11-19
 
 - Mode Formulaire : corrige « Formulaire : Cannot read properties of undefined (reading 'replace') », qui empêchait d'ajouter le moindre champ ; une copie de secours d'un formulaire en cours se récupère de nouveau après un plantage.

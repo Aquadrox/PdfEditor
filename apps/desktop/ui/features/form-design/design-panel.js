@@ -6,7 +6,7 @@
 
 import { byId, el } from "../../lib/dom.js";
 import { t } from "../../lib/i18n.js";
-import { DATE_PATTERNS, DEFAULT_LOOK, formatChoice, formatFor, kindKey, parseOptions, templateOf } from "./design-state.js";
+import { combLength, DATE_PATTERNS, DEFAULT_LOOK, formatChoice, formatFor, kindKey, parseOptions, templateOf } from "./design-state.js";
 
 const GRAY = { r: 0x80, g: 0x8a, b: 0x96 };
 const PAPER = { r: 0xf2, g: 0xf5, b: 0xff };
@@ -78,6 +78,9 @@ export class DesignPanel {
     byId("form-multiline").checked = k.multiline;
     byId("form-max-len").value = k.max_len ?? "";
     byId("form-comb").checked = k.comb;
+    const bounds = field.widgets[0]?.bounds;
+    byId("form-comb-hint").textContent =
+      k.comb && k.max_len && bounds ? t("formDesign.combHint", { cells: k.max_len, width: (bounds.width / k.max_len).toFixed(1).replace(".", ",") }) : "";
     this.showFormat(k.format);
     byId("form-calc-op").value = k.calc?.op ?? "";
     const names = this.fields.filter((f) => f.name !== field.name && f.kind.kind === "text").map((f) => f.name);
@@ -135,14 +138,17 @@ export class DesignPanel {
   readKind() {
     const k = this.field.kind;
     if (k.kind === "text") {
-      const maxLen = Number.parseInt(byId("form-max-len").value, 10);
+      const typed = Number.parseInt(byId("form-max-len").value, 10);
+      const comb = byId("form-comb").checked;
+      const box = this.field.widgets[0]?.bounds ?? { width: 100, height: 20 };
+      const maxLen = combLength(comb, Number.isFinite(typed) && typed > 0 ? typed : null, box.width, box.height);
       const op = byId("form-calc-op").value;
       const chosen = [...byId("form-calc-fields").querySelectorAll("input:checked")].map((i) => i.value);
       return {
         ...k,
         multiline: byId("form-multiline").checked,
-        max_len: Number.isFinite(maxLen) && maxLen > 0 ? maxLen : null,
-        comb: byId("form-comb").checked,
+        max_len: maxLen,
+        comb,
         format: this.readFormat(),
         calc: op && chosen.length > 0 ? { op, fields: chosen } : null,
       };

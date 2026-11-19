@@ -1,0 +1,45 @@
+name: Bogue
+description: Quelque chose ne marche pas comme prévu
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de signaler ce problème. **Le dépôt est public** : ne joignez jamais un document confidentiel, une clé API, un mot de passe ou un certificat. Une capture d'écran suffit souvent ; masquez ce qui est personnel.
+  - type: input
+    id: version
+    attributes:
+      label: Version de PdfEditor
+      description: Réglages → Diagnostic, ou le nom de l'installeur.
+      placeholder: "0.0.32"
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: Système
+      options:
+        - Windows
+        - Android
+        - Linux
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Ce qui se passe
+      description: Le message affiché, mot pour mot si possible, et une capture d'écran.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Comment le reproduire
+      placeholder: |
+        1. Ouvrir un PDF de deux pages
+        2. Passer en mode Formulaire
+        3. Choisir l'outil Date et cliquer sur la page
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ce qui était attendu

@@ -226,3 +226,25 @@ test("Mode Lire : date au calendrier, obligatoire signalé, total calculé, list
     await app.close();
   }
 });
+
+test("Mode Formulaire : « Une case par caractère » règle des cases lisibles (bogue #57)", async () => {
+  const app = await openForm({ set_form_field: [{ ok: designed(1) }] });
+  try {
+    await formMode(app);
+    await designBox(app, "nom").click();
+    await app.page.locator("#form-props:visible").waitFor();
+    await app.page.fill("#form-max-len", "100");
+    await app.page.press("#form-max-len", "Tab");
+    await waitForCalls(app, "set_form_field", 1);
+    // Le faux Rust relit les mêmes champs : on attend ce rechargement avant de cocher.
+    await waitForCalls(app, "form_fields", 3);
+    await app.page.click("#form-comb");
+    const calls = await waitForCalls(app, "set_form_field", 2);
+    // Champ de 160 × 20 pt : 100 cases (1,6 pt) ramenées à 10 cases de 16 pt.
+    assert.equal(calls[1].field.field_kind.comb, true);
+    assert.equal(calls[1].field.field_kind.max_len, 10);
+    assert.deepEqual(app.errors, []);
+  } finally {
+    await app.close();
+  }
+});

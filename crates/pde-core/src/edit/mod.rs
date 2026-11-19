@@ -36,7 +36,7 @@ pub use element::{
 };
 pub use existing::{ExistingImage, MIN_EXISTING_SIDE};
 pub use field_box::{
-    FieldBox, FieldOrigin, MAX_EXPORT_CHARS, MAX_FIELD_NAME_CHARS, MIN_FIELD_SIDE,
+    FieldBox, FieldOrigin, MAX_EXPORT_CHARS, MAX_FIELD_NAME_CHARS, MIN_COMB_CELL, MIN_FIELD_SIDE,
 };
 pub use form::{
     FIELD_FONT_RANGE, FieldKind, FieldLook, FieldValue, FormField, MAX_FIELD_CHARS, MAX_OPTIONS,

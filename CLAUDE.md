@@ -3,7 +3,8 @@
 - Le propriétaire ne code pas en Rust : Claude écrit tout le code. Expliquer les choix en termes Python/C/.NET si utile.
 - Docs, commits et commentaires en français ; identifiants de code en anglais.
 - Lire avant de coder : `docs/FONCTIONS.md` (identifiants E-01, S-05…), `docs/ARCHITECTURE.md` (couches, règles de dépendance), `docs/DESIGN.md` (interface).
-- `docs/ROADMAP.md` est le suivi d'avancement : le mettre à jour à chaque étape livrée.
+- `docs/ROADMAP.md` est la vue d'ensemble (versions, livré, grands chantiers) : le mettre à jour à chaque étape livrée.
+- **Issues GitHub** : le détail de ce qui reste. Un bogue ou un retour d'essai du propriétaire devient une issue (étiquettes `bug`, `android`, `windows`, `formulaires`, `édition`, `pages`, `signature`, `ia`, `ci`, `à vérifier`) ; une limite d'une fonction livrée aussi, et la roadmap y renvoie par un lien. Avant de commencer, chercher l'issue du sujet ; une PR qui la règle écrit « Closes #n » dans sa description. Ne pas recopier le détail d'une issue dans la roadmap.
 - Dev sur un serveur Debian sans Windows : tester sous Linux tout ce qui est portable, la CI Windows valide le reste. `pde-core` reste sans dépendance OS, PDFium, réseau ni Tauri.
 - **Code propre** : un module = une responsabilité ; au-delà d'environ 400 lignes de code (hors tests), découper. Commandes Tauri sans logique (elles appellent `pde-app`). Pas de `unwrap()` hors des tests. `unsafe` seulement dans `pde-platform`, avec un commentaire `// SAFETY:`.
 - **Tests dès le début** : chaque fonction livrée arrive avec ses tests ; chaque bogue corrigé avec le test qui le reproduit. Aucune vraie API IA en test (faux modèle `ChatModel`).

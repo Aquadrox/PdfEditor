@@ -20,8 +20,11 @@ que vous avez choisi.
   par consigne, anonymisation, assistant d'actions — toujours avec aperçu et
   accord avant d'appliquer quoi que ce soit.
 
-> Projet en développement actif : l'avancement est suivi dans
-> [docs/ROADMAP.md](docs/ROADMAP.md).
+> Projet en développement actif : la vue d'ensemble est dans
+> [docs/ROADMAP.md](docs/ROADMAP.md), le détail (bogues, limites, points à
+> vérifier) dans les [issues](https://github.com/Aquadrox/PdfEditor/issues).
+> Un problème ? [Signalez-le](https://github.com/Aquadrox/PdfEditor/issues/new/choose)
+> (sans document confidentiel ni clé API : le dépôt est public).
 
 ## Sommaire
 
@@ -338,7 +341,8 @@ Règles de contribution (PR, titres, version, secrets) :
 | [docs/FONCTIONS.md](docs/FONCTIONS.md) | Liste des fonctions et priorités |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Couches, crates, choix techniques, tests, confidentialité |
 | [docs/DESIGN.md](docs/DESIGN.md) | Direction visuelle, jetons, composants, rédaction |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Étapes et avancement |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Étapes et avancement (vue d'ensemble) |
+| [Issues](https://github.com/Aquadrox/PdfEditor/issues) | Bogues, limites restantes, points à vérifier |
 | [CHANGELOG.md](CHANGELOG.md) | Notes de version |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Règles de contribution, protection de `main`, secrets |
 
