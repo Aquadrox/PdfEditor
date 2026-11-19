@@ -21,7 +21,8 @@ pub async fn check_update(
     updates::check_now(&app, updates.inner()).await
 }
 
-/// Bouton « Mettre à jour » : télécharge, vérifie, installe et relance.
+/// Bouton « Mettre à jour » : télécharge, vérifie, installe et relance
+/// (Android : confie le paquet à l'installateur du système, qui ferme l'application).
 #[tauri::command]
 pub async fn install_update(
     app: AppHandle,

@@ -176,11 +176,48 @@ jobs:
       - name: APK de test (ARM64)
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         run: ./scripts/build-android.sh
+      # Tests JVM du code Kotlin (mises à jour : reprise Xiaomi, A-04).
+      - name: Tests Kotlin
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        working-directory: apps/desktop/gen/android
+        run: ./gradlew --no-daemon testUniversalDebugUnitTest
       - uses: actions/upload-artifact@v7
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         with:
           name: PdfEditor-android-test
           path: apps/desktop/gen/android/app/build/outputs/apk/universal/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+      # Tag : APK de release signé avec la clé du propriétaire (secrets
+      # GitHub, jamais dans le dépôt), proposé en mise à jour (A-04). Android
+      # n'installe une mise à jour que signée avec la même clé.
+      - name: APK signé (ARM64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::secret ANDROID_KEYSTORE_BASE64 absent : impossible de signer l'APK"
+            exit 1
+          fi
+          export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/pdfeditor.jks"
+          trap 'rm -f "$ANDROID_KEYSTORE_FILE"' EXIT
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$ANDROID_KEYSTORE_FILE"
+          ./scripts/build-android.sh release
+          apk=apps/desktop/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+          test -f "$apk" || { echo "::error::APK signé introuvable ($apk)"; exit 1; }
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
+          "$apksigner" verify --print-certs "$apk" | grep -i "certificate SHA-256"
+          mkdir -p dist
+          cp "$apk" "dist/PdfEditor_${GITHUB_REF_NAME#v}_android.apk"
+      - uses: actions/upload-artifact@v7
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: PdfEditor-android
+          path: dist/*.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -196,11 +233,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Publication (tags vX.Y.Z posés par ./release.sh) : release GitHub avec
-  # l'installeur signé et le manifeste lu par la mise à jour automatique
-  # (releases/latest/download/latest.json).
+  # l'installeur et l'APK signés, et les manifestes lus par la mise à jour
+  # automatique (releases/latest/download/latest.json, latest-android.json).
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [linux, windows, secrets]
+    needs: [linux, windows, android, secrets]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -212,6 +249,9 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: PdfEditor-installeur-windows
+      - uses: actions/download-artifact@v8
+        with:
+          name: PdfEditor-android
       # Notes de version : en tête de la release, et dans le champ `changelog`
       # du manifeste, que l'application affiche avec la mise à jour proposée.
       - name: Notes de version
@@ -249,8 +289,39 @@ jobs:
           json.dump(manifest, open("latest.json", "w"), indent=2, ensure_ascii=False)
           PY
           cat latest.json
+      # Manifeste lu par l'application Android (A-04), à part de latest.json
+      # (dont Tauri exige une signature minisign par entrée) : adresse, taille
+      # et SHA-256 de l'APK, vérifiés avant l'installation ; Android vérifie
+      # en plus la signature de l'APK.
+      - name: Manifeste de mise à jour Android
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os
+          from datetime import datetime, timezone
+          tag, repo = os.environ["TAG"], os.environ["GITHUB_REPOSITORY"]
+          version = tag.removeprefix("v")
+          apk = f"PdfEditor_{version}_android.apk"
+          assert os.path.isfile(apk), f"{apk} absent"
+          manifest = {
+              "version": version,
+              "notes": f"https://github.com/{repo}/releases/tag/{tag}",
+              "changelog": open("changelog.txt", encoding="utf-8").read().strip(),
+              "pub_date": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "platforms": {
+                  "android-aarch64": {
+                      "url": f"https://github.com/{repo}/releases/download/{tag}/{apk}",
+                      "sha256": hashlib.sha256(open(apk, "rb").read()).hexdigest(),
+                      "size": os.path.getsize(apk),
+                  },
+              },
+          }
+          json.dump(manifest, open("latest-android.json", "w"), indent=2, ensure_ascii=False)
+          PY
+          cat latest-android.json
       - name: Publication de la release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: gh release create "$TAG" *.exe *.exe.sig latest.json --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file notes.md
+        run: gh release create "$TAG" *.exe *.exe.sig *.apk latest.json latest-android.json --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file notes.md

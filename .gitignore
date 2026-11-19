@@ -11,6 +11,9 @@
 *.pem
 *.pfx
 *.p12
+# Clé de signature des APK Android (secrets GitHub seulement)
+*.jks
+*.keystore
 
 # Dépendances des tests d'interface (npm ci)
 node_modules/

@@ -3,6 +3,8 @@
 //!
 //! Ce fichier ne fait qu'assembler : la logique est dans `pde-app`.
 
+#[cfg(mobile)]
+mod apk_installer;
 mod autosave;
 mod closing;
 mod commands;
@@ -12,7 +14,8 @@ mod mobile_files;
 mod protocol;
 #[cfg(desktop)]
 mod updates;
-// Android : pas de module de mise à jour de Tauri ; même interface, inactive.
+// Android : pas de module de mise à jour de Tauri ; même interface, par APK
+// signé (A-04).
 #[cfg(mobile)]
 #[path = "updates_mobile.rs"]
 mod updates;
@@ -109,6 +112,9 @@ pub fn run() {
     // Android : lecture et écriture des adresses `content://` (A-02).
     #[cfg(mobile)]
     let builder = builder.plugin(tauri_plugin_fs::init());
+    // Android : installateur des mises à jour (module Kotlin, A-04).
+    #[cfg(mobile)]
+    let builder = builder.plugin(apk_installer::init());
     let result = builder
         .on_window_event(closing::on_window_event)
         // L'application s'assemble une fois Tauri prêt : sur Android, ses

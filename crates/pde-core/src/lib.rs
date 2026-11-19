@@ -5,6 +5,7 @@
 //! autres crates implémentent. Tout ce qu'il contient se teste sous Linux.
 
 pub mod ai;
+pub mod apk_update;
 pub mod changelog;
 pub mod document;
 pub mod edit;

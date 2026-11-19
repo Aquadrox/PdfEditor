@@ -4,6 +4,14 @@ Une section par version, la plus récente en tête. Une ligne `- ` par
 changement, en mots d'utilisateur ; `[Windows]`, `[Linux]` ou `[Android]` devant ce
 qui ne concerne qu'une plateforme.
 
+## 0.0.30 — 2026-11-19
+
+- [Android] Mises à jour automatiques : PdfEditor annonce les nouvelles versions et s'installe tout seul après un appui sur « Mettre à jour » (paquet signé, vérifié avant l'installation). La première fois, Android demande d'autoriser PdfEditor à installer des applications.
+- [Android] Xiaomi et autres téléphones qui refusent la mise à jour sans confirmation : la fenêtre de confirmation d'Android s'ouvre aussitôt, un seul appui suffit.
+- [Android] Une notification prévient quand la mise à jour est installée et rouvre PdfEditor.
+- [Android] Les informations de l'application dans les paramètres d'Android indiquent le vrai numéro de version (1.0 auparavant).
+- [Android] La version de test (APK des PR) s'appelle « PdfEditor (test) » et s'installe à côté de la version publiée.
+
 ## 0.0.29 — 2026-11-18
 
 - Mode IA, « Modifier » et traduction : corrige « aucun texte à modifier (page scannée ?) » sur les documents A4 ordinaires (LibreOffice, Word…), dont le texte n'était pas reconnu.
