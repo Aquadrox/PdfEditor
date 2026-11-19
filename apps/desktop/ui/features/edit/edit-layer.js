@@ -16,6 +16,7 @@ import { resizedFrame } from "./image-state.js";
 import { asImage, isExisting, withFrame } from "./existing-image.js";
 import { editorBox, isOriginalText, withNewText } from "./original-text.js";
 import { openTextEditor } from "./text-editor.js";
+import { afterTap } from "../../lib/tap.js";
 
 /** En dessous (pixels), un appui sur un élément est un clic, pas un déplacement. */
 const DRAG_THRESHOLD = 3;
@@ -139,7 +140,7 @@ export class EditLayer {
       if (event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
-      this.editOriginal(box.parentElement, item, index);
+      afterTap(event, () => box.isConnected && this.editOriginal(box.parentElement, item, index));
     });
     return box;
   }
@@ -180,6 +181,15 @@ export class EditLayer {
   onLayerDown(event, layer, index) {
     if (!this.active || event.target !== layer || event.button !== 0) return;
     event.preventDefault();
+    // Au doigt, seuls Dessin et Forme tracent dès l'appui (la page ne défile
+    // pas sous ces outils) ; poser un texte ou une note attend le tapotement,
+    // sinon chaque défilement en créerait un.
+    if (this.tool === "ink" || this.tool === "shape") return this.placeAt(event, layer, index);
+    afterTap(event, () => this.placeAt(event, layer, index));
+  }
+
+  /** Clic ou tapotement sur la page : texte, note ou tracé selon l'outil. */
+  placeAt(event, layer, index) {
     // Un clic à côté d'une saisie en cours la valide, sans en ouvrir une autre.
     if (this.editing) return this.editing.commit();
     this.session.select(null);

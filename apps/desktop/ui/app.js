@@ -27,6 +27,7 @@ import { attachDeskInput } from "./features/viewer/desk-input.js";
 import { attachKeyboard } from "./features/palette/keyboard.js";
 import { Palette } from "./features/palette/palette.js";
 import { showSidebarTab } from "./features/viewer/sidebar.js";
+import { attachCompactUi } from "./features/viewer/compact-ui.js";
 import { AiMode } from "./features/ai/ai-mode.js";
 import { attachAiSettings } from "./features/ai/ai-settings.js";
 import { attachRecipesSettings } from "./features/ai/recipes-settings.js";
@@ -61,6 +62,8 @@ const viewer = new Viewer(byId("desk"), {
   },
 });
 const statusbar = attachStatusbar(viewer);
+// Téléphone : pages et plan en tiroir, panneaux en feuilles, gestes au doigt.
+const compact = attachCompactUi(viewer, () => mode);
 const search = attachSearch(viewer);
 const thumbnails = new Thumbnails(byId("thumbs"), byId("sidebar-body"), (page) => viewer.goToPage(page));
 const settingsView = attachSettings({
@@ -154,6 +157,7 @@ function showSaveState(dirty) {
 function setMode(next) {
   const previous = mode;
   mode = current ? next : "read";
+  compact.setMode(mode);
   for (const name of ["read", "edit", "form", "pages", "sign", "ai"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
   byId(`mode-${mode}`).setAttribute("aria-current", "page");
   byId("save-button").hidden = mode === "read" || mode === "sign" || mode === "ai";
@@ -176,6 +180,7 @@ function show(doc) {
   let editLoading = Promise.resolve();
   showHome(!doc);
   byId("sidebar").hidden = !doc;
+  compact.setDocument(Boolean(doc));
   byId("doc-name").textContent = doc ? doc.file_name : "";
   byId("menu-close").disabled = !doc;
   byId("menu-save-as").disabled = !doc;
@@ -326,11 +331,13 @@ function openSettings(section = "general") {
   document.querySelector(".app").hidden = true;
   byId("settings-view").hidden = false;
   settingsView.open(section);
+  compact.settingsOpened();
 }
 
 function closeSettings() {
   byId("settings-view").hidden = true;
   document.querySelector(".app").hidden = false;
+  compact.settingsClosed();
 }
 
 const actions = {

@@ -111,14 +111,58 @@ titre, sur-titres décoratifs au-dessus des sections.
 
 ## Tactile (Android, v0.8)
 
-Même identité visuelle (jetons, typographie, sceau). Ce qui change :
+Même identité visuelle (jetons, typographie, sceau). Disposition
+**compacte** dès que la fenêtre est étroite (≤ 760 px) ou qu'un écran
+tactile est peu haut (téléphone en paysage) : classe `compact` sur `<html>`
+(`lib/compact.js`), règles dans `styles/mobile.css` (cadre, barres, gestes), `mobile-panels.css` (tiroir, feuilles, paysage) et `mobile-screens.css` (accueil, dialogues, Réglages). Ce qui change :
 
-- cibles tactiles de 44 px au moins ;
-- panneaux latéraux en tiroirs par-dessus la page, barre d'outils réduite
-  aux outils du mode, actions secondaires dans un menu ;
-- pincer pour zoomer, double-tapotement pour ajuster à la largeur ;
-- l'interface est écrite dès maintenant sans dépendre du survol de la souris
-  pour une information essentielle (infobulles = compléments seulement).
+```
+┌──────────────────────────────┐
+│ ≡  ▢  contrat.pdf    ◉  ⌕  💾 │ barre du haut 52 px (menu, tiroir, sceau, recherche, enregistrer)
+├──────────────────────────────┤
+│ T    ▣    ✎    ▭    ▤   …  → │ outils du mode : icône sur libellé, bande qui défile
+│ Police 11 pt  G I ■     ⟲ ⟳ │ réglages de l'outil, Annuler / Rétablir
+├──────────────────────────────┤
+│        ┌────────────┐        │
+│        │   page     │        │ pincer, double tapotement
+│        └────────────┘        │
+│     ( 3 sur 12 │ 46 % ↔ )    │ pastille flottante
+├──────────────────────────────┤
+│ Lire Éditer Form. Pages …    │ modes en bas, 60 px
+└──────────────────────────────┘
+```
+
+- **Modes en bas** (à portée du pouce), icône au-dessus du libellé, pastille
+  `--accent-soft` derrière l'icône du mode affiché ; visibles seulement avec
+  un document. En paysage : icônes seules (libellés lus par les lecteurs d'écran).
+- **Barres d'outils** en deux bandes qui défilent horizontalement : les outils
+  (icône sur libellé), puis les réglages de l'outil et Annuler / Rétablir
+  (`.tool-strip` ; sur PC `display: contents`, rien ne change). En paysage,
+  une seule bande.
+- **Tiroirs et feuilles** : pages et plan dans un tiroir à gauche (voile,
+  fermé par le choix d'une page, le voile ou Retour) ; Propriétés, Assistant
+  IA, Formulaire et Signatures en **feuilles** qui montent du bas, au-dessus
+  des modes, repliables sur leur titre (poignée, chevron). Propriétés
+  n'apparaît qu'avec une sélection ; Signatures part replié.
+- **Barre d'état** remplacée par une pastille flottante : page, zoom,
+  ajuster à la largeur.
+- Cibles tactiles de **44 px** au moins sur tout écran tactile
+  (`pointer: coarse`) ; texte de base 15 px, champs 16 px ; raccourcis
+  clavier cachés.
+- **Gestes** : pincer pour zoomer (deux doigts font aussi glisser la page ;
+  aperçu par transformation CSS, vrai zoom au relâchement) ; double
+  tapotement : grossir ×2 sous le doigt depuis la largeur, sinon revenir à la
+  largeur (modes Lire, Signer, IA). Ce qui pose un élément (texte, note)
+  attend le **tapotement**, jamais l'appui : un glisser fait défiler. Les
+  outils qui tracent (Dessin, Forme, Surligner, Caviarder, cadre d'un champ
+  ou d'une signature) bloquent le défilement sous le doigt (`touch-action:
+  none`) ; deux doigts pincent toujours.
+- **Retour d'Android** : ferme d'abord le tiroir, puis les Réglages
+  (`lib/back.js`, une étape d'historique par panneau ouvert).
+- **Bord à bord** : l'activité Android garde l'interface hors des barres du
+  système et du clavier (marges de la vue, couleur `--surface`).
+- Aucune information essentielle au seul survol : les infobulles restent des
+  compléments.
 
 ## Composants
 

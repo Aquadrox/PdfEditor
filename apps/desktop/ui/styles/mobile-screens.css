@@ -1,0 +1,156 @@
+/* Téléphone : écrans en disposition compacte (accueil, grille des pages,
+   dialogues, Réglages). Cadre de l'application et gestes : mobile.css. */
+
+/* Accueil : une colonne, la feuille d'ouverture puis les récents. */
+.compact .home {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-4) calc(var(--space-6) + var(--safe-bottom));
+}
+
+.compact .drop-sheet {
+  flex: none;
+  width: 100%;
+  aspect-ratio: auto;
+  padding: 40px var(--space-6) var(--space-6);
+  outline: none;
+}
+
+.compact .drop-sheet .btn.primary {
+  align-self: stretch;
+  justify-content: center;
+  height: 48px;
+}
+
+.compact .home-create {
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.compact .home-create .btn {
+  justify-content: center;
+}
+
+.compact .recent-panel {
+  flex: none;
+  max-width: none;
+}
+
+/* Grille des pages : deux colonnes sur un téléphone. */
+.compact .page-grid-list {
+  grid-template-columns: repeat(auto-fill, 168px);
+  gap: var(--space-3) var(--space-2);
+  padding: var(--space-4) var(--space-3) var(--space-8);
+}
+
+.compact .page-card {
+  padding: var(--space-2) var(--space-1) var(--space-1);
+}
+
+/* Mode Pages : la grille montre déjà toutes les pages. */
+.compact .app[data-mode="pages"] .statusbar {
+  display: none;
+}
+
+/* Dialogues : presque toute la largeur, actions faciles à atteindre. */
+.compact dialog {
+  width: calc(100vw - 16px) !important;
+  max-width: none;
+  max-height: calc(100dvh - 16px - var(--safe-top) - var(--safe-bottom));
+}
+
+.compact .dialog-body {
+  padding: var(--space-4);
+}
+
+.compact .dialog-actions {
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+}
+
+.compact .dialog-actions .btn {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+/* Réglages : rubriques en onglets qui défilent, puis le contenu. */
+.compact .settings-view .topbar {
+  padding-right: var(--space-3);
+}
+
+.compact .settings-body {
+  flex-direction: column;
+}
+
+.compact .settings-nav {
+  flex-direction: row;
+  width: auto;
+  padding: var(--space-2);
+  overflow-x: auto;
+  border-right: 0;
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: none;
+}
+
+.compact .nav-item {
+  flex: none;
+  padding: 0 var(--space-3);
+  white-space: nowrap;
+}
+
+.compact .settings-content {
+  padding: var(--space-2) var(--space-4) var(--space-8);
+}
+
+.compact .settings-footer {
+  padding: var(--space-2) var(--space-4) calc(var(--space-2) + var(--safe-bottom));
+}
+
+.compact .field {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.compact .field > :last-child {
+  justify-self: stretch;
+}
+
+/* Interrupteur : reste à droite de son libellé, à la taille du doigt. */
+.compact .field:has(> .switch) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.compact .field > .switch:last-child {
+  justify-self: end;
+}
+
+.compact .switch {
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+}
+
+.compact .switch::after {
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+}
+
+.compact .switch:checked::after {
+  left: 24px;
+}
+
+.compact .field .narrow {
+  width: 140px;
+}
+
+/* Sans clavier, la rubrique des raccourcis n'a pas d'usage. */
+@media (pointer: coarse) {
+  .compact .nav-item[data-section="shortcuts"] {
+    display: none;
+  }
+}

@@ -1,0 +1,343 @@
+/* Téléphone et tactile (docs/DESIGN.md § Tactile). Disposition compacte :
+   classe `compact` posée sur <html> par lib/compact.js (fenêtre étroite, ou
+   écran tactile peu haut). Même identité visuelle ; ce qui change :
+   modes dans une barre en bas (à portée du pouce), barres d'outils qui
+   défilent, pages et plan en tiroir, panneaux en feuilles qui montent du
+   bas, cibles de 44 px, marges des barres du système (Android). */
+
+/* --- Partout : éléments propres au téléphone, cachés sur PC ------------ */
+
+.tool-strip {
+  display: contents;
+}
+
+:root:not(.compact) .sidebar-toggle,
+:root:not(.compact) .sheet-toggle,
+:root:not(.compact) .scrim {
+  display: none;
+}
+
+/* Enregistrer : libellé sur PC, icône seule sur téléphone. */
+:root:not(.compact) #save-button svg {
+  display: none;
+}
+
+/* Au doigt, la page ne défile pas sous les outils qui tracent : un doigt
+   dessine, deux doigts pincent (features/viewer/touch-gestures.js). */
+.desk.editing.tool-ink .edit-layer.active,
+.desk.editing.tool-shape .edit-layer.active,
+.desk.editing.tool-markup .page,
+.desk.editing.tool-redact .page,
+.design-layer.drawing,
+.sign-layer.placing,
+.page-card[aria-selected="true"] {
+  touch-action: none;
+}
+
+/* Écran tactile, quelle que soit la disposition : cibles de 44 px. */
+@media (pointer: coarse) {
+  :root {
+    --control-h: 44px;
+  }
+
+  .btn.small {
+    height: 36px;
+  }
+
+  .btn.small.icon {
+    width: 36px;
+  }
+
+  .menu button {
+    height: 44px;
+  }
+
+  .mode {
+    height: 44px;
+  }
+
+  .nav-item {
+    height: 44px;
+  }
+
+  .outline-item {
+    padding: 10px 8px;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  .thumb {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* --- Disposition compacte ---------------------------------------------- */
+
+.compact {
+  --text-body: 15px;
+  --text-caption: 13px;
+  --text-panel: 17px;
+  --text-dialog: 20px;
+  --topbar-h: 52px;
+  --nav-h: 60px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+.compact body {
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+/* Raccourcis clavier : sans clavier, du bruit. */
+.compact kbd {
+  display: none;
+}
+
+/* Champs lisibles au doigt (et sans zoom automatique du navigateur). */
+.compact .input,
+.compact textarea,
+.compact select {
+  font-size: 16px;
+}
+
+/* Barre du haut : menu, pages, nom du document, sceau, recherche, enregistrer. */
+.compact .topbar {
+  gap: var(--space-1);
+  height: calc(var(--topbar-h) + var(--safe-top));
+  padding: var(--safe-top) var(--space-1) 0;
+}
+
+.compact .topbar > .btn.icon {
+  width: 44px;
+  height: 44px;
+}
+
+.compact .doc-title {
+  flex: 1;
+  padding: 0 var(--space-1);
+}
+
+.compact .doc-name {
+  font-size: var(--text-body);
+}
+
+.compact #save-button {
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  padding: 0;
+}
+
+.compact #save-button span,
+.compact #seal-label {
+  display: none;
+}
+
+.compact .seal {
+  height: 44px;
+  padding: 0 9px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.compact .seal .wax {
+  width: 26px;
+  height: 26px;
+}
+
+/* Modes : barre de navigation en bas, icône au-dessus du libellé. */
+.compact .modes {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  display: none;
+  gap: 0;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  margin: 0;
+  padding: 0 var(--safe-right) var(--safe-bottom) var(--safe-left);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.compact .app.has-document .modes {
+  display: flex;
+}
+
+.compact .app.has-document {
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom));
+}
+
+.compact .mode {
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  height: var(--nav-h);
+  padding: 0 2px;
+  border-radius: 0;
+  font-size: 11.5px;
+  line-height: 1.2;
+}
+
+.compact .mode span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Mode affiché : pastille derrière l'icône, libellé à l'encre bleue. */
+.compact .mode svg.icon {
+  box-sizing: content-box;
+  padding: 4px 14px;
+  border-radius: 14px;
+  transition: background var(--duration) ease-out;
+}
+
+.compact .mode[aria-current="page"],
+.compact .mode:hover:not(:disabled) {
+  background: transparent;
+}
+
+.compact .mode[aria-current="page"] svg.icon {
+  background: var(--accent-soft);
+}
+
+/* Barres d'outils des modes : une ou deux bandes qui défilent au doigt. */
+.compact .edit-toolbar {
+  flex-wrap: nowrap;
+  gap: var(--space-1);
+  min-height: 52px;
+  padding: var(--space-1) var(--space-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.compact .edit-toolbar:has(> .tool-strip) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.compact .edit-toolbar > .separator {
+  display: none;
+}
+
+.compact .tool-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 52px;
+  padding: var(--space-1) var(--space-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.compact .tool-strip.options {
+  border-top: 1px solid var(--line);
+}
+
+.compact .edit-toolbar::-webkit-scrollbar,
+.compact .tool-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.compact .edit-toolbar .btn,
+.compact .edit-toolbar .input,
+.compact .edit-toolbar .tool-options,
+.compact .edit-toolbar .segmented,
+.compact .edit-toolbar .swatches,
+.compact .edit-toolbar .checkbox {
+  flex: none;
+}
+
+.compact .edit-toolbar .tool-options {
+  flex-wrap: nowrap;
+}
+
+/* Outils : icône au-dessus du libellé, comme la barre des modes. */
+.compact .tool-strip.tools .btn:not(.icon) {
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 64px;
+  height: 52px;
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.compact .edit-toolbar .spacer {
+  flex: 1 0 var(--space-2);
+}
+
+/* Consigne du mode Pages : elle passe à la ligne à côté de Annuler. */
+.compact .tool-strip > .pages-hint {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.compact .tool-strip > .pages-hint ~ .spacer,
+.compact .tool-strip > .spacer:has(+ .pages-hint) {
+  display: none;
+}
+
+.compact .pages-count:empty {
+  display: none;
+}
+
+.compact .edit-toolbar .separator {
+  flex: none;
+}
+
+.compact .edit-toolbar .swatch {
+  width: 28px;
+  height: 28px;
+}
+
+.compact .edit-toolbar .font-select {
+  width: 120px;
+}
+
+.compact .edit-toolbar .size-input {
+  width: 64px;
+}
+
+.compact .color-input {
+  width: 44px;
+  height: 44px;
+}
+
+/* Signer : les consignes passent à la ligne au lieu de défiler. */
+.compact #sign-toolbar {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.compact #sign-hint {
+  flex-basis: 100%;
+  order: 10;
+  padding: 0 var(--space-1) var(--space-1);
+  white-space: normal;
+}
+
+.compact #sign-hint:empty,
+.compact #sign-identity {
+  display: none;
+}
