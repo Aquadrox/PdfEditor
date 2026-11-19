@@ -122,3 +122,36 @@ test("menu principal entièrement visible, sous son bouton : Ouvrir et Fermer co
     await app.close();
   }
 });
+
+test("Fermer le document revient à l'accueil (feuille, nouveau document, récents)", async () => {
+  const app = await launch({
+    initial_files: [{ ok: ["/docs/contrat.pdf"] }],
+    open_document: [{ ok: documentView(2) }],
+    edit_view: [{ ok: { elements: [], revisions: [0, 0], layout: 0, fields: {}, metadata: null, flattened: false, can_undo: false, can_redo: false, dirty: false } }],
+  });
+  const { page } = app;
+  try {
+    await page.locator("#doc-name", { hasText: "contrat.pdf" }).waitFor();
+    assert.equal(await page.locator("#home").isVisible(), false);
+    await page.click("#mode-form");
+    // Document lu plus bas : la table a défilé.
+    await page.$eval("#desk", (desk) => (desk.scrollTop = desk.scrollHeight));
+    assert.ok((await page.$eval("#desk", (desk) => desk.scrollTop)) > 300);
+    await page.click("#menu-button");
+    await page.click("#menu-close");
+    assert.deepEqual(await app.callsTo("close_document"), [{ id: 1 }]);
+    await page.locator("#home").waitFor({ state: "visible" });
+    await page.locator("#home-new").waitFor({ state: "visible" });
+    assert.equal(await page.locator("#desk .page").count(), 0);
+    // La feuille d'accueil est à l'écran, pas au-dessus de la partie visible.
+    assert.equal(await page.$eval("#desk", (desk) => desk.scrollTop), 0);
+    const sheet = await page.locator("#drop-sheet").boundingBox();
+    const desk = await page.locator("#desk").boundingBox();
+    assert.ok(sheet.y >= desk.y - 1 && sheet.y < desk.y + desk.height, `feuille à y=${sheet.y}`);
+    assert.equal(await page.isHidden("#form-toolbar"), true);
+    assert.equal(await page.getAttribute("#mode-read", "aria-current"), "page");
+    assert.deepEqual(app.errors, []);
+  } finally {
+    await app.close();
+  }
+});

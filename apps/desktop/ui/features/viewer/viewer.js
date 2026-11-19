@@ -96,6 +96,12 @@ export class Viewer {
     this.currentHit = -1;
     this.revisions = [];
     this.container.replaceChildren();
+    // Sans document, plus de hauteur imposée ni de défilement : l'accueil,
+    // en haut de la table, redevient visible.
+    this.container.style.removeProperty("height");
+    this.container.style.removeProperty("width");
+    this.desk.scrollTop = 0;
+    this.desk.scrollLeft = 0;
     this.page = 0;
   }
 
