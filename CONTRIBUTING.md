@@ -2,14 +2,20 @@
 
 ## Règles
 
-1. **Rien sur `main` sans PR.** Une PR = un sujet, référencé à la roadmap
-   et aux fonctions (`E-03`, `S-05`…).
-2. **Tests obligatoires.** Une fonction arrive avec ses tests ; un correctif
+1. **Rien sur `main` sans PR.** Une PR = un sujet, référencé aux fonctions
+   (`E-03`, `S-05`…) et à son issue : « Closes #n » dans la description
+   ferme l'issue au merge.
+2. **Issues pour le détail, roadmap pour la vue d'ensemble.** Bogues,
+   retours d'essai, points à vérifier et limites restantes d'une fonction
+   sont des [issues](https://github.com/Aquadrox/PdfEditor/issues) (modèles
+   « Bogue » et « Amélioration ») ; `docs/ROADMAP.md` garde les versions, ce
+   qui est livré et les grands chantiers, et renvoie aux issues.
+3. **Tests obligatoires.** Une fonction arrive avec ses tests ; un correctif
    avec le test qui reproduit le bogue (test de non-régression).
-3. **CI verte** avant merge : jobs `linux`, `windows`, `secrets`.
-4. **Code découpé** : un module = une responsabilité, environ 400 lignes de
+4. **CI verte** avant merge : jobs `linux`, `windows`, `secrets`.
+5. **Code découpé** : un module = une responsabilité, environ 400 lignes de
    code maximum par fichier (hors tests).
-5. **Aucun secret** dans le dépôt (voir plus bas).
+6. **Aucun secret** dans le dépôt (voir plus bas).
 
 Vérifications locales (une fois : `./scripts/fetch-pdfium.sh`, voir le README) :
 

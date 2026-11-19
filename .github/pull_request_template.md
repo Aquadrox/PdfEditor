@@ -2,7 +2,7 @@
 
 ## Objet
 
-<!-- Ce que change la PR et pourquoi, en quelques lignes. Référence roadmap / fonction (ex. E-03). -->
+<!-- Ce que change la PR et pourquoi, en quelques lignes. Fonction (ex. E-03) ; « Closes #n » pour chaque issue réglée. -->
 
 ## Changements
 
@@ -19,5 +19,5 @@
 - [ ] `cargo fmt --all`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` passent
 - [ ] Aucun secret (clé, jeton, mot de passe, certificat privé) dans le diff
 - [ ] Aucun fichier de plus de ~400 lignes de code (hors tests) créé ou agrandi sans découpage
-- [ ] `docs/ROADMAP.md` mis à jour si une étape est livrée
+- [ ] `docs/ROADMAP.md` mis à jour si une étape est livrée ; issues réglées citées (« Closes #n »), limites restantes ouvertes en issues
 - [ ] Version (`Cargo.toml`) et `CHANGELOG.md` mis à jour si l'application change

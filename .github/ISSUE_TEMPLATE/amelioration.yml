@@ -1,0 +1,16 @@
+name: Amélioration
+description: Une fonction à ajouter ou à améliorer
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Besoin
+      description: Ce que vous voulez faire, et pourquoi (le cas concret aide).
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idée de solution
+      description: Facultatif. Identifiant de la fonction s'il existe (docs/FONCTIONS.md, ex. E-12).
