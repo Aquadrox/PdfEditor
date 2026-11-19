@@ -7,6 +7,8 @@
 
 /** Côté minimal d'un champ (comme MIN_FIELD_SIDE de pde-core). */
 export const MIN_SIDE = 4;
+/** Largeur minimale d'une case d'un champ en cases (MIN_COMB_CELL de pde-core). */
+export const MIN_COMB_CELL = 6;
 
 const text = (format = null, extra = {}) => ({
   kind: "text",
@@ -241,4 +243,23 @@ export function kindKey(field) {
 /** Empreinte des éléments de conception d'un état d'édition : change quand un champ est créé, réglé, déplacé ou supprimé. */
 export function fieldSignature(view) {
   return JSON.stringify((view?.elements ?? []).filter((e) => e.element.kind === "field").map((e) => [e.id, e.element]));
+}
+
+/** Cases au plus dans un champ en cases de `width` points (1 à 100). */
+export function maxCombCells(width) {
+  return Math.min(Math.max(Math.floor(width / MIN_COMB_CELL), 1), 100);
+}
+
+/**
+ * Longueur d'un champ texte selon « Une case par caractère » : sans cases,
+ * celle saisie ; en cases, celle saisie si elle tient dans la largeur,
+ * sinon des cases à peu près carrées (bogue #57 : 100 cases dans 220 pt
+ * empilaient les caractères).
+ */
+export function combLength(comb, maxLen, width, height) {
+  if (!comb) return maxLen;
+  const max = maxCombCells(width);
+  if (maxLen && maxLen <= max) return maxLen;
+  const square = Math.floor(width / Math.max(MIN_COMB_CELL, height * 0.75));
+  return Math.min(Math.max(square, 1), max);
 }

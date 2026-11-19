@@ -16,6 +16,9 @@ pub const MIN_FIELD_SIDE: f64 = 4.0;
 pub const MAX_FIELD_NAME_CHARS: usize = 200;
 /// Valeur d'export la plus longue (case à cocher, bouton radio).
 pub const MAX_EXPORT_CHARS: usize = 100;
+/// Largeur minimale d'une case d'un champ en cases (points) : en dessous,
+/// les caractères et les séparations se chevauchent.
+pub const MIN_COMB_CELL: f64 = 6.0;
 
 /// Emplacement d'un champ du document que l'élément remplace.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -99,6 +102,27 @@ impl FieldBox {
         matches!(self.kind, FieldKind::Checkbox | FieldKind::Radio { .. })
     }
 
+    /// Champ créé en cases : chaque case garde une largeur lisible. Les
+    /// champs du document gardent les leurs, même étroites.
+    fn check_comb(&self) -> Result<(), String> {
+        let FieldKind::Text {
+            comb: true,
+            max_len: Some(cells),
+            ..
+        } = self.kind
+        else {
+            return Ok(());
+        };
+        if self.origin.is_some() || self.width / f64::from(cells) >= MIN_COMB_CELL {
+            return Ok(());
+        }
+        let fit = (self.width / MIN_COMB_CELL).floor().max(1.0);
+        Err(format!(
+            "cases trop étroites : {fit} cases au plus pour ce champ de {:.0} pt (ou élargissez-le)",
+            self.width
+        ))
+    }
+
     pub(crate) fn validate(&self) -> Result<(), String> {
         let numbers = [self.top_left.x, self.top_left.y, self.width, self.height];
         if numbers.iter().any(|v| !v.is_finite()) {
@@ -124,6 +148,7 @@ impl FieldBox {
             return Err("infobulle invalide".into());
         }
         self.kind.validate(&self.name)?;
+        self.check_comb()?;
         self.look.validate()?;
         if self.is_button()
             && self.origin.is_none()
@@ -189,6 +214,33 @@ mod tests {
             change(&mut f);
             assert!(f.validate().is_err(), "{f:?}");
         }
+    }
+
+    /// Bogue #57 : 100 cases dans 220 pt (2,2 pt par case) empilaient les
+    /// caractères.
+    #[test]
+    fn comb_cells_stay_readable() {
+        let comb = |max_len| FieldKind::Text {
+            multiline: false,
+            max_len: Some(max_len),
+            password: false,
+            comb: true,
+            format: None,
+            calc: None,
+        };
+        let mut f = field("code", comb(100));
+        f.width = 220.0;
+        let error = f.validate().unwrap_err();
+        assert!(error.contains("36 cases au plus"), "{error}");
+        f.kind = comb(36);
+        assert_eq!(f.validate(), Ok(()));
+        // Un champ du document garde ses cases.
+        f.kind = comb(100);
+        f.origin = Some(FieldOrigin {
+            name: "code".into(),
+            widget: 0,
+        });
+        assert_eq!(f.validate(), Ok(()));
     }
 
     #[test]

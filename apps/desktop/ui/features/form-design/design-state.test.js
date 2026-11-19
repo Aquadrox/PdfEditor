@@ -3,6 +3,8 @@ import { test } from "node:test";
 
 import {
   boxAt,
+  combLength,
+  maxCombCells,
   boxBetween,
   clampBox,
   displayValue,
@@ -86,4 +88,17 @@ test("réglages renvoyés à Rust et options", () => {
   assert.equal(kindKey({ kind: { kind: "text", format: FORMATS.email() } }), "formDesign.format.email");
   assert.equal(kindKey({ kind: { kind: "choice", list: true } }), "formDesign.tool.list");
   assert.equal(kindKey({ kind: { kind: "signature" } }), "formDesign.tool.signature");
+});
+
+test("champ en cases : nombre de cases adapté à la largeur (bogue #57)", () => {
+  assert.equal(maxCombCells(220), 36);
+  assert.equal(maxCombCells(3), 1);
+  assert.equal(maxCombCells(10000), 100);
+  // 100 cases dans 220 pt : ramené à des cases à peu près carrées.
+  assert.equal(combLength(true, 100, 220, 25), 11);
+  assert.equal(combLength(true, null, 220, 25), 11);
+  // Un nombre qui tient est gardé ; sans cases, la longueur saisie reste.
+  assert.equal(combLength(true, 5, 220, 25), 5);
+  assert.equal(combLength(false, 100, 220, 25), 100);
+  assert.equal(combLength(false, null, 220, 25), null);
 });

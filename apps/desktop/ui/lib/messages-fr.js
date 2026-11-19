@@ -156,6 +156,7 @@ export default {
   "formDesign.multiline": "Plusieurs lignes",
   "formDesign.maxLen": "Longueur max.",
   "formDesign.comb": "Une case par caractère",
+  "formDesign.combHint": "{cells} cases de {width} pt ; élargissez le champ pour en avoir plus.",
   "formDesign.calc": "Calculé à partir d'autres champs",
   "formDesign.calc.none": "Non calculé",
   "formDesign.calc.sum": "Somme",
