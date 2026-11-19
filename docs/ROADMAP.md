@@ -29,6 +29,7 @@ Première version publiée : v0.0.5 (16/11/2026), installeur Windows signé et m
 - ✅ `pde-core::settings` (`config.toml` tolérant, valeurs bornées, raccourcis vérifiés) + page Réglages : Général, Affichage, Raccourcis clavier, Diagnostic, appliqués à chaud (R-01, R-02, R-08, R-09)
 - ✅ `pde-platform` : dossiers de l'application (`PDE_HOME` pour les tests) ; le trousseau arrive avec la signature (v0.4)
 - ✅ Documents récents sur l'accueil, rouvrir le dernier document au démarrage (V-01)
+- ✅ Association `.pdf` déclarée par l'installeur Windows et réglage « Choisir PdfEditor par défaut… » (page « Applications par défaut » de Windows, qui laisse ce choix à l'utilisateur) (V-01, v0.0.32). Reste : une seule fenêtre (un PDF ouvert depuis l'Explorateur pendant que PdfEditor tourne lance une seconde fenêtre)
 - ✅ Journal repris de VoiceToText (purge automatique, niveau réglable, paniques notées), sans nom ni contenu de document
 - ✅ Installeur Windows (NSIS, PDFium inclus) construit par la CI ; version vérifiée contre le tag ; `CHANGELOG.md` contrôlé (`changelog.py`) ; `release.sh` (repris de VoiceToText)
 - ✅ Mises à jour automatiques (repris de VoiceToText) : vérification au démarrage puis toutes les 6 h (réglable), bandeau avec nouveautés, installation sur clic après vérification de la signature minisign et de la version signée ; release publiée par la CI avec `latest.json`

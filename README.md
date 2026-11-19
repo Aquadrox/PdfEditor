@@ -43,6 +43,13 @@ Télécharger `PdfEditor_X.Y.Z_x64-setup.exe` depuis les
 Ensuite, PdfEditor propose lui-même ses mises à jour : un bandeau les
 annonce, elles sont vérifiées par signature et installées sur votre clic.
 
+**En faire le lecteur PDF par défaut** : l'installeur déclare PdfEditor pour
+les fichiers `.pdf` (il apparaît dans « Ouvrir avec »). Windows réserve le
+choix du lecteur par défaut à l'utilisateur : **Réglages → Général →
+Choisir PdfEditor par défaut…** ouvre la page « Applications par défaut » de
+Windows ; cherchez `.pdf` et choisissez PdfEditor. (Ou : clic droit sur un
+PDF → Ouvrir avec → Choisir une autre application → PdfEditor → Toujours.)
+
 ### Android (téléphones ARM 64 bits)
 
 Installer `PdfEditor_X.Y.Z_android.apk` depuis les Releases (autoriser

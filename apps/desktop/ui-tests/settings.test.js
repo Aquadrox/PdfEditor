@@ -153,3 +153,23 @@ test("Fichiers : dialogue du dossier annulé, rien ne change", async () => {
     await app.close();
   }
 });
+
+test("Lecteur PDF par défaut : bouton sous Windows seulement, ouvre les Paramètres de Windows", async () => {
+  const windows = await launch({ app_info: [{ ok: { version: "0.0.0-test", os: "windows" } }], open_default_apps: [{ ok: null }] });
+  try {
+    await openSettings(windows);
+    await windows.page.locator("#default-app").waitFor({ state: "visible" });
+    await windows.page.click("#default-app");
+    await windows.page.waitForFunction(() => window.__calls.some((c) => c.command === "open_default_apps"));
+    assert.deepEqual(windows.errors, []);
+  } finally {
+    await windows.close();
+  }
+  const linux = await launch({ app_info: [{ ok: { version: "0.0.0-test", os: "linux" } }] });
+  try {
+    await openSettings(linux);
+    assert.equal(await linux.page.isHidden("#default-app-field"), true);
+  } finally {
+    await linux.close();
+  }
+});
