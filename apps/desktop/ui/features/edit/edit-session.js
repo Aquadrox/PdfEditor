@@ -79,7 +79,8 @@ export class EditSession {
    * textes d'origine supprimés) et les images d'origine encore intactes.
    */
   itemsOn(page) {
-    const items = this.view.elements.filter((e) => e.element.page === page);
+    // Champs de formulaire : mode Formulaire (features/form-design).
+    const items = this.view.elements.filter((e) => e.element.page === page && e.element.kind !== "field");
     const shown = items.filter((e) => !(isExisting(e.element) && e.element.frame === null) && !isRemovedText(e.element));
     return [...shown, ...syntheticItems(page, this.pageImages.get(page) ?? [], items)];
   }

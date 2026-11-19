@@ -5,6 +5,8 @@ use serde_json::{Value, json};
 
 use super::{ActionInfo, Mode};
 
+mod forms;
+
 const FILE: &str = "Fichier";
 const VIEW: &str = "Affichage";
 const EDIT: &str = "Éditer";
@@ -106,6 +108,7 @@ pub(super) fn all() -> Vec<ActionInfo> {
     let mut actions = file();
     actions.extend(view());
     actions.extend(edit());
+    actions.extend(forms::form());
     actions.extend(pages());
     actions.extend(sign());
     actions.extend(ai());

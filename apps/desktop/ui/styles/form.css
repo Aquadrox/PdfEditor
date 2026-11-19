@@ -58,3 +58,172 @@
   background: transparent;
   cursor: not-allowed;
 }
+
+/* Champ obligatoire : liseré à gauche (la couleur n'est pas le seul
+   signal : aria-required et l'info-bulle le disent aussi). */
+.form-field.required {
+  box-shadow: inset 2px 0 0 var(--on-paper-danger);
+}
+
+/* Liste affichée : options lisibles en permanence, sur fond de page. */
+.form-field.choice.list {
+  overflow: auto;
+  background: rgb(39 71 184 / 4%);
+  color: #1c2430;
+}
+
+/* Calendrier d'un champ date, au bord droit du champ. */
+.form-date {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--on-paper-accent);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--on-paper-accent);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.form-date .icon {
+  width: 80%;
+  height: 80%;
+}
+
+.form-date-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Mode Formulaire (E-12) : cadre de chaque champ sur la page, nom au-dessus. */
+.design-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+}
+
+.design-layer.drawing {
+  cursor: crosshair;
+}
+
+.design-box {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid var(--on-paper-accent);
+  border-radius: 2px;
+  background: var(--on-paper-accent-soft);
+  cursor: move;
+  touch-action: none;
+}
+
+.design-box.signature {
+  border: 1.5px dashed var(--on-paper-seal);
+  background: var(--on-paper-seal-soft);
+}
+
+.design-box.required {
+  box-shadow: inset 2px 0 0 var(--on-paper-danger);
+}
+
+.design-box:focus-visible,
+.design-box.selected {
+  outline: 2px solid var(--on-paper-accent);
+  outline-offset: 1px;
+}
+
+.design-label {
+  position: absolute;
+  bottom: 100%;
+  left: -1px;
+  max-width: 220px;
+  overflow: hidden;
+  padding: 0 4px;
+  border-radius: 2px 2px 0 0;
+  background: var(--on-paper-accent);
+  color: #fff;
+  font-size: 10px;
+  line-height: 14px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.design-box.signature .design-label {
+  background: var(--on-paper-seal);
+}
+
+.design-handle {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 9px;
+  height: 9px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--on-paper-accent);
+  background: var(--paper);
+  cursor: nwse-resize;
+}
+
+.design-draft,
+.design-suggestion {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1.5px dashed var(--on-paper-accent);
+  background: var(--on-paper-accent-soft);
+  pointer-events: none;
+}
+
+.design-suggestion:not(.chosen) {
+  opacity: 0.35;
+}
+
+/* Panneau Champ. */
+.form-panel .field-label {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.form-panel .inline-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.form-panel .inline-row[hidden],
+.form-panel label[hidden] {
+  display: none;
+}
+
+.form-calc-fields {
+  display: grid;
+  gap: var(--space-1);
+  max-height: 140px;
+  overflow: auto;
+}
+
+.form-suggestions {
+  display: grid;
+  gap: var(--space-1);
+  max-height: 220px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .design-box,
+  .form-date {
+    transition: none;
+  }
+}

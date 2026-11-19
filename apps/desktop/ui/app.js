@@ -12,6 +12,7 @@ import { renderRecent } from "./features/home/recent.js";
 import { openPath, pickPdf } from "./features/open/open.js";
 import { PagesMode } from "./features/pages/pages-mode.js";
 import { FormLayer } from "./features/form/form-layer.js";
+import { FormDesign } from "./features/form-design/form-design.js";
 import { attachProperties } from "./features/form/properties-dialog.js";
 import { attachSearch } from "./features/search/search-bar.js";
 import { SignMode } from "./features/sign/sign-mode.js";
@@ -54,6 +55,7 @@ const viewer = new Viewer(byId("desk"), {
   onPageShown: (frame, page) => {
     edit.layer.pageShown(frame, page);
     form.pageShown(frame, page);
+    formDesign.pageShown(frame, page);
     sign.pageShown(frame, page);
   },
 });
@@ -87,6 +89,11 @@ const pages = new PagesMode(edit.session, (page) => {
 edit.session.onLayout(relayout);
 // Formulaire en mode Lire, propriétés du document dans le menu.
 const form = new FormLayer(edit.session, viewer);
+// Conception de formulaires (E-12) : mode Formulaire ; « Tester » passe en mode Lire.
+const formDesign = new FormDesign(edit.session, viewer, {
+  test: () => setMode("read"),
+  fieldsChanged: (fields) => form.setFields(fields),
+});
 attachProperties(
   () => current,
   edit.session,
@@ -108,7 +115,7 @@ const sign = new SignMode(viewer, {
 });
 
 function applyLock(info) {
-  if (info.lock && (mode === "edit" || mode === "pages")) setMode("read");
+  if (info.lock && (mode === "edit" || mode === "pages" || mode === "form")) setMode("read");
   form.flattenAllowed = !info.lock;
   form.setActive(mode === "read" && info.lock !== "all");
 }
@@ -129,6 +136,7 @@ function relayout(doc) {
   statusbar.setPage(page);
   pages.load(current);
   form.load(current);
+  formDesign.load(current);
   search.reset();
 }
 
@@ -147,16 +155,17 @@ function showSaveState(dirty) {
 function setMode(next) {
   const previous = mode;
   mode = current ? next : "read";
-  for (const name of ["read", "edit", "pages", "sign", "ai"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
+  for (const name of ["read", "edit", "form", "pages", "sign", "ai"]) byId(`mode-${name}`).toggleAttribute("aria-current", false);
   byId(`mode-${mode}`).setAttribute("aria-current", "page");
   byId("save-button").hidden = mode === "read" || mode === "sign" || mode === "ai";
   if (mode !== "edit") edit.layer.commitText();
   edit.setActive(mode === "edit");
+  formDesign.setActive(mode === "form");
   pages.setActive(mode === "pages", viewer.page);
   sign.setActive(mode === "sign");
   ai.setActive(mode === "ai");
   form.setActive(mode === "read" && sign.info.lock !== "all");
-  if (mode === "edit" || mode === "pages") sign.warnIfSigned(current);
+  if (mode === "edit" || mode === "pages" || mode === "form") sign.warnIfSigned(current);
   // En quittant la grille, la page choisie est affichée.
   if (previous === "pages" && mode !== "pages" && current) viewer.goToPage(pages.firstSelected);
 }
@@ -172,6 +181,7 @@ function show(doc) {
   byId("menu-close").disabled = !doc;
   byId("menu-save-as").disabled = !doc;
   byId("mode-edit").disabled = !doc;
+  byId("mode-form").disabled = !doc;
   byId("mode-pages").disabled = !doc;
   byId("mode-sign").disabled = !doc;
   byId("mode-ai").disabled = !doc;
@@ -187,12 +197,13 @@ function show(doc) {
     statusbar.setPage(0);
     editLoading = edit
       .load(doc)
-      .then(() => Promise.all([pages.load(doc), form.load(doc), sign.load(doc)]))
+      .then(() => Promise.all([pages.load(doc), form.load(doc), formDesign.load(doc), sign.load(doc)]))
       .catch((e) => toast(t("error.unexpected", { message: e?.message ?? String(e) }), "error"));
   } else {
     edit.load(null);
     pages.load(null);
     form.load(null);
+    formDesign.load(null);
     sign.load(null);
     viewer.unload();
     thumbnails.clear();
@@ -330,6 +341,7 @@ byId("edit-undo").addEventListener("click", () => edit.undo());
 byId("edit-redo").addEventListener("click", () => edit.redo());
 byId("mode-read").addEventListener("click", () => setMode("read"));
 byId("mode-edit").addEventListener("click", () => setMode("edit"));
+byId("mode-form").addEventListener("click", () => setMode("form"));
 byId("mode-pages").addEventListener("click", () => setMode("pages"));
 byId("mode-sign").addEventListener("click", () => setMode("sign"));
 byId("mode-ai").addEventListener("click", () => setMode("ai"));

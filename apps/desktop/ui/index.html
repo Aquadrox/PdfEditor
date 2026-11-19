@@ -77,6 +77,18 @@
       <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4M12 17h.01" /></symbol>
       <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></symbol>
       <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></symbol>
+      <symbol id="i-form" viewBox="0 0 24 24"><path d="M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1" /><path d="M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5" /><path d="M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1" /><path d="M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7" /><path d="M9 7v10" /></symbol>
+      <symbol id="i-pointer" viewBox="0 0 24 24"><path d="M4.04 4.69a.5.5 0 0 1 .65-.65l16 6.5a.5.5 0 0 1-.06.95l-6.12 1.58a2 2 0 0 0-1.44 1.44l-1.58 6.12a.5.5 0 0 1-.95.06z" /></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></symbol>
+      <symbol id="i-euro" viewBox="0 0 24 24"><path d="M4 10h12M4 14h9" /><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2" /></symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" /></symbol>
+      <symbol id="i-checkbox" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="m9 12 2 2 4-4" /></symbol>
+      <symbol id="i-radio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3" /></symbol>
+      <symbol id="i-dropdown" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="m16 10-4 4-4-4" /></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 6h.01M3 12h.01M3 18h.01M8 6h13M8 12h13M8 18h13" /></symbol>
+      <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8h8M7 12h10M7 16h6" /></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3l14 9-14 9z" /></symbol>
     </svg>
 
     <div class="app">
@@ -102,6 +114,7 @@
         <nav class="modes" data-i18n-aria="modes.label">
           <button id="mode-read" class="mode" aria-current="page"><svg class="icon"><use href="#i-read" /></svg><span data-i18n="mode.read"></span></button>
           <button id="mode-edit" class="mode" disabled><svg class="icon"><use href="#i-edit" /></svg><span data-i18n="mode.edit"></span></button>
+          <button id="mode-form" class="mode" disabled><svg class="icon"><use href="#i-form" /></svg><span data-i18n="mode.form"></span></button>
           <button id="mode-pages" class="mode" disabled><svg class="icon"><use href="#i-pages" /></svg><span data-i18n="mode.pages"></span></button>
           <button id="mode-sign" class="mode" disabled><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="mode.sign"></span></button>
           <button id="mode-ai" class="mode" disabled><svg class="icon"><use href="#i-ai" /></svg><span data-i18n="mode.ai"></span></button>
@@ -178,6 +191,28 @@
         <span class="spacer"></span>
         <button id="edit-undo" class="btn ghost icon" disabled data-i18n-label="edit.undo" data-shortcut-hint="undo"><svg class="icon"><use href="#i-undo" /></svg></button>
         <button id="edit-redo" class="btn ghost icon" disabled data-i18n-label="edit.redo" data-shortcut-hint="redo"><svg class="icon"><use href="#i-redo" /></svg></button>
+      </div>
+
+      <div id="form-toolbar" class="edit-toolbar form-toolbar" role="toolbar" data-i18n-aria="formDesign.toolbar" hidden>
+        <button class="btn on" data-field-tool="select" aria-pressed="true" data-i18n-title="formDesign.toolHint.select"><svg class="icon"><use href="#i-pointer" /></svg><span data-i18n="formDesign.tool.select"></span></button>
+        <span class="separator" aria-hidden="true"></span>
+        <button class="btn ghost" data-field-tool="text" aria-pressed="false" data-i18n-title="formDesign.toolHint.text"><svg class="icon"><use href="#i-type" /></svg><span data-i18n="formDesign.tool.text"></span></button>
+        <button class="btn ghost" data-field-tool="paragraph" aria-pressed="false" data-i18n-title="formDesign.toolHint.paragraph"><svg class="icon"><use href="#i-align-left" /></svg><span data-i18n="formDesign.tool.paragraph"></span></button>
+        <button class="btn ghost" data-field-tool="date" aria-pressed="false" data-i18n-title="formDesign.toolHint.date"><svg class="icon"><use href="#i-calendar" /></svg><span data-i18n="formDesign.tool.date"></span></button>
+        <button class="btn ghost" data-field-tool="amount" aria-pressed="false" data-i18n-title="formDesign.toolHint.amount"><svg class="icon"><use href="#i-euro" /></svg><span data-i18n="formDesign.tool.amount"></span></button>
+        <button class="btn ghost" data-field-tool="email" aria-pressed="false" data-i18n-title="formDesign.toolHint.email"><svg class="icon"><use href="#i-mail" /></svg><span data-i18n="formDesign.tool.email"></span></button>
+        <button class="btn ghost" data-field-tool="phone" aria-pressed="false" data-i18n-title="formDesign.toolHint.phone"><svg class="icon"><use href="#i-phone" /></svg><span data-i18n="formDesign.tool.phone"></span></button>
+        <button class="btn ghost" data-field-tool="checkbox" aria-pressed="false" data-i18n-title="formDesign.toolHint.checkbox"><svg class="icon"><use href="#i-checkbox" /></svg><span data-i18n="formDesign.tool.checkbox"></span></button>
+        <button class="btn ghost" data-field-tool="radio" aria-pressed="false" data-i18n-title="formDesign.toolHint.radio"><svg class="icon"><use href="#i-radio" /></svg><span data-i18n="formDesign.tool.radio"></span></button>
+        <button class="btn ghost" data-field-tool="dropdown" aria-pressed="false" data-i18n-title="formDesign.toolHint.dropdown"><svg class="icon"><use href="#i-dropdown" /></svg><span data-i18n="formDesign.tool.dropdown"></span></button>
+        <button class="btn ghost" data-field-tool="list" aria-pressed="false" data-i18n-title="formDesign.toolHint.list"><svg class="icon"><use href="#i-list" /></svg><span data-i18n="formDesign.tool.list"></span></button>
+        <button class="btn ghost" data-field-tool="signature" aria-pressed="false" data-i18n-title="formDesign.toolHint.signature"><svg class="icon"><use href="#i-sign" /></svg><span data-i18n="formDesign.tool.signature"></span></button>
+        <span class="separator" aria-hidden="true"></span>
+        <button id="form-detect" class="btn ghost" data-i18n-title="formDesign.detectHint"><svg class="icon"><use href="#i-scan" /></svg><span data-i18n="formDesign.detect"></span></button>
+        <button id="form-test" class="btn ghost" data-i18n-title="formDesign.testHint"><svg class="icon"><use href="#i-play" /></svg><span data-i18n="formDesign.test"></span></button>
+        <span class="spacer"></span>
+        <button id="form-undo" class="btn ghost icon" disabled data-i18n-label="edit.undo" data-shortcut-hint="undo"><svg class="icon"><use href="#i-undo" /></svg></button>
+        <button id="form-redo" class="btn ghost icon" disabled data-i18n-label="edit.redo" data-shortcut-hint="redo"><svg class="icon"><use href="#i-redo" /></svg></button>
       </div>
 
       <div id="pages-toolbar" class="edit-toolbar" role="toolbar" data-i18n-aria="pages.toolbar" hidden>
@@ -431,6 +466,95 @@
           </form>
         </aside>
 
+        <aside id="form-panel" class="properties form-panel" aria-labelledby="form-panel-title" hidden>
+          <div class="properties-header">
+            <h2 id="form-panel-title" class="panel-title" data-i18n="formDesign.panel"></h2>
+            <span id="form-count" class="caption" role="status"></span>
+          </div>
+          <div id="form-suggestions" class="properties-group" hidden>
+            <span class="caption" data-i18n="formDesign.suggestions"></span>
+            <p id="form-suggestions-text" class="properties-hint" role="status"></p>
+            <ul id="form-suggestions-list" class="form-suggestions"></ul>
+            <div class="actions-row">
+              <button id="form-suggestions-add" class="btn primary" type="button" data-i18n="formDesign.suggestionsAdd"></button>
+              <button id="form-suggestions-cancel" class="btn ghost" type="button" data-i18n="formDesign.suggestionsCancel"></button>
+            </div>
+          </div>
+          <p id="form-empty" class="properties-empty" data-i18n="formDesign.empty"></p>
+          <form id="form-props" class="properties-fields" hidden>
+            <div class="properties-group">
+              <span id="form-kind" class="caption"></span>
+              <label class="field-label" for="form-name" data-i18n="formDesign.name"></label>
+              <input id="form-name" class="input" type="text" maxlength="200" spellcheck="false" />
+              <label class="field-label" for="form-tooltip" data-i18n="formDesign.tooltip"></label>
+              <input id="form-tooltip" class="input" type="text" maxlength="500" data-i18n-placeholder="formDesign.tooltipPlaceholder" />
+            </div>
+            <div id="form-text-group" class="properties-group">
+              <label class="field-label" for="form-format" data-i18n="formDesign.format"></label>
+              <select id="form-format" class="input">
+                <option value="none" data-i18n="formDesign.format.none"></option>
+                <option value="date" data-i18n="formDesign.format.date"></option>
+                <option value="time" data-i18n="formDesign.format.time"></option>
+                <option value="number" data-i18n="formDesign.format.number"></option>
+                <option value="amount" data-i18n="formDesign.format.amount"></option>
+                <option value="percent" data-i18n="formDesign.format.percent"></option>
+                <option value="phone" data-i18n="formDesign.format.phone"></option>
+                <option value="zip" data-i18n="formDesign.format.zip"></option>
+                <option value="email" data-i18n="formDesign.format.email"></option>
+                <option value="mask" data-i18n="formDesign.format.mask"></option>
+              </select>
+              <select id="form-date-pattern" class="input" data-i18n-aria="formDesign.datePattern" hidden></select>
+              <span id="form-number-group" class="inline-row" hidden>
+                <label class="inline"><span class="caption" data-i18n="formDesign.decimals"></span><input id="form-decimals" class="input num" type="number" min="0" max="10" /></label>
+                <label class="inline"><span class="caption" data-i18n="formDesign.currency"></span><input id="form-currency" class="input" type="text" maxlength="8" /></label>
+              </span>
+              <input id="form-mask" class="input" type="text" maxlength="40" spellcheck="false" data-i18n-placeholder="formDesign.maskPlaceholder" data-i18n-aria="formDesign.format.mask" hidden />
+              <p id="form-format-hint" class="properties-hint" role="status"></p>
+              <label class="inline checkbox"><input id="form-multiline" type="checkbox" /><span data-i18n="formDesign.multiline"></span></label>
+              <label class="inline"><span class="caption" data-i18n="formDesign.maxLen"></span><input id="form-max-len" class="input num" type="number" min="1" max="10000" /></label>
+              <label class="inline checkbox"><input id="form-comb" type="checkbox" /><span data-i18n="formDesign.comb"></span></label>
+              <label class="field-label" for="form-calc-op" data-i18n="formDesign.calc"></label>
+              <select id="form-calc-op" class="input">
+                <option value="" data-i18n="formDesign.calc.none"></option>
+                <option value="sum" data-i18n="formDesign.calc.sum"></option>
+                <option value="product" data-i18n="formDesign.calc.product"></option>
+                <option value="average" data-i18n="formDesign.calc.average"></option>
+                <option value="min" data-i18n="formDesign.calc.min"></option>
+                <option value="max" data-i18n="formDesign.calc.max"></option>
+              </select>
+              <div id="form-calc-fields" class="form-calc-fields" hidden></div>
+            </div>
+            <div id="form-choice-group" class="properties-group" hidden>
+              <label class="field-label" for="form-options" data-i18n="formDesign.options"></label>
+              <textarea id="form-options" class="input prop-text" rows="4" spellcheck="false" data-i18n-placeholder="formDesign.optionsPlaceholder"></textarea>
+              <label class="inline checkbox"><input id="form-editable" type="checkbox" /><span data-i18n="formDesign.editable"></span></label>
+              <label class="inline checkbox"><input id="form-multi" type="checkbox" /><span data-i18n="formDesign.multi"></span></label>
+            </div>
+            <div id="form-button-group" class="properties-group" hidden>
+              <label class="field-label" for="form-export" data-i18n="formDesign.export"></label>
+              <input id="form-export" class="input" type="text" maxlength="100" spellcheck="false" />
+              <button id="form-add-radio" class="btn" type="button" data-i18n="formDesign.addRadio" hidden></button>
+            </div>
+            <div class="properties-group">
+              <label class="inline checkbox"><input id="form-required" type="checkbox" /><span data-i18n="formDesign.required"></span></label>
+              <label class="inline checkbox"><input id="form-read-only" type="checkbox" /><span data-i18n="formDesign.readOnly"></span></label>
+              <span class="inline-row">
+                <label class="inline"><span class="caption" data-i18n="formDesign.fontSize"></span><input id="form-font-size" class="input num" type="number" min="0" max="72" step="0.5" data-i18n-title="formDesign.fontSizeHint" /></label>
+                <select id="form-align" class="input" data-i18n-aria="formDesign.align">
+                  <option value="left" data-i18n="formDesign.align.left"></option>
+                  <option value="center" data-i18n="formDesign.align.center"></option>
+                  <option value="right" data-i18n="formDesign.align.right"></option>
+                </select>
+              </span>
+              <label class="inline checkbox"><input id="form-border" type="checkbox" /><span data-i18n="formDesign.border"></span></label>
+              <label class="inline checkbox"><input id="form-background" type="checkbox" /><span data-i18n="formDesign.background"></span></label>
+            </div>
+            <div class="properties-group actions-row">
+              <button id="form-duplicate" class="btn" type="button" data-i18n="props.duplicate"></button>
+              <button id="form-delete" class="btn ghost danger" type="button" data-i18n="props.delete"></button>
+            </div>
+          </form>
+        </aside>
         <aside id="signatures-panel" class="properties sign-panel" aria-labelledby="signatures-title" hidden>
           <div class="properties-header">
             <h2 id="signatures-title" class="panel-title" data-i18n="sig.title"></h2>
