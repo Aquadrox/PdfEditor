@@ -11,6 +11,7 @@
 //! sans séparateur de milliers avec un point décimal.
 
 mod calc;
+mod date_input;
 mod dates;
 mod js;
 mod mask;

@@ -11,6 +11,7 @@
 
 mod appearance;
 mod design;
+mod field_settings;
 mod look;
 mod patch;
 mod structure;
