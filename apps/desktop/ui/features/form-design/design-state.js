@@ -120,7 +120,8 @@ export function newField(tool, box, page, names, group = null) {
     width: box.width,
     height: box.height,
     name: group?.name ?? uniqueName(preset.name, names),
-    kind: preset.kind(),
+    // `field_kind` : dans un élément, `kind` désigne déjà l'élément (« field »).
+    field_kind: preset.kind(),
     tooltip: "",
     required: false,
     read_only: false,
@@ -171,7 +172,7 @@ export function templateOf(field, patch = {}) {
     width: Math.max(widget?.bounds.width ?? 10, MIN_SIDE),
     height: Math.max(widget?.bounds.height ?? 10, MIN_SIDE),
     name: field.name,
-    kind: field.kind,
+    field_kind: field.kind,
     tooltip: field.tooltip ?? "",
     required: field.required,
     read_only: field.read_only,

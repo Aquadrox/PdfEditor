@@ -6,6 +6,7 @@ qui ne concerne qu'une plateforme.
 
 ## 0.0.32 — 2026-11-19
 
+- Mode Formulaire : corrige « Formulaire : Cannot read properties of undefined (reading 'replace') », qui empêchait d'ajouter le moindre champ ; une copie de secours d'un formulaire en cours se récupère de nouveau après un plantage.
 - Accueil en thème sombre : les boutons « Nouveau document » et « Importer un document Word » sont lisibles (ils étaient sombres sur fond sombre, avec des icônes trop grandes).
 
 ## 0.0.31 — 2026-11-19

@@ -25,7 +25,8 @@ test("noms libres et nouveaux champs", () => {
   assert.equal(date.name, "date_2");
   assert.equal(date.page, 1);
   assert.deepEqual(date.top_left, { x: 10, y: 20 });
-  assert.deepEqual(date.kind.format, { kind: "date", pattern: "dd/mm/yyyy" });
+  assert.deepEqual(date.field_kind.format, { kind: "date", pattern: "dd/mm/yyyy" });
+  assert.equal(date.kind, undefined);
   assert.equal(newField("checkbox", { x: 0, y: 0, width: 14, height: 14 }, 0, []).export, "Oui");
   const joined = newField("radio", { x: 0, y: 0, width: 14, height: 14 }, 0, [], { name: "civilite", exports: ["Choix1"] });
   assert.equal(joined.name, "civilite");

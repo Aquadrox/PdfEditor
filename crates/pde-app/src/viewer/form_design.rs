@@ -615,3 +615,36 @@ mod tests {
         assert!(s.viewer.suggest_form_fields(s.id, 2).unwrap().is_empty());
     }
 }
+
+/// Contrat avec l'interface (`ui/features/form-design/design-state.js`) :
+/// un champ envoyé tel que `newField` l'écrit est accepté, et l'état rendu
+/// désigne l'élément par `"kind": "field"`, le genre du champ par
+/// `field_kind`. Bogue : les deux clés s'appelaient `kind`, l'interface ne
+/// reconnaissait plus le champ (« Cannot read properties of undefined »).
+#[cfg(test)]
+mod interface_tests {
+    use super::super::testing::Session;
+    use pde_core::edit::FieldBox;
+
+    #[test]
+    fn fields_sent_by_the_interface_come_back_as_field_elements() {
+        let s = Session::new("conception-json");
+        let sent: FieldBox = serde_json::from_value(serde_json::json!({
+            "page": 0, "top_left": { "x": 72, "y": 100 }, "width": 100, "height": 20,
+            "name": "date_1",
+            "field_kind": { "kind": "text", "multiline": false, "max_len": null, "password": false,
+                            "comb": false, "format": { "kind": "date", "pattern": "dd/mm/yyyy" }, "calc": null },
+            "tooltip": "", "required": false, "read_only": false,
+            "look": { "font_size": 0, "align": "left", "color": { "r": 0, "g": 0, "b": 0 },
+                      "border": { "r": 128, "g": 138, "b": 150 }, "background": null },
+            "value": null, "export": "", "origin": null, "deleted": false
+        }))
+        .unwrap();
+        let (_, view) = s.viewer.add_form_fields(s.id, vec![sent]).unwrap();
+        let json = serde_json::to_value(&view).unwrap();
+        let element = &json["elements"][0]["element"];
+        assert_eq!(element["kind"], "field");
+        assert_eq!(element["field_kind"]["format"]["kind"], "date");
+        assert_eq!(element["top_left"]["y"], 100.0);
+    }
+}
